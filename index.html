@@ -89,7 +89,7 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
 <div class="wrap">
 
 <header class="top">
-  <div><span class="badge live">Probabilistic Research Platform</span><span class="badge">v12 · Lineage everywhere</span></div>
+  <div><span class="badge live">Probabilistic Research Platform</span><span class="badge">v13 · 설계탭</span></div>
   <h1>통합 확률기반 투자 리서치 플랫폼</h1>
   <div class="meta">실측 <b>2026-08-19</b> · 시세 08-19 (Bigdata.com) · 라벨: <span class="lbc fact">FACT</span> <span class="lbc cons">CONSENSUS</span> <span class="lbc model">MODEL</span> <span class="lbc assum">ASSUMPTION</span> <span class="lbc scen">SCENARIO</span> <span class="lbc ins">INSUFF.</span> — 상세는 Governance 탭</div>
 </header>
@@ -99,6 +99,7 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
   <button class="pbtn" data-v="screener">🔎 Screener</button>
   <button class="pbtn" data-v="memory">🧠 Memory</button>
   <button class="pbtn" data-v="governance">⚖️ Governance</button>
+  <button class="pbtn" data-v="design">📐 설계</button>
   <button class="pbtn" data-v="soon">＋ Sectors</button>
 </nav>
 
@@ -307,6 +308,86 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
     </ul>
     <div class="ok">근거 부족 시 숫자 대신 <span class="lbc ins">INSUFFICIENT EVIDENCE</span>를 표시한다(빈칸 채우기보다 빈칸 유지).</div>
   </section>
+  <section>
+    <h2><span class="k">검증</span>리포트 낙관성 검증 방법 (Verification)</h2>
+    <p class="sec-sub">이 대시보드가 증권사 리포트 숫자의 "과낙관"을 어떻게 검증하는지 — 링크만 봐도 이해되도록 여기 명시.</p>
+    <h3>입력 리포트 (4개 소스)</h3>
+    <table><thead><tr><th>리포트</th><th>형태</th><th>용도</th></tr></thead><tbody>
+      <tr><td>키움 박유악 — Memory Split 2027</td><td>PDF</td><td>HBM 수급·삼성 HBM 1위 주장(핵심 검증 대상)</td></tr>
+      <tr><td>삼성증권 이종욱 — Tech Talk</td><td>PDF</td><td>사이클·밸류에이션·자본조달 카나리아</td></tr>
+      <tr><td>미래에셋 김영건 — 데이터센터 투자여력</td><td>PDF</td><td>빅테크 capex 지속가능성</td></tr>
+      <tr><td>한화 박제인 — SanDisk Earnings Flash</td><td>캡처 이미지</td><td>NAND·주주환원(Bayesian 입력)</td></tr>
+    </tbody></table>
+    <h3>낙관성 3단계 검증</h3>
+    <ol style="font-size:12.3px;padding-left:18px">
+      <li><b>내부 산수 검산</b> — 리포트 숫자끼리 논리적으로 연결되나 (매출=출하×ASP, EPS 브릿지)</li>
+      <li><b>컨센서스 대조</b> — 리포트 bull 주장 vs 시장 컨센서스(불일치=과낙관 신호)</li>
+      <li><b>실적·역사 대조</b> — 주장 vs 실제 보고 재무/과거 사이클 최대치</li>
+    </ol>
+    <div class="bad"><b>실증 예 — 키움 삼성 HBM 영업이익 83조(2027, HBM 단독)</b><br>
+      삼성 <b>전사</b> 영업이익 실측: 2021 <b>51.6조</b> · 2022 43.4 · 2023 6.6 · 2024 32.7 · 2025 43.6조<br>
+      → HBM "하나"로 83조 = 전사 <b>역대 최대(51.6조)의 1.6배</b> + OPM 75% 가정 ⇒ <b>과낙관 위험 高</b><br>
+      → 결정적: 컨센서스 삼성 2028 EPS <b>−33%</b>가 이 스토리를 반박(진짜 HBM 질주면 2028이 안 꺾임). <span class="q">단일 하우스 vs 컨센서스 충돌 = 과낙관 실증.</span></div>
+    <div class="ok"><b>SanDisk — 유일하게 확률에 직접 반영</b>: 리포트 증거(NBM 장기계약 등)를 Bayesian으로 → P(구조적) 사전 25% → 사후 59.5%, 적정 P/E 7.3→9.0x.</div>
+    <div class="bad"><b>오염 데이터 차단</b>: 컨센서스 삼성 2026 매출 +119%·순마진 44% 등 불가능 수치 → <span class="lbc unv">DATA CONFLICT</span>로 거부(가짜 Fair Value 생성 안 함, §A4).</div>
+    <div class="flag"><b>현재 연동 상태(정직)</b> — 정성 3단계 검증은 <b>VALUATION 탭 → CHECK 패널</b>에서 기업별로 작동. 단 이 판정이 확률/밸류에이션 숫자에 <b>기계적으로 곱해지는 건 SanDisk(Bayesian)뿐</b>. 나머지는 "컨센서스 EPS를 입력으로 쓰므로 과낙관이 간접적으로만 희석"됨. → 다음 단계: 과낙관 페널티를 확률에 직접 반영(옵션).</div>
+  </section>
+</div>
+
+<!-- ============ DESIGN / METHOD ============ -->
+<div class="view" id="v-design">
+  <section>
+    <h2><span class="k">DESIGN</span>설계 · 숫자 검증 방법론 (Single Source)</h2>
+    <p class="sec-sub">이 플랫폼이 "어떤 원칙으로, 어떤 숫자를, 어떻게 검증해 만드는가"를 한 곳에 명시. 링크만으로 시스템 전체가 이해되도록.</p>
+    <div class="easy"><b>미션</b> — 시장가격이 <b>암묵적으로 가정하는 미래</b> vs <b>증거가 지지하는 미래</b>의 격차(Expectations Gap)가 가장 큰 곳을 찾는다. 예언이 아니라 <b>불확실성을 숨기지 않는 구조화된 판단</b>.<br>파이프라인: Market/Industry → Narrative → Evidence → Probability → Value Drivers → Financial Model → DCF/Reverse DCF → Scenario/MC → Market-Implied → Mispricing → Ranking.</div>
+  </section>
+  <section>
+    <h2><span class="k">CHECK</span>숫자 검증 방법 (핵심)</h2>
+    <h3>1. Revenue Bridge — 매출을 요약 말고 재구성</h3>
+    <div class="acalc" style="font-family:inherit">Revenue = Volume × ASP (메모리: Bit Shipment × $/Bit). 성장률 = Volume + ASP + Mix + FX + Other 로 분해.<br>검산 예(키움 삼성 HBM): (출하 +109%)×(ASP +81%) = +278% ≈ 리포트 +269% → 정합 ✓</div>
+    <h3>2. EPS 재구성 & 역기저(base effect)</h3>
+    <div class="acalc" style="font-family:inherit">Revenue → Gross → Operating → NOPAT → Net → EPS 로 걸어 재계산 후 리포트값과 대조. YoY만 보지 않고 QoQ·2yr CAGR·정규화·cycle-adjusted 병행. Forward EPS 하락 시 "역기저 vs 실제 악화" 분리.</div>
+    <h3>3. 성장률 Bridge · Historical ≠ Future</h3>
+    <div class="acalc" style="font-family:inherit">"최근 +171% → 향후 +65%면 보수적" 같은 단순 외삽 금지. CXMT 공급·Big3 증설·HBM allocation·ASP·utilization을 각각 검토.</div>
+    <h3>4. 독립 수급 모델 (bottom-up)</h3>
+    <div class="acalc" style="font-family:inherit">HBM Demand = AI accel units × stacks/accel × GB/stack. CXMT: Wafer capacity → Gross bit → Yield-adj bit → Marketable supply (capacity ≠ bit output). Capacity share ≠ Shipment ≠ Revenue ≠ Profit share.</div>
+    <h3>5. DCF 엔진 (단계별, 각 가정 노출)</h3>
+    <div class="acalc" style="font-family:inherit">Revenue → EBIT → NOPAT(=EBIT×(1−tax)) → +D&A −CapEx −ΔNWC = FCFF → ÷(WACC) → +Terminal(FCFF×(1+g)/(WACC−g)) → EV → +순현금 → Equity → ÷주식수 → 주당가치. 조건검증: WACC > g. WACC = we×CoE + wd×kd×(1−tax), CoE = rf + β×ERP.</div>
+    <h3>6. Reverse DCF — 주가 내재 기대 역산</h3>
+    <div class="acalc" style="font-family:inherit">현재가·순현금·WACC·g 고정 → EV=ΣFCFF/(1+WACC)^t+TV, 한 변수(예 FCFF CAGR)만 solve(§A8). 예(삼성): 현재가 정당화에 10년 FCFF CAGR ≈ 28% 필요 → 시장=공격적 업사이클.</div>
+    <h3>7. Monte Carlo (분포·상관)</h3>
+    <div class="acalc" style="font-family:inherit">forward EPS 분포(컨센 low/mean/high) × 사이클 P/E 분포, 20,000회 → 공정가치 분포·P(FV&gt;가). 변수 상관 반영(SanDisk regime-mixture). "정답 생성기" 아님 — 가정에 민감.</div>
+    <h3>8. Bayesian (prior → posterior)</h3>
+    <div class="acalc" style="font-family:inherit">사건 정의 → base rate(prior) → 증거별 우도비(LR, 중복원본 금지) → posterior. 예(SanDisk 구조적 이익): 25% → 59.5%(LR: NBM 2.2·자본환원 1.6·프레임 1.25).</div>
+    <h3>9. Sanity Checks (자동 거부/경고)</h3>
+    <div class="bad" style="font-size:12px">WACC ≤ g → ERROR · 음수 주식수 → ERROR · TV 비중 과대 → WARNING · 극단적 implied growth → WARNING · DCF vs 주가 급괴리 → REVIEW · 컨센서스 불가능 수치(삼성 2026 매출 +119%) → <b>DATA CONFLICT 거부</b>(가짜 FV 금지).</div>
+  </section>
+  <section>
+    <h2><span class="k">CHECK</span>리포트 낙관성 3단계 검증 + 실증</h2>
+    <ol style="font-size:12.3px;padding-left:18px"><li><b>내부 산수 검산</b></li><li><b>컨센서스 대조</b>(불일치=과낙관 신호)</li><li><b>실적·역사 대조</b></li></ol>
+    <div class="bad"><b>실증 — 키움 삼성 HBM OP 83조(2027, 단독)</b> vs 삼성 <b>전사</b> OP 실측(2021 51.6·2025 43.6조) → 역대최대의 1.6배 + OPM 75% ⇒ 과낙관 高. 컨센서스 2028 EPS −33%가 반박.</div>
+    <div class="flag"><b>연동 상태</b> — 정성 검증은 VALUATION→CHECK에서 작동. 확률 직접연동은 <b>SanDisk(Bayesian)만</b>; 나머지는 컨센서스 EPS 경유 간접. (다음: 과낙관 페널티 직접 반영 옵션)</div>
+  </section>
+  <section>
+    <h2><span class="k">RULES</span>라벨 · 소스 · 확률 거버넌스 (요약)</h2>
+    <p class="sec-sub">상세는 ⚖️ Governance 탭. 여기선 요약.</p>
+    <div class="chipbar" style="gap:6px;margin:2px 0 8px"><span class="lbc fact">FACT</span><span class="lbc cons">CONSENSUS</span><span class="lbc model">MODEL</span><span class="lbc assum">ASSUMPTION</span><span class="lbc" style="background:#ede9fe;color:#5b21b6">IMPLIED</span><span class="lbc scen">SCENARIO</span><span class="lbc unv">UNVERIFIED</span><span class="lbc ins">INSUFF.</span></div>
+    <div style="font-size:12.3px">• <b>Source Tier</b>: A 공시/실적 · B earnings call/sell-side · C 언론 · D X/블로그 (C/D 단독 가정변경 금지).<br>• <b>Probability</b>: Empirical(historical) / Model(MC) / Judgment(Bayesian·시나리오) 구분 — 혼용 금지.<br>• <b>Anti-hallucination</b>: 임의 숫자·출처없는 확률/WACC 금지, 중복원본 금지, 현재가 맞춤 조작 금지, 기계적 20/60/20 금지, 과잉정밀 금지. <b>결측 ≠ 0</b>(INSUFFICIENT 유지).</div>
+  </section>
+  <section>
+    <h2><span class="k">AUDIT</span>Data Lineage (클릭 감사)</h2>
+    <div class="easy">모든 핵심 숫자를 클릭 → Type·Formula·Calculation·Source·Why·Parent inputs(재귀 drill)·⚠Missing·Full Audit. "이 숫자 어디서 왔나 / fact인가 가정인가 / 틀리면 어떻게 되나"에 UI만으로 답 가능.</div>
+  </section>
+  <section>
+    <h2><span class="k">STATUS</span>구현 상태 · 문서 위계(SSOT) · 로드맵</h2>
+    <div style="font-size:12.3px">
+      <b>Implemented</b>: Memory 4종 대시보드·다중 밸류에이션·Monte Carlo·Bayesian(SanDisk)·삼성 정식 DCF/Reverse DCF·Expectations Gap·라벨/거버넌스·클릭 Data Lineage·낙관성 CHECK.<br>
+      <b>Partially</b>: Screener(Memory만)·Audit 커버리지·과낙관의 확률 직접연동(SanDisk만).<br>
+      <b>Not yet</b>: SK/Micron/SanDisk 정식 DCF·News/X·OpenDART/SEC 커넥터·Version Control·타 섹터.<br><br>
+      <b>문서 위계(SSOT)</b>: ① Master Spec → ② AGENTS.md → ③ 플랫폼_설계서 → ④ 데이터계보_설계서 → ⑤ 스킬(28원칙). (프로젝트 폴더 보관)<br>
+      <b>데이터</b>: 실측 Bigdata.com(주가·컨센서스, 2026-08-19) · 리포트 4종. 목표주가·컨센서스 ≠ 진실.
+    </div>
+  </section>
 </div>
 
 <!-- ============ SOON ============ -->
@@ -333,7 +414,7 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
 (function(){
 "use strict";
 var MC={"samsung": {"name": "삼성전자", "ccy": "원", "cur": 247500, "tp": 400000, "pct": {"5": 169571.06, "10": 189111.73, "25": 222642.19, "50": 261598.58, "75": 302935.71, "90": 342259.95, "95": 365871.15}, "ev": 264025.06, "exp_ret": 0.067, "p_up": 0.594, "p_up10": 0.43, "p_up30": 0.168, "p_dn10": 0.251, "p_dn20": 0.132, "hist": {"c": [151407.0, 160313.34, 169219.68, 178126.03, 187032.37, 195938.72, 204845.06, 213751.41, 222657.75, 231564.09, 240470.44, 249376.78, 258283.13, 267189.47, 276095.82, 285002.16, 293908.5, 302814.85, 311721.19, 320627.54, 329533.88, 338440.23, 347346.57, 356252.92, 365159.26, 374065.6, 382971.95, 391878.29], "n": [176, 248, 351, 416, 582, 688, 798, 864, 1015, 1091, 1139, 1173, 1212, 1162, 1178, 1043, 1003, 877, 754, 733, 576, 549, 473, 362, 243, 217, 155, 122]}, "cur_pe": 12.2, "fv_pe_mid": 13.0}, "skhynix": {"name": "SK하이닉스", "ccy": "원", "cur": 1500000, "tp": 3000000, "pct": {"5": 927679.2, "10": 1053461.39, "25": 1267171.23, "50": 1518767.0, "75": 1780324.97, "90": 2032280.61, "95": 2175970.46}, "ev": 1532286.63, "exp_ret": 0.022, "p_up": 0.52, "p_up10": 0.366, "p_up30": 0.14, "p_dn10": 0.325, "p_dn20": 0.196, "hist": {"c": [812198.42, 869086.61, 925974.8, 982862.99, 1039751.19, 1096639.38, 1153527.57, 1210415.76, 1267303.96, 1324192.15, 1381080.34, 1437968.53, 1494856.72, 1551744.92, 1608633.11, 1665521.3, 1722409.49, 1779297.69, 1836185.88, 1893074.07, 1949962.26, 2006850.46, 2063738.65, 2120626.84, 2177515.03, 2234403.22, 2291291.42, 2348179.61], "n": [182, 242, 347, 412, 576, 707, 775, 903, 961, 1063, 1192, 1142, 1196, 1202, 1153, 1045, 1007, 886, 779, 714, 605, 538, 472, 366, 244, 206, 176, 109]}, "cur_pe": 11.2, "fv_pe_mid": 11.5}, "micron": {"name": "Micron", "ccy": "$", "cur": 940.76, "tp": null, "pct": {"5": 584.93, "10": 681.13, "25": 847.54, "50": 1044.51, "75": 1260.83, "90": 1471.0, "95": 1598.68}, "ev": 1063.77, "exp_ret": 0.131, "p_up": 0.635, "p_up10": 0.513, "p_up30": 0.287, "p_dn10": 0.249, "p_dn20": 0.157, "hist": {"c": [500.59, 546.66, 592.73, 638.8, 684.87, 730.94, 777.01, 823.08, 869.15, 915.22, 961.29, 1007.36, 1053.43, 1099.5, 1145.57, 1191.64, 1237.71, 1283.78, 1329.85, 1375.92, 1421.99, 1468.06, 1514.13, 1560.2, 1606.27, 1652.34, 1698.41, 1744.48], "n": [190, 290, 381, 489, 631, 788, 866, 926, 1113, 1158, 1185, 1205, 1175, 1154, 1107, 1016, 925, 795, 690, 660, 558, 513, 404, 308, 228, 185, 150, 110]}, "cur_pe": 5.7, "fv_pe_mid": 6.5}, "sandisk": {"name": "SanDisk", "ccy": "$", "cur": 1625.78, "tp": 2432.96, "pct": {"5": 998.06, "10": 1138.97, "25": 1444.99, "50": 2036.38, "75": 2612.92, "90": 3047.33, "95": 3315.22}, "ev": 2066.82, "exp_ret": 0.271, "p_up": 0.662, "p_up10": 0.596, "p_up30": 0.468, "p_dn10": 0.259, "p_dn20": 0.175, "hist": {"c": [902.63, 1000.95, 1099.28, 1197.6, 1295.93, 1394.26, 1492.58, 1590.91, 1689.23, 1787.56, 1885.89, 1984.21, 2082.54, 2180.86, 2279.19, 2377.51, 2475.84, 2574.17, 2672.49, 2770.82, 2869.14, 2967.47, 3065.79, 3164.12, 3262.45, 3360.77, 3459.1, 3557.42], "n": [351, 559, 764, 890, 978, 1046, 984, 923, 781, 770, 741, 786, 810, 800, 840, 901, 865, 899, 771, 706, 676, 594, 464, 416, 272, 274, 189, 150]}, "cur_pe": 7.3, "fv_pe_mid": 9.0}};
-var CD={"val": {"samsung": {"ccy": "원", "cur": 247500, "tp": 400000, "synth": [201000, 265000, 339000], "mid": 265000, "methods": [["애널리스트 TP (삼성證)", 380000, 400000, 420000, "앵커"], ["Fwd P/E FY27 (EPS20,330)", 182970, 243960, 284620, "실측"], ["Cycle-adj P/E (norm16,510)", 165100, 189865, 214630, "실측"], ["P/B (BPS161k)", 193200, 289800, 402500, "실측"], ["역사적 P/B", 161000, 241500, 402500, "MED"]]}, "skhynix": {"ccy": "원", "cur": 1500000, "tp": 3000000, "synth": [1270000, 1540000, 1980000], "mid": 1540000, "methods": [["애널리스트 TP (삼성證)", 2850000, 3000000, 3150000, "앵커"], ["Fwd P/E FY27 (EPS133,406)", 1200654, 1534169, 1867684, "실측"], ["Cycle-adj P/E (norm120,004)", 1200040, 1380046, 1560052, "실측"], ["P/B (BPS1,015k)", 1218000, 1827000, 3045000, "실측"]]}, "micron": {"ccy": "$", "cur": 940.76, "tp": null, "synth": [720, 990, 1260], "mid": 990, "methods": [["Fwd P/E FY27 (EPS163.8)", 737, 983, 1310, "실측"], ["Fwd P/E FY28 (EPS173.4)", 867, 1040, 1214, "실측"], ["Cycle-adj P/E (norm134.4)", 672, 874, 1075, "실측"]]}, "sandisk": {"ccy": "$", "cur": 1625.78, "tp": 2432.96, "synth": [1200, 1995, 2560], "mid": 1995, "methods": [["애널리스트 TP (한화)", 2300, 2433, 2560, "앵커"], ["Fwd P/E FY27 (EPS221.7, Bayes)", 1330, 1995, 2439, "Bayes"], ["Cycle-adj P/E (regime)", 1108, 1774, 2660, "MED"]]}}, "fin": {"samsung": {"name": "삼성전자", "ccy": "원", "cur": 247500, "chg": -7.82, "pe27": 12.2, "pb27": 1.5, "tp": 400000, "tpup": 0.616, "eps": [15673, 20330, 13527], "eps28dir": "−33% 피크아웃", "exposure": "HBM + 서버/PC/모바일 DRAM + NAND + 파운드리. HBM 후발이나 캐파 최대.", "opt": {"report": "키움 박유악", "claim": "삼성 HBM 1위 탈환, 2027 HBM OP 83조(+315%), 출하 +109%(시장 2배)", "check": "컨센서스 2028 EPS −33% → 시장은 삼성을 HBM 승자로 안 봄. OPM 75% 가정은 극단.", "verdict": "과낙관 위험 高", "effect": "MC는 컨센서스 EPS(키움 배제) 사용 → 자동 보수적. Bull은 퀄 통과 옵션으로만."}}, "skhynix": {"name": "SK하이닉스", "ccy": "원", "cur": 1500000, "chg": -9.75, "pe27": 11.2, "pb27": 1.5, "tp": 3000000, "tpup": 1.0, "eps": [100692, 133406, 125913], "eps28dir": "−6% 완만", "exposure": "HBM 선두(엔비디아 주력) + DRAM + NAND. HBM 비중 최고.", "opt": {"report": "키움 박유악", "claim": "HBM OP 70조(+138%), 출하 +46%", "check": "컨센서스 EPS27 +32%, 2028 −6%로 완만. HBM 리더십은 실측 우위와 정합.", "verdict": "대체로 정합", "effect": "조정 없음. 다만 최근 1M −31% 급락은 이미 반영."}}, "micron": {"name": "Micron", "ccy": "$", "cur": 940.76, "chg": -7.02, "pe27": 5.7, "pb27": 10.5, "tp": null, "tpup": null, "eps": [65.9, 163.8, 173.4], "eps28dir": "+6% 상승 지속", "exposure": "DRAM + HBM + NAND 종합. 미국 유일 메모리, HBM3E 엔비디아 공급.", "opt": {"report": "—(컨센서스)", "claim": "EPS가 FY28까지 계속 상승(미피크)", "check": "멀티플이 5.8x로 오히려 보수적. 과낙관 징후 없음.", "verdict": "과낙관 아님", "effect": "가장 정직한 리스크/리워드. MC 기대 +12%."}}, "sandisk": {"name": "SanDisk", "ccy": "$", "cur": 1625.78, "chg": -9.01, "pe27": 7.3, "pb27": 15.2, "tp": 2432.96, "tpup": 0.496, "eps": [null, 221.7, null], "eps28dir": "상승(NAND 강세)", "exposure": "순수 NAND. 데이터센터 비중 38%(YoY 12%→), NBM 장기계약.", "opt": {"report": "한화 박제인", "claim": "TP $2,432.96(+60%), NAND 시장 CY27 5,000억$", "check": "현재 P/E 6.9x는 사이클 가정. NBM 플로어계약이 구조전환 근거 → Bayesian으로 P(구조적) 25→59.5%.", "verdict": "구조전환 논리 있음(단 NAND 가격 지속 검증 필요)", "effect": "Bayesian 반영: P/E 7→9x, MC 기대 +2%→+36%."}}}};
+var CD={"val": {"samsung": {"ccy": "원", "cur": 247500, "tp": 400000, "synth": [201000, 265000, 339000], "mid": 265000, "methods": [["애널리스트 TP (삼성證)", 380000, 400000, 420000, "앵커"], ["Fwd P/E FY27 (EPS20,330)", 182970, 243960, 284620, "실측"], ["Cycle-adj P/E (norm16,510)", 165100, 189865, 214630, "실측"], ["P/B (BPS161k)", 193200, 289800, 402500, "실측"], ["역사적 P/B", 161000, 241500, 402500, "MED"]]}, "skhynix": {"ccy": "원", "cur": 1500000, "tp": 3000000, "synth": [1270000, 1540000, 1980000], "mid": 1540000, "methods": [["애널리스트 TP (삼성證)", 2850000, 3000000, 3150000, "앵커"], ["Fwd P/E FY27 (EPS133,406)", 1200654, 1534169, 1867684, "실측"], ["Cycle-adj P/E (norm120,004)", 1200040, 1380046, 1560052, "실측"], ["P/B (BPS1,015k)", 1218000, 1827000, 3045000, "실측"]]}, "micron": {"ccy": "$", "cur": 940.76, "tp": null, "synth": [720, 990, 1260], "mid": 990, "methods": [["Fwd P/E FY27 (EPS163.8)", 737, 983, 1310, "실측"], ["Fwd P/E FY28 (EPS173.4)", 867, 1040, 1214, "실측"], ["Cycle-adj P/E (norm134.4)", 672, 874, 1075, "실측"]]}, "sandisk": {"ccy": "$", "cur": 1625.78, "tp": 2432.96, "synth": [1200, 1995, 2560], "mid": 1995, "methods": [["애널리스트 TP (한화)", 2300, 2433, 2560, "앵커"], ["Fwd P/E FY27 (EPS221.7, Bayes)", 1330, 1995, 2439, "Bayes"], ["Cycle-adj P/E (regime)", 1108, 1774, 2660, "MED"]]}}, "fin": {"samsung": {"name": "삼성전자", "ccy": "원", "cur": 247500, "chg": -7.82, "pe27": 12.2, "pb27": 1.5, "tp": 400000, "tpup": 0.616, "eps": [15673, 20330, 13527], "eps28dir": "−33% 피크아웃", "exposure": "HBM + 서버/PC/모바일 DRAM + NAND + 파운드리. HBM 후발이나 캐파 최대.", "opt": {"report": "키움 박유악", "claim": "삼성 HBM 1위 탈환, 2027 HBM OP 83조(+315%), 출하 +109%(시장 2배)", "check": "HBM 단독 OP 83조 vs 삼성 전사 영업이익 실측 최대 51.6조(2021)의 1.6배 = 정량 과낙관. 컨센서스 2028 EPS −33%가 반박(시장은 삼성을 HBM 승자로 안 봄). OPM 75% 극단.", "verdict": "과낙관 위험 高", "effect": "MC는 컨센서스 EPS(키움 배제) 사용 → 자동 보수적. Bull은 퀄 통과 옵션으로만."}}, "skhynix": {"name": "SK하이닉스", "ccy": "원", "cur": 1500000, "chg": -9.75, "pe27": 11.2, "pb27": 1.5, "tp": 3000000, "tpup": 1.0, "eps": [100692, 133406, 125913], "eps28dir": "−6% 완만", "exposure": "HBM 선두(엔비디아 주력) + DRAM + NAND. HBM 비중 최고.", "opt": {"report": "키움 박유악", "claim": "HBM OP 70조(+138%), 출하 +46%", "check": "컨센서스 EPS27 +32%, 2028 −6%로 완만. HBM 리더십은 실측 우위와 정합.", "verdict": "대체로 정합", "effect": "조정 없음. 다만 최근 1M −31% 급락은 이미 반영."}}, "micron": {"name": "Micron", "ccy": "$", "cur": 940.76, "chg": -7.02, "pe27": 5.7, "pb27": 10.5, "tp": null, "tpup": null, "eps": [65.9, 163.8, 173.4], "eps28dir": "+6% 상승 지속", "exposure": "DRAM + HBM + NAND 종합. 미국 유일 메모리, HBM3E 엔비디아 공급.", "opt": {"report": "—(컨센서스)", "claim": "EPS가 FY28까지 계속 상승(미피크)", "check": "멀티플이 5.8x로 오히려 보수적. 과낙관 징후 없음.", "verdict": "과낙관 아님", "effect": "가장 정직한 리스크/리워드. MC 기대 +12%."}}, "sandisk": {"name": "SanDisk", "ccy": "$", "cur": 1625.78, "chg": -9.01, "pe27": 7.3, "pb27": 15.2, "tp": 2432.96, "tpup": 0.496, "eps": [null, 221.7, null], "eps28dir": "상승(NAND 강세)", "exposure": "순수 NAND. 데이터센터 비중 38%(YoY 12%→), NBM 장기계약.", "opt": {"report": "한화 박제인", "claim": "TP $2,432.96(+60%), NAND 시장 CY27 5,000억$", "check": "현재 P/E 6.9x는 사이클 가정. NBM 플로어계약이 구조전환 근거 → Bayesian으로 P(구조적) 25→59.5%.", "verdict": "구조전환 논리 있음(단 NAND 가격 지속 검증 필요)", "effect": "Bayesian 반영: P/E 7→9x, MC 기대 +2%→+36%."}}}};
 var charts={};
 function destroy(id){if(charts[id]){try{charts[id].destroy();}catch(e){}charts[id]=null;}}
 function mk(id,cfg){try{destroy(id);var el=document.getElementById(id);if(el){charts[id]=new Chart(el,cfg);}}catch(e){console.error(id,e);}}
