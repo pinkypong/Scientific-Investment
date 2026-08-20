@@ -89,7 +89,7 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
 <div class="wrap">
 
 <header class="top">
-  <div><span class="badge live">Probabilistic Research Platform</span><span class="badge">v11 · Clickable Lineage</span></div>
+  <div><span class="badge live">Probabilistic Research Platform</span><span class="badge">v12 · Lineage everywhere</span></div>
   <h1>통합 확률기반 투자 리서치 플랫폼</h1>
   <div class="meta">실측 <b>2026-08-19</b> · 시세 08-19 (Bigdata.com) · 라벨: <span class="lbc fact">FACT</span> <span class="lbc cons">CONSENSUS</span> <span class="lbc model">MODEL</span> <span class="lbc assum">ASSUMPTION</span> <span class="lbc scen">SCENARIO</span> <span class="lbc ins">INSUFF.</span> — 상세는 Governance 탭</div>
 </header>
@@ -324,7 +324,7 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
 </div>
 
 <footer>
-  v7 · Phase 1–2 (플랫폼 shell + 라벨/거버넌스). 기존 Memory 대시보드 재사용. 목표주가·컨센서스는 진실 아님, 확률은 근거·종류 명시.<br>
+  v12 · Phase A(정식 DCF·Reverse·Expectations Gap) + 전(全) 핵심숫자 클릭 계보. 기존 기능 보존. 목표주가·컨센서스는 진실 아님, 확률은 근거·종류 명시.<br>
   자료: Bigdata.com · 키움/삼성/미래에셋/한화 리포트 · 설계서 플랫폼_설계서_v1.md · semiconductor-ai-investment-research skill
 </footer>
 
@@ -477,6 +477,19 @@ function LN(co,key){
     formula:'20,000 sims 중 (Fair Value > Current Price) ÷ 20,000',
     calc:Math.round(m.p_up*20000).toLocaleString()+' / 20,000 = '+pctS(m.p_up),parents:['fv','price'],source:'Monte Carlo',
     why:['Monte Carlo valuation probability — 구조적 사건확률 아님']};
+  if(key==='pup10')return{label:'P(수익 +10% 이상)',value:pctS(m.p_up10),type:'MODEL PROB',confidence:CONF[co],
+    formula:'20,000 sims 중 (Fair Value > 현재가 × 1.1) ÷ 20,000',
+    calc:Math.round(m.p_up10*20000).toLocaleString()+' / 20,000 = '+pctS(m.p_up10),parents:['fv','price'],source:'Monte Carlo',
+    why:['+10% 이상 상승 확률(Model Probability)']};
+  if(key==='pdn20')return{label:'P(손실 −20% 이하)',value:pctS(m.p_dn20),type:'MODEL PROB',confidence:CONF[co],
+    formula:'20,000 sims 중 (Fair Value < 현재가 × 0.8) ÷ 20,000',
+    calc:Math.round(m.p_dn20*20000).toLocaleString()+' / 20,000 = '+pctS(m.p_dn20),parents:['fv','price'],source:'Monte Carlo',
+    why:['−20% 이하 하락 확률(하방 리스크)']};
+  if(key==='tp'){var tpsrc={samsung:'삼성증권 (이종욱)',skhynix:'삼성증권 (이종욱)',sandisk:'한화투자증권 (박제인)',micron:'—'};
+    return{label:'애널리스트 목표주가',value:(m.tp?fmt(m.tp,ccy):'—'),type:'CONSENSUS',confidence:'—',
+    formula:'sell-side 목표주가(단일 하우스)',source:tpsrc[co]||'—',
+    parents:[],why:['목표주가 ≠ 공정가치(§원칙). 참고용'],
+    missing:(m.tp?['단일 증권사 기준 · 컨센서스 TP 집계 아님']:['목표주가 없음(Micron: 미커버)'])};}
   if(key==='eps27')return{label:'Fwd EPS 2027 (MC input)',value:fmt(eps,ccy),type:'CONSENSUS',confidence:'Low',
     formula:'애널리스트 컨센서스 평균',method:'mean',source:'Bigdata.com consensus (2026-08-13)',
     missing:(co==='samsung'?['⚠ CONFLICT: 20,330 vs annual feed 69,276 vs 2025 실적 6,712 불일치 → INPUT NOT FULLY VALIDATED','개별 증권사(삼성/키움/미래에셋) EPS 미추출 → per-broker source 없음(리포트는 산업 가정용)']
@@ -561,12 +574,12 @@ function homeInit(){
 // ---------- SCREENER ----------
 function screenerInit(){
   var rows=ORDER.slice().sort(function(a,b){return MC[b].exp_ret-MC[a].exp_ret;});
-  var html='<thead><tr><th>#</th><th>기업</th><th>섹터</th><th>현재가</th><th>Exp FV</th><th>Upside</th><th>P(&gt;가)</th><th>P(+20%)</th><th>P(−20%)</th><th>Gap(1차)</th><th>Conf</th></tr></thead><tbody>';
+  var html='<thead><tr><th>#</th><th>기업</th><th>섹터</th><th>현재가</th><th>Exp FV</th><th>Upside</th><th>P(&gt;가)</th><th>P(+10%)</th><th>P(−20%)</th><th>Gap(1차)</th><th>Conf</th></tr></thead><tbody><tr><td colspan="11" class="q" style="font-size:10.5px">숫자 클릭 = 계보(Data Lineage)</td></tr>';
   rows.forEach(function(k,i){var m=MC[k];
     html+='<tr'+(k===cur?' class="hl"':'')+'><td>'+(i+1)+'</td><td>'+m.name+'</td><td style="text-align:left">'+SECT[k]+'</td>'+
       '<td class="mtr" data-lin="price" data-co="'+k+'">'+fmt(m.cur,m.ccy)+'</td><td class="mtr" data-lin="fv" data-co="'+k+'">'+fmt(m.ev,m.ccy)+'</td>'+
       '<td class="mtr '+(m.exp_ret>=0.08?'up':(m.exp_ret<0?'down':'warn'))+'" data-lin="expret" data-co="'+k+'">'+ret(m.exp_ret)+'</td>'+
-      '<td class="mtr" data-lin="pup" data-co="'+k+'">'+pctS(m.p_up)+'</td><td>'+pctS(m.p_up10)+'</td><td class="down">'+pctS(m.p_dn20)+'</td>'+
+      '<td class="mtr" data-lin="pup" data-co="'+k+'">'+pctS(m.p_up)+'</td><td class="mtr" data-lin="pup10" data-co="'+k+'">'+pctS(m.p_up10)+'</td><td class="mtr down" data-lin="pdn20" data-co="'+k+'">'+pctS(m.p_dn20)+'</td>'+
       '<td class="mtr '+(m.exp_ret>=0.08?'up':'')+'" data-lin="expret" data-co="'+k+'">'+ret(m.exp_ret)+'</td><td>'+CONF[k]+'</td></tr>';});
   html+='</tbody>';
   document.getElementById('scrTable').innerHTML=html;
@@ -575,23 +588,23 @@ function screenerInit(){
 // ---------- MEMORY: overview ----------
 function ovInit(){
   document.getElementById('ovCards').innerHTML=ORDER.map(function(k){var m=MC[k];var cls=m.exp_ret>=0.08?'up':(m.exp_ret<0?'down':'warn');
-    return '<div class="kpi"><div class="lab">'+m.name+'</div><div class="val '+cls+'">'+ret(m.exp_ret)+'</div><div class="note">'+fmt(m.cur,m.ccy)+' · P(상승) '+pctS(m.p_up)+'</div></div>';}).join('');
+    return '<div class="kpi mtr" data-lin="expret" data-co="'+k+'"><div class="lab">'+m.name+' 🔍</div><div class="val '+cls+'">'+ret(m.exp_ret)+'</div><div class="note">'+fmt(m.cur,m.ccy)+' · P(상승) '+pctS(m.p_up)+'</div></div>';}).join('');
   mk('ovBar',{type:'bar',data:{labels:ORDER.map(function(k){return MC[k].name;}),datasets:[{data:ORDER.map(function(k){return +(MC[k].exp_ret*100).toFixed(1);}),backgroundColor:ORDER.map(function(k){return MC[k].exp_ret>=0.08?'#16a34a':(MC[k].exp_ret<0?'#dc2626':'#94a3b8');})}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.y+'%';}}}},scales:{y:{ticks:{callback:function(v){return v+'%';},font:{size:10}}},x:{ticks:{font:{size:11}}}}}});
 }
 function compareHTML(){
   var rows=ORDER.map(function(k){var m=MC[k];var cls=m.exp_ret>=0.08?'up':(m.exp_ret<0?'down':'warn');
-    return '<tr'+(k===cur?' class="hl"':'')+'><td>'+m.name+(k===cur?' ◀':'')+'</td><td>'+fmt(m.cur,m.ccy)+'</td><td>'+m.cur_pe+'x</td><td>'+fmt(m.pct["50"],m.ccy)+'</td><td class="'+cls+'">'+ret(m.exp_ret)+'</td><td>'+pctS(m.p_up)+'</td></tr>';});
-  return '<section><h2><span class="k">COMPARE</span>4개 기업 비교 (공통)</h2><table><thead><tr><th>기업</th><th>현재가</th><th>P/E</th><th>MC중앙값</th><th>기대수익</th><th>P(상승)</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></section>';
+    return '<tr'+(k===cur?' class="hl"':'')+'><td>'+m.name+(k===cur?' ◀':'')+'</td><td class="mtr" data-lin="price" data-co="'+k+'">'+fmt(m.cur,m.ccy)+'</td><td class="mtr" data-lin="pe" data-co="'+k+'">'+m.cur_pe+'x</td><td class="mtr" data-lin="fv" data-co="'+k+'">'+fmt(m.pct["50"],m.ccy)+'</td><td class="mtr '+cls+'" data-lin="expret" data-co="'+k+'">'+ret(m.exp_ret)+'</td><td class="mtr" data-lin="pup" data-co="'+k+'">'+pctS(m.p_up)+'</td></tr>';});
+  return '<section><h2><span class="k">COMPARE</span>4개 기업 비교 (공통) <span class="q" style="font-size:10.5px">· 숫자 클릭=계보</span></h2><table><thead><tr><th>기업</th><th>현재가</th><th>P/E</th><th>MC중앙값</th><th>기대수익</th><th>P(상승)</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></section>';
 }
 function fillCompare(){['cmpM','cmpC','cmpV'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=compareHTML();});}
 
 function renderMarket(){
   var f=CD.fin[cur];document.getElementById('mCo').textContent=f.name;
   document.getElementById('mExp').innerHTML=
-    '<div class="kpi"><div class="lab">현재가 <span class="lbc fact">FACT</span></div><div class="val">'+fmt(f.cur,f.ccy)+' <span class="up" style="font-size:12px">+'+f.chg+'%</span></div><div class="note">Fwd P/E27 '+f.pe27+'x</div></div>'+
-    '<div class="kpi"><div class="lab">2028 EPS <span class="lbc cons">CONS</span></div><div class="val">'+f.eps28dir+'</div></div>'+
-    '<div class="kpi"><div class="lab">애널 TP <span class="lbc cons">CONS</span></div><div class="val">'+(f.tp?fmt(f.tp,f.ccy):'—')+'</div><div class="note">'+(f.tpup!=null?'여력 '+ret(f.tpup):'')+'</div></div>';
+    '<div class="kpi mtr" data-lin="price" data-co="'+cur+'"><div class="lab">현재가 <span class="lbc fact">FACT</span> 🔍</div><div class="val">'+fmt(f.cur,f.ccy)+' <span class="up" style="font-size:12px">+'+f.chg+'%</span></div><div class="note">Fwd P/E27 '+f.pe27+'x</div></div>'+
+    '<div class="kpi mtr" data-lin="eps28" data-co="'+cur+'"><div class="lab">2028 EPS <span class="lbc cons">CONS</span> 🔍</div><div class="val">'+f.eps28dir+'</div></div>'+
+    '<div class="kpi mtr" data-lin="tp" data-co="'+cur+'"><div class="lab">애널 TP <span class="lbc cons">CONS</span> 🔍</div><div class="val">'+(f.tp?fmt(f.tp,f.ccy):'—')+'</div><div class="note">'+(f.tpup!=null?'여력 '+ret(f.tpup):'')+'</div></div>';
   document.getElementById('mEasy').innerHTML='<b>포지셔닝</b> — '+f.exposure;
   once('mCap',{type:'line',data:{labels:['2024','2025','2026','2027'],datasets:[{label:'HBM',data:[265,410,530,790],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.13)',tension:.3,fill:true},{label:'CoWoS',data:[40,75,120,150],borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.13)',tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
   once('mCapex',{type:'bar',data:{labels:['2023','2024','2025','2026F','2027F','2028F'],datasets:[{data:[-0.6,62,71.9,81.3,37.1,12.1],backgroundColor:['#cbd5e1','#93c5fd','#60a5fa','#2563eb','#3b82f6','#94a3b8']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return v+'%';},font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
