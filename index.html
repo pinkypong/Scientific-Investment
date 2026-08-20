@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Investment Research Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root{color-scheme:light;--bg:#f5f7fa;--card:#fff;--ink:#161a22;--sub:#5b6472;--line:#e6e9ef;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--amber:#d97706;--violet:#7c3aed;--slate:#475569;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55;font-size:14px}
+.wrap{max-width:1100px;margin:0 auto;padding:18px 16px 80px}
+header.top{border-bottom:2px solid var(--ink);padding-bottom:10px}
+h1{font-size:20px;margin:0 0 3px;letter-spacing:-.3px}
+.meta{color:var(--sub);font-size:12px}
+.badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:11px;margin-right:6px;background:#111827;color:#fff}
+.badge.live{background:var(--green)}
+/* platform nav */
+.pnav{position:sticky;top:0;z-index:30;background:var(--bg);display:flex;gap:5px;flex-wrap:wrap;padding:10px 0 8px;border-bottom:1px solid var(--line)}
+.pbtn{border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:9px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:700}
+.pbtn:hover{border-color:#c7d0e0}.pbtn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;padding:10px 0 6px}
+.tab{border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:999px;padding:6px 12px;font-size:12.3px;cursor:pointer;font-weight:600}
+.tab.active{background:var(--slate);color:#fff;border-color:var(--slate)}
+.cobar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:2px 0 10px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.cobar .lbl{font-size:11px;color:var(--sub);font-weight:700;margin-right:2px}
+.cbtn{border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:8px;padding:5px 12px;font-size:12.3px;cursor:pointer;font-weight:700}
+.cbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.view{display:none}.view.active{display:block}
+.panel{display:none}.panel.active{display:block}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 17px;margin:11px 0;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+h2{font-size:15.5px;margin:0 0 3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+h2 .k{font-size:10px;font-weight:700;color:#fff;background:var(--slate);border-radius:6px;padding:2px 8px;letter-spacing:.4px}
+h2 .co{font-size:11px;font-weight:700;color:#fff;background:var(--blue);border-radius:6px;padding:2px 8px}
+.sec-sub{color:var(--sub);font-size:12.2px;margin:0 0 11px}
+h3{font-size:13px;margin:14px 0 6px}
+.grid{display:grid;gap:10px}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:760px){.g3,.g2,.g4{grid-template-columns:1fr}}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fbfcfe}
+.kpi .lab{font-size:11px;color:var(--sub)}.kpi .val{font-size:18px;font-weight:700;margin-top:2px}.kpi .note{font-size:10.6px;color:var(--sub);margin-top:3px}
+.up{color:var(--green)}.down{color:var(--red)}.warn{color:var(--amber)}
+table{width:100%;border-collapse:collapse;font-size:12.3px;margin-top:6px}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+thead th{background:#f1f4f9;color:var(--sub);font-weight:600;font-size:11px}
+tbody tr:hover{background:#f9fafc}
+tr.hl{background:#eef4ff}
+.chartbox{position:relative;height:250px;margin-top:8px}.chartbox.sm{height:200px}.chartbox.lg{height:330px}
+.easy{background:#f0f7ff;border-left:3px solid var(--blue);border-radius:6px;padding:8px 12px;font-size:12px;color:#1e3a5f;margin:8px 0}.easy b{color:var(--blue)}
+.flag{background:#fff7ed;border-left:3px solid var(--amber);border-radius:6px;padding:8px 12px;font-size:12.1px;margin:8px 0}
+.bad{background:#fef2f2;border-left:3px solid var(--red);border-radius:6px;padding:8px 12px;font-size:12.1px;margin:8px 0}
+.ok{background:#f0fdf4;border-left:3px solid var(--green);border-radius:6px;padding:8px 12px;font-size:12.1px;margin:8px 0}
+.ins{background:#f1f4f9;border:1px dashed #b9c2d0;border-radius:8px;padding:14px;text-align:center;color:var(--sub);font-size:12.5px;font-weight:600}
+ul{margin:6px 0 6px 2px;padding-left:18px}li{margin:3px 0}
+.src{font-size:10.6px;color:#94a0b3;margin-top:8px}
+/* label chips */
+.lbc{display:inline-block;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;letter-spacing:.3px;vertical-align:middle}
+.lbc.fact{background:#dcfce7;color:#166534}
+.lbc.cons{background:#dbeafe;color:#1e40af}
+.lbc.model{background:#ede9fe;color:#5b21b6}
+.lbc.assum{background:#fef3c7;color:#92400e}
+.lbc.scen{background:#e2e8f0;color:#334155}
+.lbc.unv{background:#fee2e2;color:#991b1b}
+.lbc.ins{background:#f1f5f9;color:#64748b}
+.tier{display:inline-block;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;color:#fff}
+.tier.a{background:#166534}.tier.b{background:#2563eb}.tier.c{background:#d97706}.tier.d{background:#94a3b8}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+.pill.g{background:#dcfce7;color:#166534}.pill.a{background:#fef3c7;color:#92400e}.pill.r{background:#fee2e2;color:#991b1b}
+.legend{font-size:10.6px;color:var(--sub);display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}.legend span{display:inline-flex;align-items:center;gap:5px}.dot{width:10px;height:10px;border-radius:50%}
+.tornado-row{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:11.6px}.tornado-row .name{width:180px;color:var(--sub)}.bar{height:14px;border-radius:4px}
+.q{color:var(--sub);font-style:italic}
+footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-height:1.7}
+.tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;color:#fff}
+.tag.hi{background:var(--green)}.tag.med{background:var(--amber)}.tag.lo{background:var(--slate)}.tag.anchor{background:var(--violet)}
+.chipbar{display:flex;gap:6px;flex-wrap:wrap;font-size:9.5px;margin:4px 0 0}
+.mtr{cursor:pointer;position:relative}.mtr:hover{outline:2px solid #bfdbfe;outline-offset:1px}
+#auditOv{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+#auditOv.on{display:flex}
+.auditbox{background:#fff;border-radius:14px;max-width:460px;width:100%;max-height:84vh;overflow:auto;padding:16px 18px;box-shadow:0 12px 44px rgba(0,0,0,.28)}
+.auditbox .close{float:right;cursor:pointer;color:var(--sub);font-weight:800;font-size:16px;line-height:1;padding:2px 6px}
+.auditbox h4{margin:6px 0 8px;font-size:16px}
+.arow{display:flex;justify-content:space-between;gap:12px;font-size:12.4px;padding:5px 0;border-bottom:1px solid var(--line)}
+.arow .l{color:var(--sub);flex-shrink:0}.arow span:last-child{text-align:right}
+.acalc{background:#f1f4f9;border-radius:8px;padding:8px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;margin:8px 0;word-break:break-all}
+.confbar{height:7px;border-radius:4px;background:#e5e7eb;overflow:hidden;margin-top:5px}.confbar i{display:block;height:100%;background:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div><span class="badge live">Probabilistic Research Platform</span><span class="badge">v11 · Clickable Lineage</span></div>
+  <h1>통합 확률기반 투자 리서치 플랫폼</h1>
+  <div class="meta">실측 <b>2026-08-19</b> · 시세 08-19 (Bigdata.com) · 라벨: <span class="lbc fact">FACT</span> <span class="lbc cons">CONSENSUS</span> <span class="lbc model">MODEL</span> <span class="lbc assum">ASSUMPTION</span> <span class="lbc scen">SCENARIO</span> <span class="lbc ins">INSUFF.</span> — 상세는 Governance 탭</div>
+</header>
+
+<nav class="pnav" id="pnav">
+  <button class="pbtn active" data-v="home">🏠 Home</button>
+  <button class="pbtn" data-v="screener">🔎 Screener</button>
+  <button class="pbtn" data-v="memory">🧠 Memory</button>
+  <button class="pbtn" data-v="governance">⚖️ Governance</button>
+  <button class="pbtn" data-v="soon">＋ Sectors</button>
+</nav>
+
+<!-- ============ HOME ============ -->
+<div class="view active" id="v-home">
+  <section>
+    <h2><span class="k">MISSION</span>시장 기대 vs 증거가 지지하는 미래 — 그 격차가 큰 곳</h2>
+    <p class="sec-sub">현재 커버리지: <b>Memory/Storage 4종</b>(삼성·SK·Micron·SanDisk). 타 섹터는 아직 데이터 없음 → 정직하게 <span class="lbc ins">INSUFFICIENT EVIDENCE</span>.</p>
+    <h3>Market Regime</h3>
+    <div class="grid g4" id="homeRegime"></div>
+    <h3>Top Opportunities <span class="lbc model">MODEL</span> <span class="q" style="font-size:10.5px">(MC 기대수익 기준 · Probability=Model)</span></h3>
+    <div id="homeTop"></div>
+    <div class="grid g2">
+      <div><h3>Largest Revisions <span class="lbc cons">CONSENSUS</span></h3><div id="homeRev"></div></div>
+      <div><h3>Thesis Alerts</h3><div id="homeAlert"></div></div>
+    </div>
+    <h3>Scenario Monitor <span class="lbc scen">SCENARIO</span></h3>
+    <div class="grid g2" id="homeScen"></div>
+    <div class="flag">확률 수치는 <b>Model Probability</b>(컨센서스 EPS 분포 × 주관적 사이클 P/E)이며 객관적 사건확률이 아님. 구조적 시나리오의 정량 확률은 base rate 부족 → <span class="lbc ins">INSUFF.</span> (정성 표기).</div>
+  </section>
+</div>
+
+<!-- ============ SCREENER ============ -->
+<div class="view" id="v-screener">
+  <section>
+    <h2><span class="k">SCREENER</span>Cross-Sector Opportunity Ranking</h2>
+    <p class="sec-sub">정렬: 기대수익(Expected Upside) 내림차순. 단일 점수 뒤에 숨기지 않고 구성요소를 노출한다(§25).</p>
+    <div style="overflow-x:auto"><table id="scrTable"></table></div>
+    <div class="flag"><b>Expectations Gap(1차) <span class="lbc model">MODEL</span></b> — 지금은 "Evidence-model FV(MC 평균) vs 현재가"의 격차로 근사. <b>정식 Reverse-DCF 기반 market-implied 기대치는 Phase 8</b>에서 추가 → 그때 진짜 Gap으로 교체. 그전까진 1차 근사임을 명시.</div>
+    <div class="ins" style="margin-top:8px">Semiconductor Equipment · Data Center · Power · Networking · Software · Biotech · Financials … <br><span class="lbc ins">INSUFFICIENT EVIDENCE</span> — 데이터 미연결(Phase 9에서 확장). 임의 종목·숫자 생성 금지 원칙에 따라 빈칸 유지.</div>
+  </section>
+</div>
+
+<!-- ============ MEMORY (기존 대시보드) ============ -->
+<div class="view" id="v-memory">
+  <nav class="tabs" id="mtabs">
+    <button class="tab active" data-tab="overview">개요</button>
+    <button class="tab" data-tab="market">① MARKET</button>
+    <button class="tab" data-tab="company">② COMPANY</button>
+    <button class="tab" data-tab="valuation">③ VALUATION</button>
+    <button class="tab" data-tab="probability">④ PROBABILITY</button>
+    <button class="tab" data-tab="thesis">⑤ THESIS</button>
+  </nav>
+  <div class="cobar" id="cobar"><span class="lbl">기업 →</span>
+    <button class="cbtn active" data-c="samsung">삼성전자</button>
+    <button class="cbtn" data-c="skhynix">SK하이닉스</button>
+    <button class="cbtn" data-c="micron">Micron</button>
+    <button class="cbtn" data-c="sandisk">SanDisk</button>
+  </div>
+
+  <div class="panel active" id="p-overview">
+    <section>
+      <h2><span class="k">SUMMARY</span>Memory/Storage 4종 요약</h2>
+      <div class="grid g4" id="ovCards"></div>
+      <div class="chartbox" style="margin-top:6px"><canvas id="ovBar"></canvas></div>
+      <div class="legend"><span>막대 = MC 기대수익률 <span class="lbc model">MODEL</span></span></div>
+    </section>
+  </div>
+
+  <div class="panel" id="p-market">
+    <section>
+      <h2><span class="k">MARKET</span><span class="co" id="mCo">삼성전자</span> 포지셔닝</h2>
+      <div class="grid g3" id="mExp"></div>
+      <div class="easy" id="mEasy"></div>
+    </section>
+    <section>
+      <h2><span class="k">MARKET</span>산업 지표 (공통)</h2>
+      <div class="grid g3">
+        <div class="kpi"><div class="lab">2027 HBM 수요/공급 <span class="lbc model">MODEL</span></div><div class="val up">+56% / +50%</div><div class="note">부족→HBM4 +65% (키움 <span class="tier b">B</span>)</div></div>
+        <div class="kpi"><div class="lab">범용 ASP <span class="lbc scen">SCEN</span></div><div class="val down">하락 전환</div><div class="note">2027, CXMT·장기계약</div></div>
+        <div class="kpi"><div class="lab">NAND 시장 <span class="lbc cons">CONS</span></div><div class="val up">3,000→5,000억$</div><div class="note">CY26→27 (한화 <span class="tier b">B</span>)</div></div>
+      </div>
+      <div class="grid g2">
+        <div><h3>HBM·CoWoS Capacity <span class="lbc model">MODEL</span></h3><div class="chartbox sm"><canvas id="mCap"></canvas></div><div class="src">키움 · 천 장/월</div></div>
+        <div><h3>빅테크 Capex YoY <span class="lbc cons">CONS</span></h3><div class="chartbox sm"><canvas id="mCapex"></canvas></div><div class="src">미래에셋</div></div>
+      </div>
+    </section>
+    <div id="cmpM"></div>
+  </div>
+
+  <div class="panel" id="p-company">
+    <section>
+      <h2><span class="k">COMPANY</span><span class="co" id="cCo">삼성전자</span> 실측 컨센서스 <span class="lbc fact">FACT</span><span class="lbc cons">CONSENSUS</span></h2>
+      <div class="grid g4" id="cKpis"></div>
+      <h3>컨센서스 EPS 궤적 <span class="lbc cons">CONSENSUS</span></h3>
+      <div class="chartbox sm"><canvas id="cEps"></canvas></div>
+      <div class="easy" id="cEasy"></div>
+    </section>
+    <div id="cmpC"></div>
+  </div>
+
+  <div class="panel" id="p-valuation">
+    <section>
+      <h2><span class="k">VALUATION</span><span class="co" id="vCo">삼성전자</span> Football Field</h2>
+      <p class="sec-sub">Fwd/Cycle-adj P/E <span class="lbc cons">CONSENSUS</span> · P/B <span class="lbc fact">FACT</span> · 멀티플 밴드 <span class="lbc assum">ASSUMPTION</span></p>
+      <div class="chartbox lg"><canvas id="vField"></canvas></div>
+      <div class="legend"><span style="color:var(--red)">━ 현재가</span><span style="color:var(--green)">┊ 애널 TP</span></div>
+      <table id="vTable"></table>
+    </section>
+    <section>
+      <h2><span class="k">CHECK</span>리포트 과낙관 체크</h2>
+      <div id="vOpt"></div>
+    </section>
+    <div id="dcfBox"></div>
+    <div id="cmpV"></div>
+  </div>
+
+  <div class="panel" id="p-probability">
+    <section>
+      <h2><span class="k">MONTE CARLO</span><span class="co" id="pCo">삼성전자</span> 공정가치 분포 <span class="lbc model">MODEL PROB</span></h2>
+      <div class="grid g4" id="mcKpis"></div>
+      <div class="chartbox lg" style="margin-top:8px"><canvas id="mcChart"></canvas></div>
+      <div class="legend"><span style="color:var(--red)">━ 현재가</span><span style="color:var(--blue)">┊ P50</span><span style="color:var(--green)">┊ TP</span></div>
+      <div class="grid g2" style="margin-top:10px">
+        <div><h3>백분위</h3><table id="pctTable"></table></div>
+        <div><h3>확률 <span class="lbc model">MODEL</span></h3><table id="probTable"></table></div>
+      </div>
+      <div class="flag" id="mcNote"></div>
+    </section>
+    <section>
+      <h2><span class="k">BAYESIAN</span>SanDisk 주주환원 이슈 <span class="lbc model">JUDGMENT+MODEL</span></h2>
+      <div class="grid g3">
+        <div class="kpi"><div class="lab">사전 P(durable)</div><div class="val">25%</div><div class="note">NAND 역사 base rate</div></div>
+        <div class="kpi"><div class="lab">사후 P(durable)</div><div class="val up">59.5%</div></div>
+        <div class="kpi"><div class="lab">적정 P/E</div><div class="val">7.3→9.0x</div></div>
+      </div>
+      <table>
+        <thead><tr><th>증거</th><th>LR</th><th>Tier</th></tr></thead>
+        <tbody>
+          <tr><td>NBM 플로어가격 장기계약($93.9B)</td><td>2.2</td><td><span class="tier a">A</span></td></tr>
+          <tr><td>자본환원(100%환원·$14B 자사주)</td><td>1.6</td><td><span class="tier a">A</span></td></tr>
+          <tr><td>FY28–30 프레임(GM80%)</td><td>1.25</td><td><span class="tier b">B</span></td></tr>
+        </tbody>
+      </table>
+      <div class="flag"><b>주의</b> — 배당 아닌 자사주(고점 자사주 가치파괴 위험). LR은 Analyst Judgment. 무효화: NAND ASP 급락·NBM 파기.</div>
+    </section>
+    <section>
+      <h2><span class="k">SENSITIVITY</span>토네이도</h2>
+      <div id="tornado"></div>
+    </section>
+  </div>
+
+  <div class="panel" id="p-thesis">
+    <section>
+      <h2><span class="k">THESIS</span>논리 · 반론 · Kill Conditions</h2>
+      <div class="grid g2">
+        <div class="ok"><b>Bull</b><ul><li>HBM 구조적 공급부족(수요+56%&gt;공급+50%)</li><li>빅테크 capex 28년 지속 · NAND NBM 마진 80%</li><li>삼성 HBM4 퀄 옵션 · Micron 미피크 · SanDisk 구조전환</li></ul></div>
+        <div class="bad"><b>Bear</b><ul><li>컨센서스 삼성 2028 EPS −33% = 피크아웃</li><li>범용 ASP 하락 · CXMT 300K→500–600K</li><li>재평가 완료 · SanDisk 베타 5.19</li></ul></div>
+      </div>
+      <div class="flag"><b>Kill Conditions (§28)</b> — 삼성 HBM4 퀄 실패/지연 · HBM 재고 급증 · 주요 고객 capex 컷 · ASP 임계이하 하락 · 공급증설이 수요 크게 초과 · 점유율 상실. 무효화 조건 충족 시 thesis 폐기.</div>
+    </section>
+  </div>
+</div>
+
+<!-- ============ GOVERNANCE ============ -->
+<div class="view" id="v-governance">
+  <section>
+    <h2><span class="k">RULE 1</span>라벨 분류 체계 (Fact/Estimate/Assumption)</h2>
+    <p class="sec-sub">모든 숫자·주장은 성격을 라벨로 구분한다. 화면 곳곳의 칩이 이 의미다.</p>
+    <table>
+      <thead><tr><th>라벨</th><th>의미</th><th>예</th></tr></thead>
+      <tbody>
+        <tr><td><span class="lbc fact">FACT</span></td><td>확정 실측치</td><td style="text-align:left">현재가·시총·공시 실적</td></tr>
+        <tr><td><span class="lbc cons">CONSENSUS</span></td><td>애널리스트 컨센서스 추정</td><td style="text-align:left">Fwd EPS/EBITDA</td></tr>
+        <tr><td><span class="lbc model">MODEL</span></td><td>우리 모델 산출</td><td style="text-align:left">MC 공정가치·기대수익</td></tr>
+        <tr><td><span class="lbc assum">ASSUMPTION</span></td><td>우리가 설정한 가정</td><td style="text-align:left">사이클 P/E·WACC</td></tr>
+        <tr><td><span class="lbc scen">SCENARIO</span></td><td>시나리오 조건부</td><td style="text-align:left">범용 ASP 하락·China</td></tr>
+        <tr><td><span class="lbc unv">UNVERIFIED</span></td><td>미확인 주장/루머</td><td style="text-align:left">X·블로그</td></tr>
+        <tr><td><span class="lbc ins">INSUFF.</span></td><td>근거 부족 → 빈칸 유지</td><td style="text-align:left">미커버 섹터</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section>
+    <h2><span class="k">RULE 34</span>Probability Governance</h2>
+    <p class="sec-sub">확률을 3종으로 구분하고 서로 다르게 표기한다. Judgment를 Empirical처럼 보이지 않게 한다.</p>
+    <table>
+      <thead><tr><th>종류</th><th>정의</th><th>이 플랫폼에서</th></tr></thead>
+      <tbody>
+        <tr><td><b>Empirical</b></td><td>실제 historical data 계산</td><td style="text-align:left">가능 시 base rate (예: NAND 사이클) — 대부분 아직 <span class="lbc ins">INSUFF.</span></td></tr>
+        <tr><td><b>Model</b></td><td>통계/시뮬 모델</td><td style="text-align:left">Monte Carlo P(상승)·백분위</td></tr>
+        <tr><td><b>Judgment</b></td><td>정량 부족 → 판단 개입</td><td style="text-align:left">Bayesian LR·시나리오 확률</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section>
+    <h2><span class="k">RULE 4</span>Source Hierarchy (Evidence Tier)</h2>
+    <div class="grid g2">
+      <div><ul>
+        <li><span class="tier a">A</span> 규제공시·기업실적·공식 guidance·확정계약</li>
+        <li><span class="tier b">B</span> earnings call·고품질 산업데이터·주요 sell-side</li>
+      </ul></div>
+      <div><ul>
+        <li><span class="tier c">C</span> Reuters/Bloomberg/FT·산업지·전문가</li>
+        <li><span class="tier d">D</span> X·Reddit·블로그·루머</li>
+      </ul></div>
+    </div>
+    <div class="flag">Tier C/D는 <b>단독으로 핵심 valuation assumption을 변경할 수 없다.</b> News는 valuation을 직접 바꾸지 않고 Assumption Review만 트리거(§Rule 3).</div>
+  </section>
+  <section>
+    <h2><span class="k">RULE 33</span>Anti-Hallucination (준수 중)</h2>
+    <ul>
+      <li>결측 재무 임의충전 금지 · 출처없는 확률/WACC/terminal growth 금지</li>
+      <li>동일 source 중복 evidence 금지(예: LS증권 데일리 7건→1~2로 축약, 메리츠 중복→1)</li>
+      <li>현재가에 맞춘 가정 조작 금지 · Bull/Base/Bear 기계적 배정 금지</li>
+      <li>저confidence 결과를 확정 적정가처럼 표기 금지 · 과잉정밀 금지</li>
+    </ul>
+    <div class="ok">근거 부족 시 숫자 대신 <span class="lbc ins">INSUFFICIENT EVIDENCE</span>를 표시한다(빈칸 채우기보다 빈칸 유지).</div>
+  </section>
+</div>
+
+<!-- ============ SOON ============ -->
+<div class="view" id="v-soon">
+  <section>
+    <h2><span class="k">ROADMAP</span>확장 예정 (Phase 3–10)</h2>
+    <div class="ins" style="text-align:left;padding:16px">
+      <b>다음 단계 (설계서 §36):</b><br>
+      Phase 3 News+X Intelligence · Phase 4 DCF+섹터별 valuation · Phase 5 Probability Protocol ·
+      Phase 6 Scenario/Decision Tree · Phase 7 Monte Carlo(확장) · <b>Phase 8 Reverse DCF/Expectations Gap</b> ·
+      Phase 9 Cross-sector Screener 데이터 · Phase 10 2nd-order Opportunity.<br><br>
+      각 섹터/기업은 데이터가 연결될 때만 채워지며, 그전까지 <span class="lbc ins">INSUFFICIENT EVIDENCE</span>로 표기한다.
+    </div>
+  </section>
+</div>
+
+<footer>
+  v7 · Phase 1–2 (플랫폼 shell + 라벨/거버넌스). 기존 Memory 대시보드 재사용. 목표주가·컨센서스는 진실 아님, 확률은 근거·종류 명시.<br>
+  자료: Bigdata.com · 키움/삼성/미래에셋/한화 리포트 · 설계서 플랫폼_설계서_v1.md · semiconductor-ai-investment-research skill
+</footer>
+
+</div>
+<script>
+(function(){
+"use strict";
+var MC={"samsung": {"name": "삼성전자", "ccy": "원", "cur": 247500, "tp": 400000, "pct": {"5": 169571.06, "10": 189111.73, "25": 222642.19, "50": 261598.58, "75": 302935.71, "90": 342259.95, "95": 365871.15}, "ev": 264025.06, "exp_ret": 0.067, "p_up": 0.594, "p_up10": 0.43, "p_up30": 0.168, "p_dn10": 0.251, "p_dn20": 0.132, "hist": {"c": [151407.0, 160313.34, 169219.68, 178126.03, 187032.37, 195938.72, 204845.06, 213751.41, 222657.75, 231564.09, 240470.44, 249376.78, 258283.13, 267189.47, 276095.82, 285002.16, 293908.5, 302814.85, 311721.19, 320627.54, 329533.88, 338440.23, 347346.57, 356252.92, 365159.26, 374065.6, 382971.95, 391878.29], "n": [176, 248, 351, 416, 582, 688, 798, 864, 1015, 1091, 1139, 1173, 1212, 1162, 1178, 1043, 1003, 877, 754, 733, 576, 549, 473, 362, 243, 217, 155, 122]}, "cur_pe": 12.2, "fv_pe_mid": 13.0}, "skhynix": {"name": "SK하이닉스", "ccy": "원", "cur": 1500000, "tp": 3000000, "pct": {"5": 927679.2, "10": 1053461.39, "25": 1267171.23, "50": 1518767.0, "75": 1780324.97, "90": 2032280.61, "95": 2175970.46}, "ev": 1532286.63, "exp_ret": 0.022, "p_up": 0.52, "p_up10": 0.366, "p_up30": 0.14, "p_dn10": 0.325, "p_dn20": 0.196, "hist": {"c": [812198.42, 869086.61, 925974.8, 982862.99, 1039751.19, 1096639.38, 1153527.57, 1210415.76, 1267303.96, 1324192.15, 1381080.34, 1437968.53, 1494856.72, 1551744.92, 1608633.11, 1665521.3, 1722409.49, 1779297.69, 1836185.88, 1893074.07, 1949962.26, 2006850.46, 2063738.65, 2120626.84, 2177515.03, 2234403.22, 2291291.42, 2348179.61], "n": [182, 242, 347, 412, 576, 707, 775, 903, 961, 1063, 1192, 1142, 1196, 1202, 1153, 1045, 1007, 886, 779, 714, 605, 538, 472, 366, 244, 206, 176, 109]}, "cur_pe": 11.2, "fv_pe_mid": 11.5}, "micron": {"name": "Micron", "ccy": "$", "cur": 940.76, "tp": null, "pct": {"5": 584.93, "10": 681.13, "25": 847.54, "50": 1044.51, "75": 1260.83, "90": 1471.0, "95": 1598.68}, "ev": 1063.77, "exp_ret": 0.131, "p_up": 0.635, "p_up10": 0.513, "p_up30": 0.287, "p_dn10": 0.249, "p_dn20": 0.157, "hist": {"c": [500.59, 546.66, 592.73, 638.8, 684.87, 730.94, 777.01, 823.08, 869.15, 915.22, 961.29, 1007.36, 1053.43, 1099.5, 1145.57, 1191.64, 1237.71, 1283.78, 1329.85, 1375.92, 1421.99, 1468.06, 1514.13, 1560.2, 1606.27, 1652.34, 1698.41, 1744.48], "n": [190, 290, 381, 489, 631, 788, 866, 926, 1113, 1158, 1185, 1205, 1175, 1154, 1107, 1016, 925, 795, 690, 660, 558, 513, 404, 308, 228, 185, 150, 110]}, "cur_pe": 5.7, "fv_pe_mid": 6.5}, "sandisk": {"name": "SanDisk", "ccy": "$", "cur": 1625.78, "tp": 2432.96, "pct": {"5": 998.06, "10": 1138.97, "25": 1444.99, "50": 2036.38, "75": 2612.92, "90": 3047.33, "95": 3315.22}, "ev": 2066.82, "exp_ret": 0.271, "p_up": 0.662, "p_up10": 0.596, "p_up30": 0.468, "p_dn10": 0.259, "p_dn20": 0.175, "hist": {"c": [902.63, 1000.95, 1099.28, 1197.6, 1295.93, 1394.26, 1492.58, 1590.91, 1689.23, 1787.56, 1885.89, 1984.21, 2082.54, 2180.86, 2279.19, 2377.51, 2475.84, 2574.17, 2672.49, 2770.82, 2869.14, 2967.47, 3065.79, 3164.12, 3262.45, 3360.77, 3459.1, 3557.42], "n": [351, 559, 764, 890, 978, 1046, 984, 923, 781, 770, 741, 786, 810, 800, 840, 901, 865, 899, 771, 706, 676, 594, 464, 416, 272, 274, 189, 150]}, "cur_pe": 7.3, "fv_pe_mid": 9.0}};
+var CD={"val": {"samsung": {"ccy": "원", "cur": 247500, "tp": 400000, "synth": [201000, 265000, 339000], "mid": 265000, "methods": [["애널리스트 TP (삼성證)", 380000, 400000, 420000, "앵커"], ["Fwd P/E FY27 (EPS20,330)", 182970, 243960, 284620, "실측"], ["Cycle-adj P/E (norm16,510)", 165100, 189865, 214630, "실측"], ["P/B (BPS161k)", 193200, 289800, 402500, "실측"], ["역사적 P/B", 161000, 241500, 402500, "MED"]]}, "skhynix": {"ccy": "원", "cur": 1500000, "tp": 3000000, "synth": [1270000, 1540000, 1980000], "mid": 1540000, "methods": [["애널리스트 TP (삼성證)", 2850000, 3000000, 3150000, "앵커"], ["Fwd P/E FY27 (EPS133,406)", 1200654, 1534169, 1867684, "실측"], ["Cycle-adj P/E (norm120,004)", 1200040, 1380046, 1560052, "실측"], ["P/B (BPS1,015k)", 1218000, 1827000, 3045000, "실측"]]}, "micron": {"ccy": "$", "cur": 940.76, "tp": null, "synth": [720, 990, 1260], "mid": 990, "methods": [["Fwd P/E FY27 (EPS163.8)", 737, 983, 1310, "실측"], ["Fwd P/E FY28 (EPS173.4)", 867, 1040, 1214, "실측"], ["Cycle-adj P/E (norm134.4)", 672, 874, 1075, "실측"]]}, "sandisk": {"ccy": "$", "cur": 1625.78, "tp": 2432.96, "synth": [1200, 1995, 2560], "mid": 1995, "methods": [["애널리스트 TP (한화)", 2300, 2433, 2560, "앵커"], ["Fwd P/E FY27 (EPS221.7, Bayes)", 1330, 1995, 2439, "Bayes"], ["Cycle-adj P/E (regime)", 1108, 1774, 2660, "MED"]]}}, "fin": {"samsung": {"name": "삼성전자", "ccy": "원", "cur": 247500, "chg": -7.82, "pe27": 12.2, "pb27": 1.5, "tp": 400000, "tpup": 0.616, "eps": [15673, 20330, 13527], "eps28dir": "−33% 피크아웃", "exposure": "HBM + 서버/PC/모바일 DRAM + NAND + 파운드리. HBM 후발이나 캐파 최대.", "opt": {"report": "키움 박유악", "claim": "삼성 HBM 1위 탈환, 2027 HBM OP 83조(+315%), 출하 +109%(시장 2배)", "check": "컨센서스 2028 EPS −33% → 시장은 삼성을 HBM 승자로 안 봄. OPM 75% 가정은 극단.", "verdict": "과낙관 위험 高", "effect": "MC는 컨센서스 EPS(키움 배제) 사용 → 자동 보수적. Bull은 퀄 통과 옵션으로만."}}, "skhynix": {"name": "SK하이닉스", "ccy": "원", "cur": 1500000, "chg": -9.75, "pe27": 11.2, "pb27": 1.5, "tp": 3000000, "tpup": 1.0, "eps": [100692, 133406, 125913], "eps28dir": "−6% 완만", "exposure": "HBM 선두(엔비디아 주력) + DRAM + NAND. HBM 비중 최고.", "opt": {"report": "키움 박유악", "claim": "HBM OP 70조(+138%), 출하 +46%", "check": "컨센서스 EPS27 +32%, 2028 −6%로 완만. HBM 리더십은 실측 우위와 정합.", "verdict": "대체로 정합", "effect": "조정 없음. 다만 최근 1M −31% 급락은 이미 반영."}}, "micron": {"name": "Micron", "ccy": "$", "cur": 940.76, "chg": -7.02, "pe27": 5.7, "pb27": 10.5, "tp": null, "tpup": null, "eps": [65.9, 163.8, 173.4], "eps28dir": "+6% 상승 지속", "exposure": "DRAM + HBM + NAND 종합. 미국 유일 메모리, HBM3E 엔비디아 공급.", "opt": {"report": "—(컨센서스)", "claim": "EPS가 FY28까지 계속 상승(미피크)", "check": "멀티플이 5.8x로 오히려 보수적. 과낙관 징후 없음.", "verdict": "과낙관 아님", "effect": "가장 정직한 리스크/리워드. MC 기대 +12%."}}, "sandisk": {"name": "SanDisk", "ccy": "$", "cur": 1625.78, "chg": -9.01, "pe27": 7.3, "pb27": 15.2, "tp": 2432.96, "tpup": 0.496, "eps": [null, 221.7, null], "eps28dir": "상승(NAND 강세)", "exposure": "순수 NAND. 데이터센터 비중 38%(YoY 12%→), NBM 장기계약.", "opt": {"report": "한화 박제인", "claim": "TP $2,432.96(+60%), NAND 시장 CY27 5,000억$", "check": "현재 P/E 6.9x는 사이클 가정. NBM 플로어계약이 구조전환 근거 → Bayesian으로 P(구조적) 25→59.5%.", "verdict": "구조전환 논리 있음(단 NAND 가격 지속 검증 필요)", "effect": "Bayesian 반영: P/E 7→9x, MC 기대 +2%→+36%."}}}};
+var charts={};
+function destroy(id){if(charts[id]){try{charts[id].destroy();}catch(e){}charts[id]=null;}}
+function mk(id,cfg){try{destroy(id);var el=document.getElementById(id);if(el){charts[id]=new Chart(el,cfg);}}catch(e){console.error(id,e);}}
+function once(id,cfg){try{var el=document.getElementById(id);if(el&&!charts[id]){charts[id]=new Chart(el,cfg);}}catch(e){console.error(id,e);}}
+function vline(x,c,d){return {id:'v'+x+c,afterDraw:function(ch){try{var s=ch.scales.x,a=ch.chartArea,ctx=ch.ctx,px=s.getPixelForValue(x);if(px<a.left||px>a.right)return;ctx.save();ctx.strokeStyle=c;ctx.lineWidth=1.7;ctx.setLineDash(d||[]);ctx.beginPath();ctx.moveTo(px,a.top);ctx.lineTo(px,a.bottom);ctx.stroke();ctx.restore();}catch(e){}}};}
+function fmt(v,ccy){if(ccy==='$'){return '$'+Math.round(v).toLocaleString('en-US');}return Math.round(v).toLocaleString('ko-KR');}
+function fmtK(v,ccy){if(ccy==='$'){return '$'+Math.round(v);}return (v/1000).toFixed(0)+'k';}
+function pctS(x){return (x*100).toFixed(0)+'%';}
+function ret(x){return (x>=0?'+':'')+(x*100).toFixed(0)+'%';}
+var ORDER=['samsung','skhynix','micron','sandisk'];
+var cur='samsung';
+var CONF={samsung:'Low',skhynix:'Medium',micron:'Medium-High',sandisk:'Medium'};
+var VCONF={samsung:45,skhynix:58,micron:62,sandisk:50};
+var COV={samsung:72,skhynix:74,micron:70,sandisk:68};
+var DCF={samsung:{asof:'2026-08-19',price:247500,wacc:0.1193,coe:0.1207,rf:0.032,beta:1.479,erp:0.06,kd:0.045,we:0.9825,wd:0.0175,tg:0.025,taxr:0.20,normM:0.14,rev0:333.6,ebit0:50.1,da0:46.9,capex0:52.2,dnwc0:9.6,shares:6.737,netcash:28.9,evm:1596,fcff0:25.2,fcffN:22.5,cagrImplied:0.278,cagrImpliedNorm:0.295,fwdFV:70999,fwdEV:449,tvContrib:0.43,fwdUpside:-0.71,fwdConf:'Low',modelCAGR:0.06,sens:[['WACC +1%p',64435],['WACC −1%p',79129],['Terminal g +0.5%p',72747],['Terminal g −0.5%p',69426],['EBIT margin +1%p',76067],['EBIT margin −1%p',65930]],conflicts:['2026 매출 컨센서스 +119% YoY (2025 333조→729조)','함의 순마진 44% (불가능)','EPS 컨센서스 +615% vs 2025 실적 6,712']}};
+function renderDCF(){
+  var el=document.getElementById('dcfBox'); if(!el)return;
+  var d=DCF[cur];
+  if(!d){el.innerHTML='<section><h2><span class="k">DCF</span><span class="co">'+CD.fin[cur].name+'</span> 정식 DCF</h2><div class="ins"><span class="lbc ins">INSUFFICIENT RELIABLE FORECAST</span><br>컨센서스 전망 feed가 sanity check 미통과(또는 미계산). 임의 fair value 생성 금지(§A4). Samsung 먼저 검증 완료 → 확장 예정.</div></section>';return;}
+  var up=Math.round((d.fwdFV/d.price-1)*100);
+  var h='<section><h2><span class="k">DCF · REVERSE · GAP</span><span class="co">삼성전자</span> 정식 밸류에이션 (Phase A)</h2>';
+  h+='<div class="chipbar" style="margin-bottom:6px;gap:6px">'+
+     '<span class="mtr lbc model" data-lin="revdcf" data-co="samsung" style="cursor:pointer">Reverse DCF ▸</span>'+
+     '<span class="mtr lbc model" data-lin="expgap" data-co="samsung" style="cursor:pointer">Expectations Gap ▸</span>'+
+     '<span class="mtr lbc assum" data-lin="wacc" data-co="samsung" style="cursor:pointer">WACC ▸</span>'+
+     '<span class="mtr lbc assum" data-lin="tg" data-co="samsung" style="cursor:pointer">Terminal g ▸</span>'+
+     '<span class="q" style="font-size:10.5px">클릭=계보</span></div>';
+  h+='<div class="bad"><b>⚠ DATA CONFLICT — 컨센서스 전망 차단(§A28)</b><br>'+d.conflicts.map(function(c){return '• '+c+' <span class="lbc unv">REJECTED</span>';}).join('<br>')+'<br><span class="q">→ 오염 데이터로 fair value를 만들지 않음. 아래는 과거 실적(FACT)+정규화 가정(ASSUMPTION) 기반.</span></div>';
+  // Reverse DCF (robust headline)
+  h+='<h3>Reverse DCF — 현재가가 요구하는 것 <span class="lbc model">IMPLIED</span></h3>';
+  h+='<div class="ok"><b>현재가 '+d.price.toLocaleString()+'원을 정당화하려면</b> (WACC '+(d.wacc*100).toFixed(1)+'% · Terminal g '+(d.tg*100).toFixed(1)+'% 고정) → <b>향후 10년 FCFF CAGR ≈ '+(d.cagrImplied*100).toFixed(0)+'%</b> 필요. 고정=WACC·g, solve=FCFF CAGR (§A8).<br>정규화 base 기준으로도 ≈ '+(d.cagrImpliedNorm*100).toFixed(0)+'%. → <b>시장은 매우 공격적인 메모리 업사이클을 이미 반영.</b></div>';
+  // Expectations Gap (formal)
+  h+='<h3>Formal Expectations Gap <span class="lbc model">MODEL</span></h3>';
+  h+='<table><tbody><tr><td>Market-implied FCFF CAGR</td><td>'+(d.cagrImplied*100).toFixed(0)+'%</td><td class="q">현재가 역산</td></tr>'+
+     '<tr><td>Evidence/정규화 model CAGR</td><td>~'+(d.modelCAGR*100).toFixed(0)+'%</td><td class="q">과거 마진·성장 정규화</td></tr>'+
+     '<tr class="hl"><td><b>Expectations Gap</b></td><td class="down"><b>+'+Math.round((d.cagrImplied-d.modelCAGR)*100)+'%p</b></td><td class="q">시장 ≫ 증거</td></tr></tbody></table>';
+  h+='<div class="flag">Expectations Gap ≠ Expected Upside(§A10). Gap은 "시장 요구 성장 vs 우리 모델 성장"의 차이. 여기선 시장이 훨씬 높은 성장을 요구 → <b>현재가는 증거 대비 낙관적</b>. 단, 메모리 피크 마진(2022 EBITDA마진 28%)을 정규화 14%가 과소반영할 수 있음(사이클 caveat).</div>';
+  // WACC breakdown
+  h+='<h3>WACC 분해 <span class="lbc assum">ASSUMPTION</span></h3>';
+  h+='<table><tbody>'+
+     '<tr><td>Risk-free (KR 10y)</td><td>'+(d.rf*100).toFixed(1)+'% <span class="lbc assum">ASSUM</span></td></tr>'+
+     '<tr><td>Beta</td><td>'+d.beta+' <span class="lbc fact">FACT</span></td></tr>'+
+     '<tr><td>Equity Risk Premium</td><td>'+(d.erp*100).toFixed(1)+'% <span class="lbc assum">ASSUM</span></td></tr>'+
+     '<tr><td>Cost of Equity = rf + β×ERP</td><td>'+(d.coe*100).toFixed(2)+'%</td></tr>'+
+     '<tr><td>Cost of Debt (after-tax)</td><td>'+(d.kd*100).toFixed(1)+'% <span class="lbc assum">ASSUM</span></td></tr>'+
+     '<tr><td>Weights (E/D)</td><td>'+(d.we*100).toFixed(0)+'% / '+(d.wd*100).toFixed(0)+'%</td></tr>'+
+     '<tr class="hl"><td><b>WACC</b></td><td><b>'+(d.wacc*100).toFixed(2)+'%</b></td></tr></tbody></table>';
+  // Forward DCF waterfall
+  h+='<h3>Forward DCF (정규화 ASSUMPTION 시나리오) <span class="lbc model">MODEL</span> · <span class="lbc" style="background:#fee2e2;color:#991b1b">Conf '+d.fwdConf+'</span></h3>';
+  h+='<table><tbody>'+
+     '<tr><td>2025 매출 (base)</td><td>'+d.rev0+'조 <span class="lbc fact">FACT</span></td></tr>'+
+     '<tr><td>정규화 EBIT 마진</td><td>'+(d.normM*100).toFixed(0)+'% <span class="lbc assum">ASSUM</span></td></tr>'+
+     '<tr><td>세율 / Terminal g</td><td>'+(d.taxr*100).toFixed(0)+'% / '+(d.tg*100).toFixed(1)+'% <span class="lbc assum">ASSUM</span></td></tr>'+
+     '<tr><td>Base FCFF (2025, norm-tax)</td><td>'+d.fcff0+'조</td></tr>'+
+     '<tr><td>Enterprise Value</td><td>'+d.fwdEV+'조</td></tr>'+
+     '<tr><td>+ Net cash</td><td>'+d.netcash+'조 <span class="lbc fact">FACT</span></td></tr>'+
+     '<tr><td>÷ 주식수</td><td>'+d.shares+'B <span class="lbc fact">FACT</span></td></tr>'+
+     '<tr class="hl"><td><b>Intrinsic Value / share</b></td><td><b>'+d.fwdFV.toLocaleString()+'원</b> ('+up+'%)</td></tr>'+
+     '<tr><td>Terminal Value 비중</td><td>'+(d.tvContrib*100).toFixed(0)+'% '+(d.tvContrib>0.75?'⚠':'OK')+'</td></tr></tbody></table>';
+  h+='<div class="bad"><b>REVIEW REQUIRED(§A28)</b> — 정규화 DCF('+d.fwdFV.toLocaleString()+'원)와 현재가('+d.price.toLocaleString()+'원)가 크게 상이(-71%). 원인: ①정규화 마진 14%가 업사이클 과소반영 가능 ②WACC 11.9% 높음. <b>이 FV는 Low Confidence — 확정 적정가 아님.</b> Reverse DCF(위)가 더 견고.</div>';
+  // Sensitivity
+  h+='<h3>Sensitivity (FV/share, base '+d.fwdFV.toLocaleString()+') <span class="lbc model">MODEL</span></h3>';
+  h+='<table><tbody>'+d.sens.map(function(s){var pct=Math.round((s[1]/d.fwdFV-1)*100);return '<tr><td>'+s[0]+'</td><td>'+s[1].toLocaleString()+'원 ('+(pct>=0?'+':'')+pct+'%)</td></tr>';}).join('')+'</tbody></table>';
+  h+='<div class="ok" style="margin-top:8px"><b>Validation(§A27) PASS</b> — 산술 검증 · 민감도 방향(WACC↑→값↓, 마진↑→값↑, g↑→값↑) · 결측/오염 입력 차단 모두 통과.</div>';
+  h+='<div class="src">FACT: Bigdata.com FY2025 실적 · ASSUMPTION: rf/ERP/kd/정규화마진/g(명시) · 재현성: samsung_dcf.json 스냅샷</div>';
+  h+='</section>';
+  el.innerHTML=h;
+}
+function badge(t){var mp={'FACT':'fact','CONSENSUS':'cons','MODEL':'model','MODEL PROB':'model','ASSUMPTION':'assum','SCENARIO':'scen','META':'ins'};return mp[t]||'ins';}
+function openAudit(key){
+  var m=MC[cur],f=CD.fin[cur],ccy=m.ccy,eps=f.eps[1],e=null;
+  if(key==='price')e={t:'FACT',n:'현재가',v:fmt(m.cur,ccy),F:'거래소 정규장 종가',I:[],C:'',S:'Bigdata.com (FMP backend)',As:'2026-08-19',Cf:'High',V:'Cross-Checked (거래소)'};
+  else if(key==='fv')e={t:'MODEL',n:'MC 공정가치 (P50)',v:fmt(m.pct['50'],ccy),F:'Monte Carlo 분포 중앙값 · FV = Fwd EPS27 × 사이클 P/E (20,000 sims)',I:[['Fwd EPS27 (CONSENSUS)',fmt(eps,ccy)],['사이클 P/E 중앙값 (ASSUMPTION)',m.fv_pe_mid+'x']],C:'≈ '+fmt(eps,ccy)+' × '+m.fv_pe_mid+'x = '+fmt(m.pct['50'],ccy),S:'모델 산출',As:'2026-08-19',Cf:CONF[cur],V:'Model-Derived',D:['Fwd EPS(컨센)','사이클 P/E(가정)','EPS 분산'],N:(cur==='sandisk'?'SanDisk는 Bayesian regime-mixture(사후 P(구조적)=59.5%) 반영.':'')};
+  else if(key==='upside')e={t:'MODEL',n:'기대수익률',v:ret(m.exp_ret),F:'기대값(EV) ÷ 현재가 − 1',I:[['기대값 EV (MODEL)',fmt(m.ev,ccy)],['현재가 (FACT)',fmt(m.cur,ccy)]],C:fmt(m.ev,ccy)+' ÷ '+fmt(m.cur,ccy)+' − 1 = '+ret(m.exp_ret),S:'모델 산출',As:'2026-08-19',Cf:CONF[cur],V:'Model-Derived'};
+  else if(key==='pup')e={t:'MODEL PROB',n:'P(상승)',v:pctS(m.p_up),F:'20,000 시뮬 중 (공정가치 > 현재가) 비율',I:[['확률 종류','Model'],['입력','컨센 EPS 분포 × 주관 P/E 분포']],C:'',S:'모델 산출',As:'2026-08-19',Cf:CONF[cur],V:'Model-Derived',N:'객관적 사건확률 아님(§34 Model Probability). 사이클 P/E 가정에 민감.'};
+  else if(key==='assum'){var lo=Math.round(eps*(m.fv_pe_mid-1)),dd=lo/m.pct['50']-1;e={t:'ASSUMPTION',n:'사이클 P/E 가정',v:m.fv_pe_mid+'x',F:'"메모리 피크 = 저(低)멀티플" 원칙으로 설정(주관)',I:[['현재 P/E',m.cur_pe+'x'],['가정 P/E 중앙값',m.fv_pe_mid+'x']],C:'',S:'애널리스트 판단',As:'2026-08-19',Cf:'Medium',V:'Weak Evidence',SENS:'P/E −1x → 공정가치 '+fmt(lo,ccy)+' ('+ret(dd)+')'};}
+  else if(key==='conf')e={t:'META',n:'Valuation Confidence',v:VCONF[cur]+' / 100',F:'primary data·estimate·source agreement·assumption evidence·sensitivity·freshness 종합',I:[['재무 1차공시(OpenDART/SEC)','미연결 → 상한 제약'],['컨센서스','확보(Bigdata)'],['가정 근거','부분'],['데이터 최신성','08-19'],['Data Coverage',COV[cur]+'%']],C:'',S:'—',As:'2026-08-19',Cf:'',V:'',N:'§25 결측≠0. 1차 공시 연결 시 상승.'};
+  if(!e)return;
+  var h='<div class="auditbox"><span class="close">✕</span><div><span class="lbc '+badge(e.t)+'">'+e.t+'</span></div><h4>'+e.n+' · '+e.v+'</h4>';
+  h+='<div class="arow"><span class="l">Formula</span><span>'+e.F+'</span></div>';
+  if(e.I){for(var i=0;i<e.I.length;i++){h+='<div class="arow"><span class="l">'+e.I[i][0]+'</span><span>'+e.I[i][1]+'</span></div>';}}
+  if(e.C)h+='<div class="acalc">'+e.C+'</div>';
+  if(e.SENS)h+='<div class="acalc">Sensitivity · '+e.SENS+'</div>';
+  h+='<div class="arow"><span class="l">Source</span><span>'+e.S+'</span></div>';
+  h+='<div class="arow"><span class="l">As of</span><span>'+e.As+'</span></div>';
+  if(e.V)h+='<div class="arow"><span class="l">Verification</span><span>'+e.V+'</span></div>';
+  if(e.Cf)h+='<div class="arow"><span class="l">Confidence</span><span>'+e.Cf+'</span></div>';
+  if(e.D)h+='<div class="arow"><span class="l">Main Drivers</span><span>'+e.D.join(' · ')+'</span></div>';
+  if(e.N)h+='<div class="flag" style="margin-top:8px">'+e.N+'</div>';
+  h+='</div>';
+  var ov=document.getElementById('auditOv');ov.innerHTML=h;ov.classList.add('on');
+}
+// ================= DATA LINEAGE (clickable, recursive) =================
+var SPE_HIST='2021 13.6x · 2022 6.9x · 2023 37.3x · 2024 10.8x · 2025 18.2x';
+function LN(co,key){
+  var m=MC[co],f=CD.fin[co],ccy=m.ccy,eps=f.eps[1];
+  // ---- global market-regime nodes ----
+  if(key==='reg_hbm')return{label:'HBM 수급 부족 → 가격↑',value:'Tight',type:'MODEL',confidence:'Medium',
+    evidence:['키움 박유악 <span class="tier b">B</span>: 2027 HBM 수요 +56% > 공급 +50%','HBM4 시장가 +65% 전망','HBM/CoWoS capacity ramp 265→790K'],
+    contra:['CXMT/증설 가속 시 완화','AI accelerator 출하 둔화 시 수요↓'],source:'키움 Memory Split 2027'};
+  if(key==='reg_dram')return{label:'범용 DRAM 피크아웃',value:'Peak-out',type:'CONSENSUS',confidence:'Medium',
+    evidence:['컨센서스 삼성 2028 EPS −33% <span class="tier b">B</span>','PC/스마트폰 수요 부진(원가율 급등)','CXMT 300K→500–600K'],
+    contra:['HBM crowd-out이 범용 공급 잠식 → 하락 완충'],source:'키움·컨센서스'};
+  if(key==='reg_china')return{label:'China(CXMT) 위협 확대',value:'Rising',type:'SCENARIO',confidence:'Medium-Low',
+    evidence:['CXMT capacity 4Q26 300K→4Q28 500–600K <span class="tier c">C</span> (Trendforce)','중국 보조금·국산화'],
+    contra:['노드·수율 격차 → wafer capacity ≠ bit supply','HBM capability 제한'],
+    missing:['정량 점유율 확률 = base rate 부족 → INSUFFICIENT EVIDENCE'],source:'Trendforce/키움'};
+  if(key==='reg_capex')return{label:'빅테크 Capex 지속',value:'Sustained',type:'CONSENSUS',confidence:'Medium',
+    evidence:['미래에셋 김영건: RPO 클라우드매출 4배·현금 여력','Total Capex YoY 2026 81%→2028F 12%'],
+    contra:['오라클 CDS·회사채 스프레드(자본조달 비용) — 메리츠·삼성證 카나리아'],source:'미래에셋'};
+  // ---- valuation (DCF) nodes: samsung only ----
+  var d=DCF[co];
+  if(key==='wacc'){ if(!d)return INS(co,'WACC'); return{label:'WACC',value:(d.wacc*100).toFixed(2)+'%',type:'ASSUMPTION',confidence:'Medium',
+    formula:'we×CoE + wd×kd×(1−tax);  CoE = rf + β×ERP',
+    calc:'CoE '+(d.coe*100).toFixed(2)+'% = '+(d.rf*100).toFixed(1)+'% + '+d.beta+'×'+(d.erp*100).toFixed(1)+'%',
+    why:['rf(KR 10y) '+(d.rf*100).toFixed(1)+'% ASSUM · β '+d.beta+' FACT · ERP '+(d.erp*100).toFixed(1)+'% ASSUM · kd '+(d.kd*100).toFixed(1)+'% ASSUM'],
+    missing:['rf/ERP/kd는 시장데이터 미연결 → 가정값'],source:'가정 + β(Bigdata.com)'};}
+  if(key==='tg'){ if(!d)return INS(co,'Terminal g'); return{label:'Terminal Growth',value:(d.tg*100).toFixed(1)+'%',type:'ASSUMPTION',confidence:'Medium',
+    why:['장기 명목성장 근사','WACC('+(d.wacc*100).toFixed(1)+'%) > g 조건 충족'],source:'가정'};}
+  if(key==='expgap'){ if(!d)return INS(co,'Expectations Gap'); return{label:'Expectations Gap (formal)',value:'+'+Math.round((d.cagrImplied-d.modelCAGR)*100)+'%p',type:'MODEL',confidence:'Medium',
+    formula:'Market-implied FCFF CAGR − Evidence model CAGR',
+    calc:(d.cagrImplied*100).toFixed(0)+'% − '+(d.modelCAGR*100).toFixed(0)+'% = +'+Math.round((d.cagrImplied-d.modelCAGR)*100)+'%p',
+    parents:['revdcf'],why:['≠ Expected Upside. 시장이 요구하는 성장 vs 우리 모델 성장의 차이','시장이 훨씬 높음 → 현재가는 증거 대비 낙관'],
+    missing:['정규화 마진 14%가 피크 과소반영 가능(사이클 caveat)'],source:'Reverse DCF'};}
+  if(key==='revdcf'){ if(!d)return INS(co,'Reverse DCF'); return{label:'Market-implied FCFF CAGR',value:(d.cagrImplied*100).toFixed(0)+'%',type:'IMPLIED',confidence:'Medium',
+    formula:'현재가·순현금·WACC·g 고정 → EV=Σ FCFF/(1+WACC)^t + TV, solve 10y FCFF CAGR',
+    why:['고정: WACC '+(d.wacc*100).toFixed(1)+'% · g '+(d.tg*100).toFixed(1)+'% (§A8)','현재가가 요구하는 성장 = 매우 공격적'],
+    parents:['price','wacc','tg'],source:'Reverse DCF (2025 실적 base)'};}
+  // ---- MC valuation chain (all companies) ----
+  if(key==='expret')return{label:'Expected Return',value:ret(m.exp_ret),type:'MODEL',confidence:CONF[co],
+    formula:'Expected Fair Value (MC mean) ÷ Current Price − 1',
+    calc:fmt(m.ev,ccy)+' ÷ '+fmt(m.cur,ccy)+' − 1 = '+ret(m.exp_ret),parents:['fv','price'],source:'Model output'};
+  if(key==='fv')return{label:'Expected Fair Value (MC mean)',value:fmt(m.ev,ccy),type:'MODEL',confidence:CONF[co],
+    formula:'mean of 20,000-sim FV distribution;  FV = Fwd EPS × Cycle P/E',
+    calc:'≈ '+fmt(eps,ccy)+' × '+m.fv_pe_mid+'x (median path)',parents:['epsdist','pedist'],
+    mc:{sims:20000,vars:['epsdist','pedist']},source:'Monte Carlo',
+    why:['EPS 분포 × P/E 분포를 20,000회 샘플링']};
+  if(key==='price')return{label:'Current Price',value:fmt(m.cur,ccy),type:'FACT',confidence:'High',
+    formula:'거래소 정규장 종가',source:'Bigdata.com (FMP)',sourceDate:'2026-08-19',verification:'Cross-Checked'};
+  if(key==='pup')return{label:'P(상승) = P(FV > Price)',value:pctS(m.p_up),type:'MODEL PROB',confidence:CONF[co],
+    formula:'20,000 sims 중 (Fair Value > Current Price) ÷ 20,000',
+    calc:Math.round(m.p_up*20000).toLocaleString()+' / 20,000 = '+pctS(m.p_up),parents:['fv','price'],source:'Monte Carlo',
+    why:['Monte Carlo valuation probability — 구조적 사건확률 아님']};
+  if(key==='eps27')return{label:'Fwd EPS 2027 (MC input)',value:fmt(eps,ccy),type:'CONSENSUS',confidence:'Low',
+    formula:'애널리스트 컨센서스 평균',method:'mean',source:'Bigdata.com consensus (2026-08-13)',
+    missing:(co==='samsung'?['⚠ CONFLICT: 20,330 vs annual feed 69,276 vs 2025 실적 6,712 불일치 → INPUT NOT FULLY VALIDATED','개별 증권사(삼성/키움/미래에셋) EPS 미추출 → per-broker source 없음(리포트는 산업 가정용)']
+                            :['개별 증권사 EPS 미추출 → Bigdata 집계치만'])};
+  if(key==='cyclepe')return{label:'Cycle P/E (assumption)',value:m.fv_pe_mid+'x',type:'ASSUMPTION',confidence:'Medium',
+    formula:'"메모리 피크=저멀티플" 원칙으로 선택(주관)',
+    why:(co==='samsung'?['Historical trailing P/E(실측): '+SPE_HIST,'Range min 6.9x / median ~13.6x / max 37.3x','Cycle position: 업사이클 초·중반 → mid 13x 선택']
+                        :['Historical P/E 관측치 미로딩 → SUBJECTIVE']),
+    missing:['⚠ P/E DISTRIBUTION NOT VALIDATED — 정식 forward-P/E 분포 미검증(주관). Valuation Confidence 하향 사유(§7).']};
+  if(key==='epsdist')return{label:'EPS Distribution (MC var)',value:'N('+fmt(eps,ccy)+', σ)',type:'CONSENSUS',confidence:'Low',
+    formula:'Normal(mean=컨센서스, σ=(high−low)/3.3)',parents:['eps27'],source:'Bigdata.com consensus',
+    why:['MC 무작위변수: forward EPS'],missing:['σ는 컨센 low/high에서 도출(개별 broker 분산 아님)']};
+  if(key==='pedist')return{label:'P/E Distribution (MC var)',value:'N('+m.fv_pe_mid+'x, σ)',type:'ASSUMPTION',confidence:'Low',
+    formula:'Normal(median='+m.fv_pe_mid+'x, σ 주관)',parents:['cyclepe'],why:['MC 무작위변수: 사이클 P/E'],
+    missing:['⚠ P/E DISTRIBUTION NOT VALIDATED (주관)']};
+  if(key==='pe')return{label:'Fwd P/E 2027',value:m.cur_pe+'x',type:'MODEL',confidence:'Medium',
+    formula:'Current Price ÷ Fwd EPS27',calc:fmt(m.cur,ccy)+' ÷ '+fmt(eps,ccy)+' = '+m.cur_pe+'x',parents:['price','eps27'],source:'Model'};
+  if(key==='eps28')return{label:'Fwd EPS 2028',value:(f.eps[2]!=null?fmt(f.eps[2],ccy):'—'),type:'CONSENSUS',confidence:'Low',
+    formula:'컨센서스',source:'Bigdata.com consensus',why:['2028 방향: '+f.eps28dir],missing:['개별 broker 미추출']};
+  if(key==='conf')return{label:'Valuation Confidence',value:VCONF[co]+'/100',type:'META',confidence:'—',
+    formula:'primary data·estimate·source agreement·assumption evidence·sensitivity·freshness',
+    missing:['P/E distribution not validated','1차 공시(OpenDART/SEC) 미연결','개별 broker EPS 미추출'],
+    why:['위 결측으로 상한 제약(§25 결측≠0)']};
+  return null;
+}
+function INS(co,name){return{label:name,value:'—',type:'INSUFF',confidence:'—',missing:['INSUFFICIENT RELIABLE FORECAST — '+CD.fin[co].name+' 정식 DCF 미계산(컨센서스 feed sanity 미통과 위험). 임의 생성 금지(§A4).']};}
+var linCo='samsung';
+function linNode(n,co,key){
+  if(!n)return '<div class="auditbox"><span class="close">✕</span><div class="ins" style="margin-top:22px">INSUFFICIENT EVIDENCE — 이 숫자의 계보가 정의되지 않음. 임의 근거를 만들지 않음(§14).</div></div>';
+  var h='<div class="auditbox"><span class="close">✕</span>';
+  h+='<div><span class="lbc '+badge(n.type)+'">'+n.type+'</span>'+(n.confidence&&n.confidence!=='—'?' <span class="q" style="font-size:10.5px">Conf '+n.confidence+'</span>':'')+'</div>';
+  h+='<h4>'+n.label+' · '+n.value+'</h4>';
+  if(n.formula)h+='<div class="arow"><span class="l">Formula</span><span>'+n.formula+'</span></div>';
+  if(n.calc)h+='<div class="acalc">'+n.calc+'</div>';
+  if(n.method)h+='<div class="arow"><span class="l">Method</span><span>'+n.method+'</span></div>';
+  if(n.source)h+='<div class="arow"><span class="l">Source</span><span>'+n.source+(n.sourceDate?' ('+n.sourceDate+')':'')+'</span></div>';
+  if(n.verification)h+='<div class="arow"><span class="l">Verification</span><span>'+n.verification+'</span></div>';
+  if(n.why){h+='<div style="margin-top:6px"><b style="font-size:12px">Why this number?</b>';n.why.forEach(function(w){h+='<div class="q" style="font-size:11.5px">• '+w+'</div>';});h+='</div>';}
+  if(n.evidence){h+='<div style="margin-top:6px"><b style="font-size:12px;color:#166534">Evidence</b>';n.evidence.forEach(function(w){h+='<div style="font-size:11.5px">✓ '+w+'</div>';});h+='</div>';}
+  if(n.contra){h+='<div style="margin-top:4px"><b style="font-size:12px;color:#991b1b">Contradicting</b>';n.contra.forEach(function(w){h+='<div style="font-size:11.5px">✗ '+w+'</div>';});h+='</div>';}
+  if(n.parents&&n.parents.length){h+='<div style="margin-top:8px"><b style="font-size:12px">Parent inputs (클릭 drill-down)</b><div style="margin-top:4px">';
+    n.parents.forEach(function(p){var pn=LN(co,p);h+='<span class="mtr lbc" data-lin="'+p+'" data-co="'+co+'" style="background:#eef2ff;color:#3730a3;font-size:11px;margin:2px 4px 2px 0;padding:3px 8px;cursor:pointer">'+(pn?pn.label+' · '+pn.value:p)+' ▸</span>';});
+    h+='</div></div>';}
+  if(n.missing){n.missing.forEach(function(w){h+='<div class="bad" style="margin-top:6px;font-size:11.5px">⚠ '+w+'</div>';});}
+  if(n.parents&&n.parents.length){h+='<div style="margin-top:10px"><button class="cbtn" data-fullaudit="'+key+'" data-co="'+co+'">View Full Audit ▾</button></div>';}
+  h+='</div>';return h;
+}
+function openLin(key,co){co=co||linCo||cur;linCo=co;var ov=document.getElementById('auditOv');if(!ov)return;ov.innerHTML=linNode(LN(co,key),co,key);ov.classList.add('on');}
+function auditTree(co,key,depth,seen){seen=seen||{};if(seen[key])return '';seen[key]=1;var n=LN(co,key);if(!n)return '';
+  var pad=depth*14;var h='<div style="margin-left:'+pad+'px;font-size:11.5px;padding:2px 0"><span class="lbc '+badge(n.type)+'">'+n.type+'</span> <b>'+n.label+'</b> = '+n.value;
+  if(n.calc)h+=' <span class="q">('+n.calc+')</span>';
+  if(n.missing)n.missing.forEach(function(w){h+='<div style="color:#991b1b;margin-left:'+(pad+14)+'px">⚠ '+w+'</div>';});
+  h+='</div>';
+  if(n.parents)n.parents.forEach(function(p){h+=auditTree(co,p,depth+1,seen);});
+  return h;}
+function openFullAudit(key,co){co=co||linCo;var ov=document.getElementById('auditOv');if(!ov)return;
+  var n=LN(co,key);var h='<div class="auditbox"><span class="close">✕</span><h4>Full Audit — '+(n?n.label:key)+'</h4>'+auditTree(co,key,0)+
+    '<div class="src" style="margin-top:10px">FACT=실측 · CONSENSUS=컨센서스 · MODEL=모델 · ASSUMPTION=가정 · IMPLIED=주가역산 · ⚠=미검증/결측</div></div>';
+  ov.innerHTML=h;ov.classList.add('on');}
+var SECT={samsung:'Memory(HBM/DRAM)',skhynix:'Memory(HBM/DRAM)',micron:'Memory(DRAM/HBM/NAND)',sandisk:'NAND'};
+
+// ---------- HOME ----------
+function homeInit(){
+  var reg=[['AI/DC Capex','우호','up','미래에셋 <span class="tier b">B</span> · 28년 지속','cons','reg_capex'],
+           ['HBM 수급','부족(가격↑)','up','키움 <span class="tier b">B</span> · 수요&gt;공급','model','reg_hbm'],
+           ['범용 DRAM','피크아웃','down','컨센 삼성28 −33% <span class="tier b">B</span>','cons','reg_dram'],
+           ['China(CXMT)','위협 확대','warn','300K→500–600K <span class="tier c">C</span>','scen','reg_china']];
+  document.getElementById('homeRegime').innerHTML=reg.map(function(r){return '<div class="kpi mtr" data-lin="'+r[5]+'" data-co="samsung"><div class="lab">'+r[0]+' <span class="lbc '+r[4]+'">'+r[4].toUpperCase()+'</span> 🔍</div><div class="val '+r[2]+'" style="font-size:16px">'+r[1]+'</div><div class="note">'+r[3]+' · 클릭=근거</div></div>';}).join('');
+  var top=ORDER.slice().sort(function(a,b){return MC[b].exp_ret-MC[a].exp_ret;});
+  document.getElementById('homeTop').innerHTML='<table><thead><tr><th>기업</th><th>섹터</th><th>기대수익 🔍</th><th>P(상승) 🔍</th><th>Confidence</th></tr></thead><tbody>'+
+    top.map(function(k){var m=MC[k];return '<tr><td>'+m.name+'</td><td style="text-align:left">'+SECT[k]+'</td><td class="mtr '+(m.exp_ret>=0.08?'up':(m.exp_ret<0?'down':'warn'))+'" data-lin="expret" data-co="'+k+'">'+ret(m.exp_ret)+'</td><td class="mtr" data-lin="pup" data-co="'+k+'">'+pctS(m.p_up)+'</td><td>'+CONF[k]+'</td></tr>';}).join('')+'</tbody></table>';
+  document.getElementById('homeRev').innerHTML='<table><tbody>'+ORDER.map(function(k){var f=CD.fin[k];return '<tr><td>'+f.name+'</td><td>2028 EPS '+f.eps28dir+'</td></tr>';}).join('')+'</tbody></table>';
+  document.getElementById('homeAlert').innerHTML=
+    '<div class="bad" style="margin:4px 0"><b>삼성</b>: 컨센서스 2028 EPS −33%가 키움 "HBM 1위" 주장과 충돌 <span class="lbc cons">CONS</span></div>'+
+    '<div class="ok" style="margin:4px 0"><b>SanDisk</b>: 주주환원+NBM → P(구조적) 25→59.5% <span class="lbc model">JUDG</span></div>';
+  document.getElementById('homeScen').innerHTML=
+    '<div class="kpi"><div class="lab">Axis A — AI/Data Center</div><div class="val" style="font-size:15px">Moderate~Strong</div><div class="note">정량 확률 <span class="lbc ins">INSUFF.</span> (base rate 부족)</div></div>'+
+    '<div class="kpi"><div class="lab">Axis B — China Memory</div><div class="val" style="font-size:15px">Moderate expansion</div><div class="note">CXMT 램프 진행 <span class="lbc scen">SCEN</span></div></div>';
+  mk('ovBarHome',{});// noop guard
+}
+
+// ---------- SCREENER ----------
+function screenerInit(){
+  var rows=ORDER.slice().sort(function(a,b){return MC[b].exp_ret-MC[a].exp_ret;});
+  var html='<thead><tr><th>#</th><th>기업</th><th>섹터</th><th>현재가</th><th>Exp FV</th><th>Upside</th><th>P(&gt;가)</th><th>P(+20%)</th><th>P(−20%)</th><th>Gap(1차)</th><th>Conf</th></tr></thead><tbody>';
+  rows.forEach(function(k,i){var m=MC[k];
+    html+='<tr'+(k===cur?' class="hl"':'')+'><td>'+(i+1)+'</td><td>'+m.name+'</td><td style="text-align:left">'+SECT[k]+'</td>'+
+      '<td class="mtr" data-lin="price" data-co="'+k+'">'+fmt(m.cur,m.ccy)+'</td><td class="mtr" data-lin="fv" data-co="'+k+'">'+fmt(m.ev,m.ccy)+'</td>'+
+      '<td class="mtr '+(m.exp_ret>=0.08?'up':(m.exp_ret<0?'down':'warn'))+'" data-lin="expret" data-co="'+k+'">'+ret(m.exp_ret)+'</td>'+
+      '<td class="mtr" data-lin="pup" data-co="'+k+'">'+pctS(m.p_up)+'</td><td>'+pctS(m.p_up10)+'</td><td class="down">'+pctS(m.p_dn20)+'</td>'+
+      '<td class="mtr '+(m.exp_ret>=0.08?'up':'')+'" data-lin="expret" data-co="'+k+'">'+ret(m.exp_ret)+'</td><td>'+CONF[k]+'</td></tr>';});
+  html+='</tbody>';
+  document.getElementById('scrTable').innerHTML=html;
+}
+
+// ---------- MEMORY: overview ----------
+function ovInit(){
+  document.getElementById('ovCards').innerHTML=ORDER.map(function(k){var m=MC[k];var cls=m.exp_ret>=0.08?'up':(m.exp_ret<0?'down':'warn');
+    return '<div class="kpi"><div class="lab">'+m.name+'</div><div class="val '+cls+'">'+ret(m.exp_ret)+'</div><div class="note">'+fmt(m.cur,m.ccy)+' · P(상승) '+pctS(m.p_up)+'</div></div>';}).join('');
+  mk('ovBar',{type:'bar',data:{labels:ORDER.map(function(k){return MC[k].name;}),datasets:[{data:ORDER.map(function(k){return +(MC[k].exp_ret*100).toFixed(1);}),backgroundColor:ORDER.map(function(k){return MC[k].exp_ret>=0.08?'#16a34a':(MC[k].exp_ret<0?'#dc2626':'#94a3b8');})}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.y+'%';}}}},scales:{y:{ticks:{callback:function(v){return v+'%';},font:{size:10}}},x:{ticks:{font:{size:11}}}}}});
+}
+function compareHTML(){
+  var rows=ORDER.map(function(k){var m=MC[k];var cls=m.exp_ret>=0.08?'up':(m.exp_ret<0?'down':'warn');
+    return '<tr'+(k===cur?' class="hl"':'')+'><td>'+m.name+(k===cur?' ◀':'')+'</td><td>'+fmt(m.cur,m.ccy)+'</td><td>'+m.cur_pe+'x</td><td>'+fmt(m.pct["50"],m.ccy)+'</td><td class="'+cls+'">'+ret(m.exp_ret)+'</td><td>'+pctS(m.p_up)+'</td></tr>';});
+  return '<section><h2><span class="k">COMPARE</span>4개 기업 비교 (공통)</h2><table><thead><tr><th>기업</th><th>현재가</th><th>P/E</th><th>MC중앙값</th><th>기대수익</th><th>P(상승)</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></section>';
+}
+function fillCompare(){['cmpM','cmpC','cmpV'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=compareHTML();});}
+
+function renderMarket(){
+  var f=CD.fin[cur];document.getElementById('mCo').textContent=f.name;
+  document.getElementById('mExp').innerHTML=
+    '<div class="kpi"><div class="lab">현재가 <span class="lbc fact">FACT</span></div><div class="val">'+fmt(f.cur,f.ccy)+' <span class="up" style="font-size:12px">+'+f.chg+'%</span></div><div class="note">Fwd P/E27 '+f.pe27+'x</div></div>'+
+    '<div class="kpi"><div class="lab">2028 EPS <span class="lbc cons">CONS</span></div><div class="val">'+f.eps28dir+'</div></div>'+
+    '<div class="kpi"><div class="lab">애널 TP <span class="lbc cons">CONS</span></div><div class="val">'+(f.tp?fmt(f.tp,f.ccy):'—')+'</div><div class="note">'+(f.tpup!=null?'여력 '+ret(f.tpup):'')+'</div></div>';
+  document.getElementById('mEasy').innerHTML='<b>포지셔닝</b> — '+f.exposure;
+  once('mCap',{type:'line',data:{labels:['2024','2025','2026','2027'],datasets:[{label:'HBM',data:[265,410,530,790],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.13)',tension:.3,fill:true},{label:'CoWoS',data:[40,75,120,150],borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.13)',tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
+  once('mCapex',{type:'bar',data:{labels:['2023','2024','2025','2026F','2027F','2028F'],datasets:[{data:[-0.6,62,71.9,81.3,37.1,12.1],backgroundColor:['#cbd5e1','#93c5fd','#60a5fa','#2563eb','#3b82f6','#94a3b8']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return v+'%';},font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
+}
+function renderCompany(){
+  var f=CD.fin[cur];document.getElementById('cCo').textContent=f.name;var eps=f.eps;
+  document.getElementById('cKpis').innerHTML=
+    '<div class="kpi"><div class="lab">Fwd EPS 26</div><div class="val">'+(eps[0]!=null?fmt(eps[0],f.ccy):'—')+'</div></div>'+
+    '<div class="kpi mtr" data-lin="eps27" data-co="'+cur+'"><div class="lab">Fwd EPS 27 <span class="lbc cons">CONS</span> 🔍</div><div class="val">'+fmt(eps[1],f.ccy)+'</div></div>'+
+    '<div class="kpi mtr" data-lin="eps28" data-co="'+cur+'"><div class="lab">Fwd EPS 28 <span class="lbc cons">CONS</span> 🔍</div><div class="val">'+(eps[2]!=null?fmt(eps[2],f.ccy):'—')+'</div><div class="note">'+f.eps28dir+'</div></div>'+
+    '<div class="kpi mtr" data-lin="pe" data-co="'+cur+'"><div class="lab">Fwd P/E(27) <span class="lbc model">MODEL</span> 🔍</div><div class="val">'+f.pe27+'x</div><div class="note">P/B '+f.pb27+'x</div></div>';
+  mk('cEps',{type:'line',data:{labels:['2026E','2027E','2028E'],datasets:[{label:f.name,data:[eps[0],eps[1],eps[2]],borderColor:'#2563eb',backgroundColor:'#2563eb',tension:.2,spanGaps:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmt(c.parsed.y,f.ccy);}}}},scales:{y:{ticks:{callback:function(v){return fmtK(v,f.ccy);},font:{size:10}}},x:{ticks:{font:{size:10.5}}}}}});
+  document.getElementById('cEasy').innerHTML='<b>쉽게</b> — 2028 EPS가 「'+f.eps28dir+'」. 꺾이면 사이클 피크 근접, 유지/상승이면 미피크 신호.';
+}
+function renderValuation(){
+  var v=CD.val[cur],f=CD.fin[cur],ccy=v.ccy;document.getElementById('vCo').textContent=f.name;
+  var rows=v.methods.map(function(r){return {n:r[0],lo:r[1],b:r[2],hi:r[3],c:r[4]};});
+  rows.push({n:'종합(가중)',lo:v.synth[0],b:v.synth[1],hi:v.synth[2],c:'—'});
+  var labels=rows.map(function(r){return r.n;});var ranges=rows.map(function(r){return [r.lo,r.hi];});
+  var colors=rows.map(function(r,i){return i===rows.length-1?'#111827':(r.c==='앵커'||r.c==='Bayes'?'#16a34a':'#2563eb');});
+  var allv=[];rows.forEach(function(r){allv.push(r.lo,r.hi);});allv.push(v.cur);if(v.tp)allv.push(v.tp);
+  var mn=Math.min.apply(null,allv)*0.92,mx=Math.max.apply(null,allv)*1.05;
+  var plugs=[vline(v.cur,'#dc2626',[])];if(v.tp){plugs.push(vline(v.tp,'#16a34a',[3,3]));}
+  mk('vField',{type:'bar',data:{labels:labels,datasets:[{data:ranges,backgroundColor:colors,borderRadius:4,barPercentage:.62}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return fmt(x.raw[0],ccy)+' – '+fmt(x.raw[1],ccy);}}}},scales:{x:{min:mn,max:mx,ticks:{callback:function(x){return fmtK(x,ccy);},font:{size:10}}},y:{ticks:{font:{size:10.5}}}}},plugins:plugs});
+  document.getElementById('vTable').innerHTML='<thead><tr><th>방법</th><th>Low</th><th>Base</th><th>High</th><th>신뢰</th></tr></thead><tbody>'+rows.map(function(r,i){var last=i===rows.length-1;return '<tr'+(last?' class="hl"':'')+'><td>'+r.n+'</td><td>'+fmt(r.lo,ccy)+'</td><td>'+fmt(r.b,ccy)+'</td><td>'+fmt(r.hi,ccy)+'</td><td>'+(r.c==='—'?'—':'<span class="tag '+(r.c==='앵커'?'anchor':(r.c==='실측'||r.c==='Bayes'?'hi':(r.c==='MED'?'med':'lo')))+'">'+r.c+'</span>')+'</td></tr>';}).join('')+'</tbody>';
+  var o=f.opt;var vv=o.verdict;var cls=vv.indexOf('과낙관')>=0?'r':(vv.indexOf('아님')>=0||vv.indexOf('정합')>=0?'g':'a');
+  document.getElementById('vOpt').innerHTML='<div class="kpi" style="margin-bottom:8px"><div class="lab">판정</div><div class="val"><span class="pill '+cls+'">'+vv+'</span></div><div class="note">리포트: '+o.report+'</div></div><table><tbody><tr><td style="width:110px">주장</td><td style="text-align:left">'+o.claim+'</td></tr><tr><td>검산·대조</td><td style="text-align:left">'+o.check+'</td></tr><tr><td>확률 반영</td><td style="text-align:left">'+o.effect+'</td></tr></tbody></table>';
+  renderDCF();
+}
+function renderMC(){
+  var m=MC[cur];document.getElementById('pCo').textContent=m.name;
+  var cls=m.exp_ret>=0.08?'up':(m.exp_ret<0?'down':'warn');
+  document.getElementById('mcKpis').innerHTML=
+    '<div class="kpi mtr" data-lin="price" data-co="'+cur+'"><div class="lab">현재가 <span class="lbc fact">FACT</span> 🔍</div><div class="val">'+fmt(m.cur,m.ccy)+'</div><div class="note">P/E '+m.cur_pe+'x · 클릭=계보</div></div>'+
+    '<div class="kpi mtr" data-lin="fv" data-co="'+cur+'"><div class="lab">MC 공정가치 <span class="lbc model">MODEL</span> 🔍</div><div class="val">'+fmt(m.ev,m.ccy)+'</div><div class="note">중앙값 '+fmt(m.pct["50"],m.ccy)+'</div></div>'+
+    '<div class="kpi mtr" data-lin="expret" data-co="'+cur+'"><div class="lab">기대수익 <span class="lbc model">MODEL</span> 🔍</div><div class="val '+cls+'">'+ret(m.exp_ret)+'</div><div class="note">클릭=계보 drill</div></div>'+
+    '<div class="kpi mtr" data-lin="pup" data-co="'+cur+'"><div class="lab">P(상승) <span class="lbc model">MODEL PROB</span> 🔍</div><div class="val">'+pctS(m.p_up)+'</div><div class="note">P(&gt;+30%) '+pctS(m.p_up30)+'</div></div>'+
+    '<div class="kpi mtr" data-lin="cyclepe" data-co="'+cur+'"><div class="lab">사이클 P/E <span class="lbc assum">ASSUMPTION</span> 🔍</div><div class="val">'+m.fv_pe_mid+'x</div><div class="note">클릭=근거·민감도</div></div>'+
+    '<div class="kpi mtr" data-lin="conf" data-co="'+cur+'"><div class="lab">Valuation Confidence 🔍</div><div class="val">'+VCONF[cur]+'/100</div><div class="confbar"><i style="width:'+VCONF[cur]+'%"></i></div></div>';
+  var plugs=[vline(m.cur,'#dc2626',[]),vline(m.pct["50"],'#2563eb',[4,3])];if(m.tp){plugs.push(vline(m.tp,'#16a34a',[2,3]));}
+  var maxX=Math.max(m.hist.c[m.hist.c.length-1],m.tp?m.tp:0)*1.02;
+  mk('mcChart',{type:'bar',data:{labels:m.hist.c,datasets:[{data:m.hist.c.map(function(x,i){return {x:x,y:m.hist.n[i]};}),backgroundColor:m.hist.c.map(function(x){return x<m.cur?'rgba(220,38,38,.55)':'rgba(22,163,74,.55)';}),parsing:false,barPercentage:1,categoryPercentage:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:function(t){return fmt(t[0].parsed.x,m.ccy);},label:function(c){return '빈도 '+c.parsed.y;}}}},scales:{x:{type:'linear',min:m.hist.c[0]*0.98,max:maxX,ticks:{callback:function(v){return fmtK(v,m.ccy);},font:{size:10},maxTicksLimit:8}},y:{ticks:{font:{size:10}},title:{display:true,text:'시뮬 빈도',font:{size:10}}}}},plugins:plugs});
+  document.getElementById('pctTable').innerHTML='<thead><tr><th>백분위</th><th>공정가치</th><th>현재가대비</th></tr></thead><tbody>'+['5','10','25','50','75','90','95'].map(function(p){var val=m.pct[p];var r=val/m.cur-1;return '<tr><td>P'+p+'</td><td>'+fmt(val,m.ccy)+'</td><td class="'+(r>=0?'up':'down')+'">'+ret(r)+'</td></tr>';}).join('')+'</tbody>';
+  document.getElementById('probTable').innerHTML='<thead><tr><th>이벤트</th><th>확률</th></tr></thead><tbody><tr><td>상승(&gt;0%)</td><td>'+pctS(m.p_up)+'</td></tr><tr><td>+10%↑</td><td>'+pctS(m.p_up10)+'</td></tr><tr><td>+30%↑</td><td>'+pctS(m.p_up30)+'</td></tr><tr><td>−10%↓</td><td class="down">'+pctS(m.p_dn10)+'</td></tr><tr><td>−20%↓</td><td class="down">'+pctS(m.p_dn20)+'</td></tr></tbody>';
+  var o=CD.fin[cur].opt;document.getElementById('mcNote').innerHTML='<b>'+m.name+'</b> — 기대 '+ret(m.exp_ret)+', P(상승) '+pctS(m.p_up)+'. 리포트 과낙관: <b>'+o.verdict+'</b>. '+o.effect+' <span class="lbc model">MODEL PROB</span>(컨센 EPS×주관 P/E).';
+}
+function tornadoInit(){
+  var tor=[['삼성 HBM4 NVIDIA 퀄',100,'#dc2626'],['컨센 EPS 리비전(2028)',85,'#d97706'],['사이클 P/E',80,'#d97706'],['HBM/범용/NAND ASP',70,'#d97706'],['CXMT 램프',55,'#2563eb'],['하이퍼스케일러 Capex',48,'#2563eb'],['NAND NBM 계약',40,'#16a34a']];
+  var tc=document.getElementById('tornado');if(tc.dataset.done)return;
+  tor.forEach(function(t){var r=document.createElement('div');r.className='tornado-row';r.innerHTML='<div class="name">'+t[0]+'</div><div class="bar" style="width:'+(t[1]*0.6)+'%;background:'+t[2]+'"></div><div style="font-size:11px;color:#94a0b3">'+t[1]+'</div>';tc.appendChild(r);});tc.dataset.done='1';
+}
+
+// ---------- MEMORY tab routing ----------
+function renderMemTab(name){
+  if(name==='overview')ovInit();
+  else if(name==='market'){renderMarket();fillCompare();}
+  else if(name==='company'){renderCompany();fillCompare();}
+  else if(name==='valuation'){renderValuation();fillCompare();}
+  else if(name==='probability'){renderMC();tornadoInit();}
+}
+function memActiveTab(){var t=document.querySelector('#mtabs .tab.active');return t?t.getAttribute('data-tab'):'overview';}
+function activateMemTab(name){
+  var tabs=document.querySelectorAll('#mtabs .tab');for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-tab')===name);}
+  var pans=document.querySelectorAll('#v-memory .panel');for(var j=0;j<pans.length;j++){var on=pans[j].id==='p-'+name;pans[j].classList.toggle('active',on);pans[j].style.display=on?'block':'none';}
+  requestAnimationFrame(function(){renderMemTab(name);});
+}
+
+// ---------- platform view routing ----------
+function showView(v){
+  var views=document.querySelectorAll('.view');for(var i=0;i<views.length;i++){var on=views[i].id==='v-'+v;views[i].classList.toggle('active',on);views[i].style.display=on?'block':'none';}
+  var btns=document.querySelectorAll('.pbtn');for(var j=0;j<btns.length;j++){btns[j].classList.toggle('active',btns[j].getAttribute('data-v')===v);}
+  requestAnimationFrame(function(){
+    if(v==='home')homeInit();
+    else if(v==='screener')screenerInit();
+    else if(v==='memory')activateMemTab(memActiveTab());
+  });
+}
+document.getElementById('pnav').addEventListener('click',function(e){var b=e.target;while(b&&!b.classList.contains('pbtn')){b=b.parentElement;}if(b){showView(b.getAttribute('data-v'));}});
+document.addEventListener('click',function(e){
+  var b=e.target;while(b&&b.nodeType===1&&!(b.classList&&(b.classList.contains('tab')||b.classList.contains('cbtn')))){b=b.parentElement;}
+  if(!b||b.nodeType!==1||!b.classList)return;
+  if(b.classList.contains('tab')){activateMemTab(b.getAttribute('data-tab'));}
+  else if(b.classList.contains('cbtn')){var cb=document.querySelectorAll('.cbtn');for(var i=0;i<cb.length;i++){cb[i].classList.toggle('active',cb[i]===b);}cur=b.getAttribute('data-c');requestAnimationFrame(function(){renderMemTab(memActiveTab());});}
+});
+
+document.addEventListener('click',function(e){
+  var a=e.target;while(a&&a.nodeType===1&&!(a.getAttribute&&a.getAttribute('data-audit'))){a=a.parentElement;}
+  if(a&&a.nodeType===1&&a.getAttribute('data-audit')){openAudit(a.getAttribute('data-audit'));}
+});
+document.addEventListener('click',function(e){
+  var a=e.target;while(a&&a.nodeType===1&&!(a.getAttribute&&(a.getAttribute('data-lin')||a.getAttribute('data-fullaudit')))){a=a.parentElement;}
+  if(!a||a.nodeType!==1)return;
+  if(a.getAttribute('data-fullaudit')){openFullAudit(a.getAttribute('data-fullaudit'),a.getAttribute('data-co'));}
+  else if(a.getAttribute('data-lin')){openLin(a.getAttribute('data-lin'),a.getAttribute('data-co'));}
+});
+function boot(){
+  var ov=document.getElementById('auditOv');
+  if(!ov){ov=document.createElement('div');ov.id='auditOv';document.body.appendChild(ov);
+    ov.addEventListener('click',function(e){if(e.target.id==='auditOv'||(e.target.className&&e.target.className.indexOf('close')>=0)){ov.classList.remove('on');}});}
+  var views=document.querySelectorAll('.view');for(var i=0;i<views.length;i++){views[i].style.display=(views[i].id==='v-home')?'block':'none';}
+  var pans=document.querySelectorAll('#v-memory .panel');for(var j=0;j<pans.length;j++){pans[j].style.display=(pans[j].id==='p-overview')?'block':'none';}
+  homeInit();
+}
+if(document.readyState!=='loading'){boot();}else{document.addEventListener('DOMContentLoaded',boot);}
+})();
+</script>
+</body>
+</html>
