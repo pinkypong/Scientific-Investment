@@ -89,7 +89,7 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
 <div class="wrap">
 
 <header class="top">
-  <div><span class="badge live">Probabilistic Research Platform</span><span class="badge">v13 · 설계탭</span></div>
+  <div><span class="badge live">Probabilistic Research Platform</span><span class="badge">v17 · 뉴스·리포트 로드</span></div>
   <h1>통합 확률기반 투자 리서치 플랫폼</h1>
   <div class="meta">실측 <b>2026-08-19</b> · 시세 08-19 (Bigdata.com) · 라벨: <span class="lbc fact">FACT</span> <span class="lbc cons">CONSENSUS</span> <span class="lbc model">MODEL</span> <span class="lbc assum">ASSUMPTION</span> <span class="lbc scen">SCENARIO</span> <span class="lbc ins">INSUFF.</span> — 상세는 Governance 탭</div>
 </header>
@@ -102,6 +102,10 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
   <button class="pbtn" data-v="design">📐 설계</button>
   <button class="pbtn" data-v="soon">＋ Sectors</button>
 </nav>
+<div class="cobar" id="liveBar" style="justify-content:space-between">
+  <span id="liveStamp" class="q" style="font-size:11px">시세 기준 2026-08-21 (스냅샷)</span>
+  <span style="display:flex;gap:6px"><button class="cbtn" id="newsBtn">📰 최신 뉴스·리포트</button><button class="cbtn" id="refreshBtn" style="background:var(--green);color:#fff;border-color:var(--green)">🔄 실시간 시세</button></span>
+</div>
 
 <!-- ============ HOME ============ -->
 <div class="view active" id="v-home">
@@ -324,10 +328,10 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
       <li><b>컨센서스 대조</b> — 리포트 bull 주장 vs 시장 컨센서스(불일치=과낙관 신호)</li>
       <li><b>실적·역사 대조</b> — 주장 vs 실제 보고 재무/과거 사이클 최대치</li>
     </ol>
-    <div class="bad"><b>실증 예 — 키움 삼성 HBM 영업이익 83조(2027, HBM 단독)</b><br>
-      삼성 <b>전사</b> 영업이익 실측: 2021 <b>51.6조</b> · 2022 43.4 · 2023 6.6 · 2024 32.7 · 2025 43.6조<br>
-      → HBM "하나"로 83조 = 전사 <b>역대 최대(51.6조)의 1.6배</b> + OPM 75% 가정 ⇒ <b>과낙관 위험 高</b><br>
-      → 결정적: 컨센서스 삼성 2028 EPS <b>−33%</b>가 이 스토리를 반박(진짜 HBM 질주면 2028이 안 꺾임). <span class="q">단일 하우스 vs 컨센서스 충돌 = 과낙관 실증.</span></div>
+    <div class="ok"><b>실증 예 — 검증 방법이 내 오류를 잡은 사례 ✅</b><br>
+      키움 "삼성 HBM OP 83조(2027)" → 처음엔 내가 <b>과낙관/데이터오염으로 오판</b>(구식 EPS 20,330 사용).<br>
+      <b>교차검증(2026 Q1/Q2 실적)</b>: 전사 영업이익 Q1 57.2조 · <b>Q2 89.5조(사상최대)</b> · H1 146.7조 → HBM 83조도 개연성. 컨센(매출729조·EPS48,000·NI323조) = 실측 run-rate 일치. TrendForce Q2 DRAM +60%.<br>
+      → <b>판정 "과낙관 高" 철회 → "실적 검증됨(슈퍼사이클)".</b> <span class="q">교훈: 단정 전에 최신 분기·가이던스로 교차검증(§Rule).</span></div>
     <div class="ok"><b>SanDisk — 유일하게 확률에 직접 반영</b>: 리포트 증거(NBM 장기계약 등)를 Bayesian으로 → P(구조적) 사전 25% → 사후 59.5%, 적정 P/E 7.3→9.0x.</div>
     <div class="bad"><b>오염 데이터 차단</b>: 컨센서스 삼성 2026 매출 +119%·순마진 44% 등 불가능 수치 → <span class="lbc unv">DATA CONFLICT</span>로 거부(가짜 Fair Value 생성 안 함, §A4).</div>
     <div class="flag"><b>현재 연동 상태(정직)</b> — 정성 3단계 검증은 <b>VALUATION 탭 → CHECK 패널</b>에서 기업별로 작동. 단 이 판정이 확률/밸류에이션 숫자에 <b>기계적으로 곱해지는 건 SanDisk(Bayesian)뿐</b>. 나머지는 "컨센서스 EPS를 입력으로 쓰므로 과낙관이 간접적으로만 희석"됨. → 다음 단계: 과낙관 페널티를 확률에 직접 반영(옵션).</div>
@@ -388,6 +392,21 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
       <b>데이터</b>: 실측 Bigdata.com(주가·컨센서스, 2026-08-19) · 리포트 4종. 목표주가·컨센서스 ≠ 진실.
     </div>
   </section>
+  <section>
+    <h2><span class="k">자가감사</span>Known Limitations (직접 점검 결과)</h2>
+    <p class="sec-sub">설계를 실제 숫자로 교차검증해 발견한 한계. 숨기지 않고 명시(§14). 심각도: 🔴중대 🟡중간 ⚪경미.</p>
+    <div class="ok"><b>✅ H1 · [RESOLVED] 삼성 EPS 입력 오류 — 교차검증으로 정정</b><br>
+      이전: 구식 EPS 20,330 사용 → MC 264k(+7%) vs DCF(정규화 14%마진) 71k(−71%) <b>모순</b>. 나는 "데이터 오염"으로 오판.<br>
+      <b>정정</b>: 2026 Q2 실적 OP 89.5조·H1 146.7조 확인 → 컨센 EPS(2027 <b>69,276</b>)가 옳음. 구식 20,330·정규화 14%마진이 오류였음.<br>
+      → 현재: MC(EPS 69,276 × <b>peak-trough 멀티플 6x</b>) 공정가치 ≈ 416k, fwd P/E <b>3.6x</b>. <b>교훈: 단정 전 최신 분기 교차검증 필수.</b></div>
+    <div class="flag"><b>남은 한계(삼성)</b> — EPS 69,276은 <b>슈퍼사이클 peak</b>. peak 이익 valuation의 핵심 불확실성 = <b>사이클 지속기간</b>. Reverse DCF: 시장은 steady FCFF ~140조(과거 정상 33조 ≪, 2026 peak 200조 ≫) 반영 = "고원이지만 하락". SK/Micron/SanDisk도 동일 교차검증 필요.</div>
+    <div class="flag"><b>🟡 H2</b> forward EPS를 자기 과거실적과 <b>자동 대조 안 함</b>(삼성만 수동 flag). → EPS reliability 크로스체크 자동화 필요.<br>
+      <b>🟡 H3</b> Expectations Gap 정의 2개 공존 — Screener(MC평균 vs 현재가, <b>1차 근사</b>) vs Design(market-implied CAGR vs model, 정식). 용어 통일 필요.<br>
+      <b>🟡 H4</b> P/E 분포 <b>NOT VALIDATED</b>(주관) → 모든 MC 공정가치가 이를 상속. Valuation Confidence 하향에 반영됨.<br>
+      <b>⚪ H5</b> 차트(막대·football field·라인)는 클릭 계보 없음 → 표/카드로 대체.<br>
+      <b>⚪ H6</b> 삼성만 정식 DCF, 나머지 3종은 INSUFFICIENT(신뢰 전망 미확보) → MC만 존재, DCF 교차검증 부재.</div>
+    <div class="src">점검일 2026-08-20 · 방법: forward EPS vs 자기 실적 대조 · MC vs DCF 공정가치 대조 · feed 내부 P/E 일관성 확인.</div>
+  </section>
 </div>
 
 <!-- ============ SOON ============ -->
@@ -413,8 +432,8 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
 <script>
 (function(){
 "use strict";
-var MC={"samsung": {"name": "삼성전자", "ccy": "원", "cur": 247500, "tp": 400000, "pct": {"5": 169571.06, "10": 189111.73, "25": 222642.19, "50": 261598.58, "75": 302935.71, "90": 342259.95, "95": 365871.15}, "ev": 264025.06, "exp_ret": 0.067, "p_up": 0.594, "p_up10": 0.43, "p_up30": 0.168, "p_dn10": 0.251, "p_dn20": 0.132, "hist": {"c": [151407.0, 160313.34, 169219.68, 178126.03, 187032.37, 195938.72, 204845.06, 213751.41, 222657.75, 231564.09, 240470.44, 249376.78, 258283.13, 267189.47, 276095.82, 285002.16, 293908.5, 302814.85, 311721.19, 320627.54, 329533.88, 338440.23, 347346.57, 356252.92, 365159.26, 374065.6, 382971.95, 391878.29], "n": [176, 248, 351, 416, 582, 688, 798, 864, 1015, 1091, 1139, 1173, 1212, 1162, 1178, 1043, 1003, 877, 754, 733, 576, 549, 473, 362, 243, 217, 155, 122]}, "cur_pe": 12.2, "fv_pe_mid": 13.0}, "skhynix": {"name": "SK하이닉스", "ccy": "원", "cur": 1500000, "tp": 3000000, "pct": {"5": 927679.2, "10": 1053461.39, "25": 1267171.23, "50": 1518767.0, "75": 1780324.97, "90": 2032280.61, "95": 2175970.46}, "ev": 1532286.63, "exp_ret": 0.022, "p_up": 0.52, "p_up10": 0.366, "p_up30": 0.14, "p_dn10": 0.325, "p_dn20": 0.196, "hist": {"c": [812198.42, 869086.61, 925974.8, 982862.99, 1039751.19, 1096639.38, 1153527.57, 1210415.76, 1267303.96, 1324192.15, 1381080.34, 1437968.53, 1494856.72, 1551744.92, 1608633.11, 1665521.3, 1722409.49, 1779297.69, 1836185.88, 1893074.07, 1949962.26, 2006850.46, 2063738.65, 2120626.84, 2177515.03, 2234403.22, 2291291.42, 2348179.61], "n": [182, 242, 347, 412, 576, 707, 775, 903, 961, 1063, 1192, 1142, 1196, 1202, 1153, 1045, 1007, 886, 779, 714, 605, 538, 472, 366, 244, 206, 176, 109]}, "cur_pe": 11.2, "fv_pe_mid": 11.5}, "micron": {"name": "Micron", "ccy": "$", "cur": 940.76, "tp": null, "pct": {"5": 584.93, "10": 681.13, "25": 847.54, "50": 1044.51, "75": 1260.83, "90": 1471.0, "95": 1598.68}, "ev": 1063.77, "exp_ret": 0.131, "p_up": 0.635, "p_up10": 0.513, "p_up30": 0.287, "p_dn10": 0.249, "p_dn20": 0.157, "hist": {"c": [500.59, 546.66, 592.73, 638.8, 684.87, 730.94, 777.01, 823.08, 869.15, 915.22, 961.29, 1007.36, 1053.43, 1099.5, 1145.57, 1191.64, 1237.71, 1283.78, 1329.85, 1375.92, 1421.99, 1468.06, 1514.13, 1560.2, 1606.27, 1652.34, 1698.41, 1744.48], "n": [190, 290, 381, 489, 631, 788, 866, 926, 1113, 1158, 1185, 1205, 1175, 1154, 1107, 1016, 925, 795, 690, 660, 558, 513, 404, 308, 228, 185, 150, 110]}, "cur_pe": 5.7, "fv_pe_mid": 6.5}, "sandisk": {"name": "SanDisk", "ccy": "$", "cur": 1625.78, "tp": 2432.96, "pct": {"5": 998.06, "10": 1138.97, "25": 1444.99, "50": 2036.38, "75": 2612.92, "90": 3047.33, "95": 3315.22}, "ev": 2066.82, "exp_ret": 0.271, "p_up": 0.662, "p_up10": 0.596, "p_up30": 0.468, "p_dn10": 0.259, "p_dn20": 0.175, "hist": {"c": [902.63, 1000.95, 1099.28, 1197.6, 1295.93, 1394.26, 1492.58, 1590.91, 1689.23, 1787.56, 1885.89, 1984.21, 2082.54, 2180.86, 2279.19, 2377.51, 2475.84, 2574.17, 2672.49, 2770.82, 2869.14, 2967.47, 3065.79, 3164.12, 3262.45, 3360.77, 3459.1, 3557.42], "n": [351, 559, 764, 890, 978, 1046, 984, 923, 781, 770, 741, 786, 810, 800, 840, 901, 865, 899, 771, 706, 676, 594, 464, 416, 272, 274, 189, 150]}, "cur_pe": 7.3, "fv_pe_mid": 9.0}};
-var CD={"val": {"samsung": {"ccy": "원", "cur": 247500, "tp": 400000, "synth": [201000, 265000, 339000], "mid": 265000, "methods": [["애널리스트 TP (삼성證)", 380000, 400000, 420000, "앵커"], ["Fwd P/E FY27 (EPS20,330)", 182970, 243960, 284620, "실측"], ["Cycle-adj P/E (norm16,510)", 165100, 189865, 214630, "실측"], ["P/B (BPS161k)", 193200, 289800, 402500, "실측"], ["역사적 P/B", 161000, 241500, 402500, "MED"]]}, "skhynix": {"ccy": "원", "cur": 1500000, "tp": 3000000, "synth": [1270000, 1540000, 1980000], "mid": 1540000, "methods": [["애널리스트 TP (삼성證)", 2850000, 3000000, 3150000, "앵커"], ["Fwd P/E FY27 (EPS133,406)", 1200654, 1534169, 1867684, "실측"], ["Cycle-adj P/E (norm120,004)", 1200040, 1380046, 1560052, "실측"], ["P/B (BPS1,015k)", 1218000, 1827000, 3045000, "실측"]]}, "micron": {"ccy": "$", "cur": 940.76, "tp": null, "synth": [720, 990, 1260], "mid": 990, "methods": [["Fwd P/E FY27 (EPS163.8)", 737, 983, 1310, "실측"], ["Fwd P/E FY28 (EPS173.4)", 867, 1040, 1214, "실측"], ["Cycle-adj P/E (norm134.4)", 672, 874, 1075, "실측"]]}, "sandisk": {"ccy": "$", "cur": 1625.78, "tp": 2432.96, "synth": [1200, 1995, 2560], "mid": 1995, "methods": [["애널리스트 TP (한화)", 2300, 2433, 2560, "앵커"], ["Fwd P/E FY27 (EPS221.7, Bayes)", 1330, 1995, 2439, "Bayes"], ["Cycle-adj P/E (regime)", 1108, 1774, 2660, "MED"]]}}, "fin": {"samsung": {"name": "삼성전자", "ccy": "원", "cur": 247500, "chg": -7.82, "pe27": 12.2, "pb27": 1.5, "tp": 400000, "tpup": 0.616, "eps": [15673, 20330, 13527], "eps28dir": "−33% 피크아웃", "exposure": "HBM + 서버/PC/모바일 DRAM + NAND + 파운드리. HBM 후발이나 캐파 최대.", "opt": {"report": "키움 박유악", "claim": "삼성 HBM 1위 탈환, 2027 HBM OP 83조(+315%), 출하 +109%(시장 2배)", "check": "HBM 단독 OP 83조 vs 삼성 전사 영업이익 실측 최대 51.6조(2021)의 1.6배 = 정량 과낙관. 컨센서스 2028 EPS −33%가 반박(시장은 삼성을 HBM 승자로 안 봄). OPM 75% 극단.", "verdict": "과낙관 위험 高", "effect": "MC는 컨센서스 EPS(키움 배제) 사용 → 자동 보수적. Bull은 퀄 통과 옵션으로만."}}, "skhynix": {"name": "SK하이닉스", "ccy": "원", "cur": 1500000, "chg": -9.75, "pe27": 11.2, "pb27": 1.5, "tp": 3000000, "tpup": 1.0, "eps": [100692, 133406, 125913], "eps28dir": "−6% 완만", "exposure": "HBM 선두(엔비디아 주력) + DRAM + NAND. HBM 비중 최고.", "opt": {"report": "키움 박유악", "claim": "HBM OP 70조(+138%), 출하 +46%", "check": "컨센서스 EPS27 +32%, 2028 −6%로 완만. HBM 리더십은 실측 우위와 정합.", "verdict": "대체로 정합", "effect": "조정 없음. 다만 최근 1M −31% 급락은 이미 반영."}}, "micron": {"name": "Micron", "ccy": "$", "cur": 940.76, "chg": -7.02, "pe27": 5.7, "pb27": 10.5, "tp": null, "tpup": null, "eps": [65.9, 163.8, 173.4], "eps28dir": "+6% 상승 지속", "exposure": "DRAM + HBM + NAND 종합. 미국 유일 메모리, HBM3E 엔비디아 공급.", "opt": {"report": "—(컨센서스)", "claim": "EPS가 FY28까지 계속 상승(미피크)", "check": "멀티플이 5.8x로 오히려 보수적. 과낙관 징후 없음.", "verdict": "과낙관 아님", "effect": "가장 정직한 리스크/리워드. MC 기대 +12%."}}, "sandisk": {"name": "SanDisk", "ccy": "$", "cur": 1625.78, "chg": -9.01, "pe27": 7.3, "pb27": 15.2, "tp": 2432.96, "tpup": 0.496, "eps": [null, 221.7, null], "eps28dir": "상승(NAND 강세)", "exposure": "순수 NAND. 데이터센터 비중 38%(YoY 12%→), NBM 장기계약.", "opt": {"report": "한화 박제인", "claim": "TP $2,432.96(+60%), NAND 시장 CY27 5,000억$", "check": "현재 P/E 6.9x는 사이클 가정. NBM 플로어계약이 구조전환 근거 → Bayesian으로 P(구조적) 25→59.5%.", "verdict": "구조전환 논리 있음(단 NAND 가격 지속 검증 필요)", "effect": "Bayesian 반영: P/E 7→9x, MC 기대 +2%→+36%."}}}};
+var MC={"samsung": {"name": "삼성전자", "ccy": "원", "cur": 247500, "tp": 400000, "pct": {"5": 150175.53, "10": 196222.21, "25": 282632.75, "50": 395983.61, "75": 528134.53, "90": 660160.28, "95": 746295.95}, "ev": 416598.13, "exp_ret": 0.683, "p_up": 0.819, "p_up10": 0.772, "p_up30": 0.666, "p_dn10": 0.139, "p_dn20": 0.102, "hist": {"c": [122595.6, 149452.57, 176309.55, 203166.53, 230023.51, 256880.49, 283737.47, 310594.45, 337451.43, 364308.4, 391165.38, 418022.36, 444879.34, 471736.32, 498593.3, 525450.28, 552307.26, 579164.23, 606021.21, 632878.19, 659735.17, 686592.15, 713449.13, 740306.11, 767163.08, 794020.06, 820877.04, 847734.02], "n": [350, 511, 592, 724, 874, 1033, 1116, 1174, 1228, 1186, 1202, 1126, 1091, 953, 923, 825, 734, 622, 576, 514, 423, 371, 281, 238, 172, 151, 115, 95]}, "cur_pe": 3.6, "fv_pe_mid": 6.0}, "skhynix": {"name": "SK하이닉스", "ccy": "원", "cur": 1500000, "tp": 3000000, "pct": {"5": 927679.2, "10": 1053461.39, "25": 1267171.23, "50": 1518767.0, "75": 1780324.97, "90": 2032280.61, "95": 2175970.46}, "ev": 1532286.63, "exp_ret": 0.022, "p_up": 0.52, "p_up10": 0.366, "p_up30": 0.14, "p_dn10": 0.325, "p_dn20": 0.196, "hist": {"c": [812198.42, 869086.61, 925974.8, 982862.99, 1039751.19, 1096639.38, 1153527.57, 1210415.76, 1267303.96, 1324192.15, 1381080.34, 1437968.53, 1494856.72, 1551744.92, 1608633.11, 1665521.3, 1722409.49, 1779297.69, 1836185.88, 1893074.07, 1949962.26, 2006850.46, 2063738.65, 2120626.84, 2177515.03, 2234403.22, 2291291.42, 2348179.61], "n": [182, 242, 347, 412, 576, 707, 775, 903, 961, 1063, 1192, 1142, 1196, 1202, 1153, 1045, 1007, 886, 779, 714, 605, 538, 472, 366, 244, 206, 176, 109]}, "cur_pe": 11.2, "fv_pe_mid": 11.5}, "micron": {"name": "Micron", "ccy": "$", "cur": 940.76, "tp": null, "pct": {"5": 584.93, "10": 681.13, "25": 847.54, "50": 1044.51, "75": 1260.83, "90": 1471.0, "95": 1598.68}, "ev": 1063.77, "exp_ret": 0.131, "p_up": 0.635, "p_up10": 0.513, "p_up30": 0.287, "p_dn10": 0.249, "p_dn20": 0.157, "hist": {"c": [500.59, 546.66, 592.73, 638.8, 684.87, 730.94, 777.01, 823.08, 869.15, 915.22, 961.29, 1007.36, 1053.43, 1099.5, 1145.57, 1191.64, 1237.71, 1283.78, 1329.85, 1375.92, 1421.99, 1468.06, 1514.13, 1560.2, 1606.27, 1652.34, 1698.41, 1744.48], "n": [190, 290, 381, 489, 631, 788, 866, 926, 1113, 1158, 1185, 1205, 1175, 1154, 1107, 1016, 925, 795, 690, 660, 558, 513, 404, 308, 228, 185, 150, 110]}, "cur_pe": 5.7, "fv_pe_mid": 6.5}, "sandisk": {"name": "SanDisk", "ccy": "$", "cur": 1625.78, "tp": 2432.96, "pct": {"5": 998.06, "10": 1138.97, "25": 1444.99, "50": 2036.38, "75": 2612.92, "90": 3047.33, "95": 3315.22}, "ev": 2066.82, "exp_ret": 0.271, "p_up": 0.662, "p_up10": 0.596, "p_up30": 0.468, "p_dn10": 0.259, "p_dn20": 0.175, "hist": {"c": [902.63, 1000.95, 1099.28, 1197.6, 1295.93, 1394.26, 1492.58, 1590.91, 1689.23, 1787.56, 1885.89, 1984.21, 2082.54, 2180.86, 2279.19, 2377.51, 2475.84, 2574.17, 2672.49, 2770.82, 2869.14, 2967.47, 3065.79, 3164.12, 3262.45, 3360.77, 3459.1, 3557.42], "n": [351, 559, 764, 890, 978, 1046, 984, 923, 781, 770, 741, 786, 810, 800, 840, 901, 865, 899, 771, 706, 676, 594, 464, 416, 272, 274, 189, 150]}, "cur_pe": 7.3, "fv_pe_mid": 9.0}};
+var CD={"val": {"samsung": {"ccy": "원", "cur": 247500, "tp": 400000, "synth": [201000, 265000, 339000], "mid": 265000, "methods": [["애널리스트 TP (삼성證)", 380000, 400000, 420000, "앵커"], ["Fwd P/E FY27 (EPS20,330)", 182970, 243960, 284620, "실측"], ["Cycle-adj P/E (norm16,510)", 165100, 189865, 214630, "실측"], ["P/B (BPS161k)", 193200, 289800, 402500, "실측"], ["역사적 P/B", 161000, 241500, 402500, "MED"]]}, "skhynix": {"ccy": "원", "cur": 1500000, "tp": 3000000, "synth": [1270000, 1540000, 1980000], "mid": 1540000, "methods": [["애널리스트 TP (삼성證)", 2850000, 3000000, 3150000, "앵커"], ["Fwd P/E FY27 (EPS133,406)", 1200654, 1534169, 1867684, "실측"], ["Cycle-adj P/E (norm120,004)", 1200040, 1380046, 1560052, "실측"], ["P/B (BPS1,015k)", 1218000, 1827000, 3045000, "실측"]]}, "micron": {"ccy": "$", "cur": 940.76, "tp": null, "synth": [720, 990, 1260], "mid": 990, "methods": [["Fwd P/E FY27 (EPS163.8)", 737, 983, 1310, "실측"], ["Fwd P/E FY28 (EPS173.4)", 867, 1040, 1214, "실측"], ["Cycle-adj P/E (norm134.4)", 672, 874, 1075, "실측"]]}, "sandisk": {"ccy": "$", "cur": 1625.78, "tp": 2432.96, "synth": [1200, 1995, 2560], "mid": 1995, "methods": [["애널리스트 TP (한화)", 2300, 2433, 2560, "앵커"], ["Fwd P/E FY27 (EPS221.7, Bayes)", 1330, 1995, 2439, "Bayes"], ["Cycle-adj P/E (regime)", 1108, 1774, 2660, "MED"]]}}, "fin": {"samsung": {"name": "삼성전자", "ccy": "원", "cur": 247500, "chg": -7.82, "pe27": 3.6, "pb27": 2.85, "tp": 400000, "tpup": 0.616, "eps": [48000, 69276, 70901], "eps28dir": "+2% (2029 −19% 완만)", "exposure": "HBM + 서버/PC/모바일 DRAM + NAND + 파운드리. HBM 후발이나 캐파 최대.", "opt": {"report": "키움 박유악 / 실적 교차검증", "claim": "삼성 HBM OP 2027 83조·1위 탈환", "check": "2026 Q2 실측 전사 OP 89.5조(사상최대)·H1 146.7조 → 컨센서스(매출729조·EPS48,000) 실측과 일치. HBM 83조도 이제 개연성 有. TrendForce Q2 DRAM +60%·Counterpoint 2026 DRAM +300%.", "verdict": "실적 검증됨 (슈퍼사이클)", "effect": "이전 \"과낙관/오염\" 판정 철회. 현재 fwd P/E 3.6x = 시장은 peak 이익의 정상화를 반영 → 사이클 지속 시 저평가 논쟁."}}, "skhynix": {"name": "SK하이닉스", "ccy": "원", "cur": 1500000, "chg": -9.75, "pe27": 11.2, "pb27": 1.5, "tp": 3000000, "tpup": 1.0, "eps": [100692, 133406, 125913], "eps28dir": "−6% 완만", "exposure": "HBM 선두(엔비디아 주력) + DRAM + NAND. HBM 비중 최고.", "opt": {"report": "키움 박유악", "claim": "HBM OP 70조(+138%), 출하 +46%", "check": "컨센서스 EPS27 +32%, 2028 −6%로 완만. HBM 리더십은 실측 우위와 정합.", "verdict": "대체로 정합", "effect": "조정 없음. 다만 최근 1M −31% 급락은 이미 반영."}}, "micron": {"name": "Micron", "ccy": "$", "cur": 940.76, "chg": -7.02, "pe27": 5.7, "pb27": 10.5, "tp": null, "tpup": null, "eps": [65.9, 163.8, 173.4], "eps28dir": "+6% 상승 지속", "exposure": "DRAM + HBM + NAND 종합. 미국 유일 메모리, HBM3E 엔비디아 공급.", "opt": {"report": "—(컨센서스)", "claim": "EPS가 FY28까지 계속 상승(미피크)", "check": "멀티플이 5.8x로 오히려 보수적. 과낙관 징후 없음.", "verdict": "과낙관 아님", "effect": "가장 정직한 리스크/리워드. MC 기대 +12%."}}, "sandisk": {"name": "SanDisk", "ccy": "$", "cur": 1625.78, "chg": -9.01, "pe27": 7.3, "pb27": 15.2, "tp": 2432.96, "tpup": 0.496, "eps": [null, 221.7, null], "eps28dir": "상승(NAND 강세)", "exposure": "순수 NAND. 데이터센터 비중 38%(YoY 12%→), NBM 장기계약.", "opt": {"report": "한화 박제인", "claim": "TP $2,432.96(+60%), NAND 시장 CY27 5,000억$", "check": "현재 P/E 6.9x는 사이클 가정. NBM 플로어계약이 구조전환 근거 → Bayesian으로 P(구조적) 25→59.5%.", "verdict": "구조전환 논리 있음(단 NAND 가격 지속 검증 필요)", "effect": "Bayesian 반영: P/E 7→9x, MC 기대 +2%→+36%."}}}};
 var charts={};
 function destroy(id){if(charts[id]){try{charts[id].destroy();}catch(e){}charts[id]=null;}}
 function mk(id,cfg){try{destroy(id);var el=document.getElementById(id);if(el){charts[id]=new Chart(el,cfg);}}catch(e){console.error(id,e);}}
@@ -429,57 +448,27 @@ var cur='samsung';
 var CONF={samsung:'Low',skhynix:'Medium',micron:'Medium-High',sandisk:'Medium'};
 var VCONF={samsung:45,skhynix:58,micron:62,sandisk:50};
 var COV={samsung:72,skhynix:74,micron:70,sandisk:68};
-var DCF={samsung:{asof:'2026-08-19',price:247500,wacc:0.1193,coe:0.1207,rf:0.032,beta:1.479,erp:0.06,kd:0.045,we:0.9825,wd:0.0175,tg:0.025,taxr:0.20,normM:0.14,rev0:333.6,ebit0:50.1,da0:46.9,capex0:52.2,dnwc0:9.6,shares:6.737,netcash:28.9,evm:1596,fcff0:25.2,fcffN:22.5,cagrImplied:0.278,cagrImpliedNorm:0.295,fwdFV:70999,fwdEV:449,tvContrib:0.43,fwdUpside:-0.71,fwdConf:'Low',modelCAGR:0.06,sens:[['WACC +1%p',64435],['WACC −1%p',79129],['Terminal g +0.5%p',72747],['Terminal g −0.5%p',69426],['EBIT margin +1%p',76067],['EBIT margin −1%p',65930]],conflicts:['2026 매출 컨센서스 +119% YoY (2025 333조→729조)','함의 순마진 44% (불가능)','EPS 컨센서스 +615% vs 2025 실적 6,712']}};
+var DCF={samsung:{asof:'2026-08-20',price:247500,verified:true,wacc:0.119,coe:0.1207,rf:0.032,beta:1.479,erp:0.06,kd:0.045,we:0.9825,wd:0.0175,tg:0.025,eps26:48000,eps27:69276,eps28:70901,pe27:3.6,q2op:89.5,h1op:146.7,h1fcf:114,q2margin:52,netcash:167.6,evm:1486,impliedFCFF:140,peakFCFF:200,normOld:33,mcfv:416598,mcup:0.68}};
 function renderDCF(){
   var el=document.getElementById('dcfBox'); if(!el)return;
   var d=DCF[cur];
   if(!d){el.innerHTML='<section><h2><span class="k">DCF</span><span class="co">'+CD.fin[cur].name+'</span> 정식 DCF</h2><div class="ins"><span class="lbc ins">INSUFFICIENT RELIABLE FORECAST</span><br>컨센서스 전망 feed가 sanity check 미통과(또는 미계산). 임의 fair value 생성 금지(§A4). Samsung 먼저 검증 완료 → 확장 예정.</div></section>';return;}
-  var up=Math.round((d.fwdFV/d.price-1)*100);
-  var h='<section><h2><span class="k">DCF · REVERSE · GAP</span><span class="co">삼성전자</span> 정식 밸류에이션 (Phase A)</h2>';
-  h+='<div class="chipbar" style="margin-bottom:6px;gap:6px">'+
-     '<span class="mtr lbc model" data-lin="revdcf" data-co="samsung" style="cursor:pointer">Reverse DCF ▸</span>'+
-     '<span class="mtr lbc model" data-lin="expgap" data-co="samsung" style="cursor:pointer">Expectations Gap ▸</span>'+
-     '<span class="mtr lbc assum" data-lin="wacc" data-co="samsung" style="cursor:pointer">WACC ▸</span>'+
-     '<span class="mtr lbc assum" data-lin="tg" data-co="samsung" style="cursor:pointer">Terminal g ▸</span>'+
-     '<span class="q" style="font-size:10.5px">클릭=계보</span></div>';
-  h+='<div class="bad"><b>⚠ DATA CONFLICT — 컨센서스 전망 차단(§A28)</b><br>'+d.conflicts.map(function(c){return '• '+c+' <span class="lbc unv">REJECTED</span>';}).join('<br>')+'<br><span class="q">→ 오염 데이터로 fair value를 만들지 않음. 아래는 과거 실적(FACT)+정규화 가정(ASSUMPTION) 기반.</span></div>';
-  // Reverse DCF (robust headline)
-  h+='<h3>Reverse DCF — 현재가가 요구하는 것 <span class="lbc model">IMPLIED</span></h3>';
-  h+='<div class="ok"><b>현재가 '+d.price.toLocaleString()+'원을 정당화하려면</b> (WACC '+(d.wacc*100).toFixed(1)+'% · Terminal g '+(d.tg*100).toFixed(1)+'% 고정) → <b>향후 10년 FCFF CAGR ≈ '+(d.cagrImplied*100).toFixed(0)+'%</b> 필요. 고정=WACC·g, solve=FCFF CAGR (§A8).<br>정규화 base 기준으로도 ≈ '+(d.cagrImpliedNorm*100).toFixed(0)+'%. → <b>시장은 매우 공격적인 메모리 업사이클을 이미 반영.</b></div>';
-  // Expectations Gap (formal)
-  h+='<h3>Formal Expectations Gap <span class="lbc model">MODEL</span></h3>';
-  h+='<table><tbody><tr><td>Market-implied FCFF CAGR</td><td>'+(d.cagrImplied*100).toFixed(0)+'%</td><td class="q">현재가 역산</td></tr>'+
-     '<tr><td>Evidence/정규화 model CAGR</td><td>~'+(d.modelCAGR*100).toFixed(0)+'%</td><td class="q">과거 마진·성장 정규화</td></tr>'+
-     '<tr class="hl"><td><b>Expectations Gap</b></td><td class="down"><b>+'+Math.round((d.cagrImplied-d.modelCAGR)*100)+'%p</b></td><td class="q">시장 ≫ 증거</td></tr></tbody></table>';
-  h+='<div class="flag">Expectations Gap ≠ Expected Upside(§A10). Gap은 "시장 요구 성장 vs 우리 모델 성장"의 차이. 여기선 시장이 훨씬 높은 성장을 요구 → <b>현재가는 증거 대비 낙관적</b>. 단, 메모리 피크 마진(2022 EBITDA마진 28%)을 정규화 14%가 과소반영할 수 있음(사이클 caveat).</div>';
-  // WACC breakdown
+  var h='<section><h2><span class="k">DCF · REVERSE</span><span class="co">삼성전자</span> 정식 밸류에이션 (실측 검증)</h2>';
+  h+='<div class="chipbar" style="margin-bottom:6px;gap:6px"><span class="mtr lbc model" data-lin="revdcf" data-co="samsung" style="cursor:pointer">Reverse DCF ▸</span><span class="mtr lbc assum" data-lin="wacc" data-co="samsung" style="cursor:pointer">WACC ▸</span><span class="mtr lbc assum" data-lin="tg" data-co="samsung" style="cursor:pointer">Terminal g ▸</span><span class="q" style="font-size:10.5px">클릭=계보</span></div>';
+  h+='<div class="ok"><b>✅ 슈퍼사이클 실측 검증</b> — 2026 Q2 전사 영업이익 <b>'+d.q2op+'조</b>(사상최대, OPM '+d.q2margin+'%) · H1 <b>'+d.h1op+'조</b>. 컨센서스(매출 729조·EPS 48,000·NI 323조)가 실측 run-rate와 일치 → <b>이전 "DATA CONFLICT/과낙관" 판정 철회</b>. TrendForce Q2 DRAM +60%·Counterpoint 2026 DRAM +300%로 교차확인.</div>';
+  h+='<table><tbody>'+
+     '<tr><td>Fwd EPS 2026 / 2027</td><td>'+d.eps26.toLocaleString()+' / '+d.eps27.toLocaleString()+' <span class="lbc cons">CONS(검증)</span></td></tr>'+
+     '<tr><td>현재 Fwd P/E (2027)</td><td><b>'+d.pe27+'x</b> (peak 이익 · trough 멀티플)</td></tr>'+
+     '<tr class="mtr" data-lin="fv" data-co="samsung"><td>MC 공정가치(평균) 🔍</td><td>'+d.mcfv.toLocaleString()+'원 (+'+Math.round(d.mcup*100)+'%)</td></tr></tbody></table>';
+  h+='<h3>Reverse DCF — 현재가가 내포한 정상이익 <span class="lbc" style="background:#ede9fe;color:#5b21b6">IMPLIED</span></h3>';
+  h+='<div class="flag">EV(시총 − 순현금 '+d.netcash+'조) = <b>'+d.evm.toLocaleString()+'조</b>. WACC '+(d.wacc*100).toFixed(1)+'% · g '+(d.tg*100).toFixed(1)+'% 고정 시 <b>시장 내재 steady-state FCFF ≈ '+d.impliedFCFF+'조</b>.<br>과거 정상 FCF ~'+d.normOld+'조 ≪ 내재 '+d.impliedFCFF+'조 ≪ 2026 peak ~'+d.peakFCFF+'조 → <b>시장은 "과거보다 훨씬 높은 고원(plateau)이지만 2026 peak 대비 하락"을 반영.</b><br><span class="q">핵심 논쟁 = 슈퍼사이클 지속기간(정상화 속도). 이전의 "10년 28% CAGR 필요"는 트로프 2025를 base로 쓴 오류 → 정정.</span></div>';
   h+='<h3>WACC 분해 <span class="lbc assum">ASSUMPTION</span></h3>';
   h+='<table><tbody>'+
-     '<tr><td>Risk-free (KR 10y)</td><td>'+(d.rf*100).toFixed(1)+'% <span class="lbc assum">ASSUM</span></td></tr>'+
-     '<tr><td>Beta</td><td>'+d.beta+' <span class="lbc fact">FACT</span></td></tr>'+
-     '<tr><td>Equity Risk Premium</td><td>'+(d.erp*100).toFixed(1)+'% <span class="lbc assum">ASSUM</span></td></tr>'+
-     '<tr><td>Cost of Equity = rf + β×ERP</td><td>'+(d.coe*100).toFixed(2)+'%</td></tr>'+
-     '<tr><td>Cost of Debt (after-tax)</td><td>'+(d.kd*100).toFixed(1)+'% <span class="lbc assum">ASSUM</span></td></tr>'+
-     '<tr><td>Weights (E/D)</td><td>'+(d.we*100).toFixed(0)+'% / '+(d.wd*100).toFixed(0)+'%</td></tr>'+
-     '<tr class="hl"><td><b>WACC</b></td><td><b>'+(d.wacc*100).toFixed(2)+'%</b></td></tr></tbody></table>';
-  // Forward DCF waterfall
-  h+='<h3>Forward DCF (정규화 ASSUMPTION 시나리오) <span class="lbc model">MODEL</span> · <span class="lbc" style="background:#fee2e2;color:#991b1b">Conf '+d.fwdConf+'</span></h3>';
-  h+='<table><tbody>'+
-     '<tr><td>2025 매출 (base)</td><td>'+d.rev0+'조 <span class="lbc fact">FACT</span></td></tr>'+
-     '<tr><td>정규화 EBIT 마진</td><td>'+(d.normM*100).toFixed(0)+'% <span class="lbc assum">ASSUM</span></td></tr>'+
-     '<tr><td>세율 / Terminal g</td><td>'+(d.taxr*100).toFixed(0)+'% / '+(d.tg*100).toFixed(1)+'% <span class="lbc assum">ASSUM</span></td></tr>'+
-     '<tr><td>Base FCFF (2025, norm-tax)</td><td>'+d.fcff0+'조</td></tr>'+
-     '<tr><td>Enterprise Value</td><td>'+d.fwdEV+'조</td></tr>'+
-     '<tr><td>+ Net cash</td><td>'+d.netcash+'조 <span class="lbc fact">FACT</span></td></tr>'+
-     '<tr><td>÷ 주식수</td><td>'+d.shares+'B <span class="lbc fact">FACT</span></td></tr>'+
-     '<tr class="hl"><td><b>Intrinsic Value / share</b></td><td><b>'+d.fwdFV.toLocaleString()+'원</b> ('+up+'%)</td></tr>'+
-     '<tr><td>Terminal Value 비중</td><td>'+(d.tvContrib*100).toFixed(0)+'% '+(d.tvContrib>0.75?'⚠':'OK')+'</td></tr></tbody></table>';
-  h+='<div class="bad"><b>REVIEW REQUIRED(§A28)</b> — 정규화 DCF('+d.fwdFV.toLocaleString()+'원)와 현재가('+d.price.toLocaleString()+'원)가 크게 상이(-71%). 원인: ①정규화 마진 14%가 업사이클 과소반영 가능 ②WACC 11.9% 높음. <b>이 FV는 Low Confidence — 확정 적정가 아님.</b> Reverse DCF(위)가 더 견고.</div>';
-  // Sensitivity
-  h+='<h3>Sensitivity (FV/share, base '+d.fwdFV.toLocaleString()+') <span class="lbc model">MODEL</span></h3>';
-  h+='<table><tbody>'+d.sens.map(function(s){var pct=Math.round((s[1]/d.fwdFV-1)*100);return '<tr><td>'+s[0]+'</td><td>'+s[1].toLocaleString()+'원 ('+(pct>=0?'+':'')+pct+'%)</td></tr>';}).join('')+'</tbody></table>';
-  h+='<div class="ok" style="margin-top:8px"><b>Validation(§A27) PASS</b> — 산술 검증 · 민감도 방향(WACC↑→값↓, 마진↑→값↑, g↑→값↑) · 결측/오염 입력 차단 모두 통과.</div>';
-  h+='<div class="src">FACT: Bigdata.com FY2025 실적 · ASSUMPTION: rf/ERP/kd/정규화마진/g(명시) · 재현성: samsung_dcf.json 스냅샷</div>';
+     '<tr><td>Cost of Equity = rf + β×ERP</td><td>'+(d.coe*100).toFixed(2)+'% ('+(d.rf*100).toFixed(1)+'% + '+d.beta+'×'+(d.erp*100).toFixed(1)+'%)</td></tr>'+
+     '<tr><td>Cost of Debt · Weights(E/D)</td><td>'+(d.kd*100).toFixed(1)+'% · '+(d.we*100).toFixed(0)+'/'+(d.wd*100).toFixed(0)+'</td></tr>'+
+     '<tr class="hl"><td><b>WACC</b></td><td><b>'+(d.wacc*100).toFixed(2)+'%</b> <span class="lbc assum">ASSUM</span></td></tr></tbody></table>';
+  h+='<div class="bad"><b>주의(cycle caveat)</b> — EPS 69,276은 <b>슈퍼사이클 peak</b>. peak 이익에 mid 멀티플 적용 금지(§skill) → MC는 낮은 멀티플(6x) 사용. 핵심 리스크는 <b>사이클 하강 시점</b>(2029 컨센 EPS −19% 완만 반영). MC 공정가치는 EPS·멀티플 가정에 민감.</div>';
+  h+='<div class="src">FACT: Bigdata.com 2026 Q1/Q2 실적·시세(08-20) · CONS: 컨센서스(실측 검증) · ASSUM: WACC 구성·g · 교차검증: TrendForce/Counterpoint 뉴스</div>';
   h+='</section>';
   el.innerHTML=h;
 }
@@ -534,15 +523,15 @@ function LN(co,key){
     missing:['rf/ERP/kd는 시장데이터 미연결 → 가정값'],source:'가정 + β(Bigdata.com)'};}
   if(key==='tg'){ if(!d)return INS(co,'Terminal g'); return{label:'Terminal Growth',value:(d.tg*100).toFixed(1)+'%',type:'ASSUMPTION',confidence:'Medium',
     why:['장기 명목성장 근사','WACC('+(d.wacc*100).toFixed(1)+'%) > g 조건 충족'],source:'가정'};}
-  if(key==='expgap'){ if(!d)return INS(co,'Expectations Gap'); return{label:'Expectations Gap (formal)',value:'+'+Math.round((d.cagrImplied-d.modelCAGR)*100)+'%p',type:'MODEL',confidence:'Medium',
-    formula:'Market-implied FCFF CAGR − Evidence model CAGR',
-    calc:(d.cagrImplied*100).toFixed(0)+'% − '+(d.modelCAGR*100).toFixed(0)+'% = +'+Math.round((d.cagrImplied-d.modelCAGR)*100)+'%p',
-    parents:['revdcf'],why:['≠ Expected Upside. 시장이 요구하는 성장 vs 우리 모델 성장의 차이','시장이 훨씬 높음 → 현재가는 증거 대비 낙관'],
-    missing:['정규화 마진 14%가 피크 과소반영 가능(사이클 caveat)'],source:'Reverse DCF'};}
-  if(key==='revdcf'){ if(!d)return INS(co,'Reverse DCF'); return{label:'Market-implied FCFF CAGR',value:(d.cagrImplied*100).toFixed(0)+'%',type:'IMPLIED',confidence:'Medium',
-    formula:'현재가·순현금·WACC·g 고정 → EV=Σ FCFF/(1+WACC)^t + TV, solve 10y FCFF CAGR',
-    why:['고정: WACC '+(d.wacc*100).toFixed(1)+'% · g '+(d.tg*100).toFixed(1)+'% (§A8)','현재가가 요구하는 성장 = 매우 공격적'],
-    parents:['price','wacc','tg'],source:'Reverse DCF (2025 실적 base)'};}
+  if(key==='expgap'){ if(!d)return INS(co,'Expectations Gap'); return{label:'Expectations Gap (정상화 관점)',value:'peak→plateau',type:'MODEL',confidence:'Low',
+    formula:'시장 내재 steady FCFF vs 2026 peak FCFF',
+    why:['시장 내재 steady FCFF '+d.impliedFCFF+'조 vs 2026 peak ~'+d.peakFCFF+'조','핵심 = 슈퍼사이클 지속기간(정상화 속도)'],
+    parents:['revdcf'],source:'Reverse DCF (2026 실측 base)'};}
+  if(key==='revdcf'){ if(!d)return INS(co,'Reverse DCF'); return{label:'Market-implied steady FCFF',value:d.impliedFCFF+'조',type:'IMPLIED',confidence:'Medium',
+    formula:'EV = FCFF/(WACC−g) → FCFF_implied = EV×(WACC−g)',
+    calc:d.evm+'조 × ('+(d.wacc*100).toFixed(1)+'% − '+(d.tg*100).toFixed(1)+'%) = '+d.impliedFCFF+'조',
+    why:['과거 정상 ~'+d.normOld+'조 < 내재 '+d.impliedFCFF+'조 < 2026 peak ~'+d.peakFCFF+'조','시장은 고원(plateau)+peak 대비 하락 반영 (트로프 base 오류 정정)'],
+    parents:['price','wacc','tg'],source:'Reverse DCF (2026 실측 base)'};}
   // ---- MC valuation chain (all companies) ----
   if(key==='expret')return{label:'Expected Return',value:ret(m.exp_ret),type:'MODEL',confidence:CONF[co],
     formula:'Expected Fair Value (MC mean) ÷ Current Price − 1',
@@ -551,7 +540,8 @@ function LN(co,key){
     formula:'mean of 20,000-sim FV distribution;  FV = Fwd EPS × Cycle P/E',
     calc:'≈ '+fmt(eps,ccy)+' × '+m.fv_pe_mid+'x (median path)',parents:['epsdist','pedist'],
     mc:{sims:20000,vars:['epsdist','pedist']},source:'Monte Carlo',
-    why:['EPS 분포 × P/E 분포를 20,000회 샘플링']};
+    why:['EPS 분포 × P/E 분포를 20,000회 샘플링'],
+    missing:(co==='samsung'?['peak 이익 기반 — EPS 69,276은 슈퍼사이클 peak(실측 검증). peak에 낮은 멀티플(6x) 적용. 리스크=사이클 하강 시점.']:undefined)};
   if(key==='price')return{label:'Current Price',value:fmt(m.cur,ccy),type:'FACT',confidence:'High',
     formula:'거래소 정규장 종가',source:'Bigdata.com (FMP)',sourceDate:'2026-08-19',verification:'Cross-Checked'};
   if(key==='pup')return{label:'P(상승) = P(FV > Price)',value:pctS(m.p_up),type:'MODEL PROB',confidence:CONF[co],
@@ -573,7 +563,7 @@ function LN(co,key){
     missing:(m.tp?['단일 증권사 기준 · 컨센서스 TP 집계 아님']:['목표주가 없음(Micron: 미커버)'])};}
   if(key==='eps27')return{label:'Fwd EPS 2027 (MC input)',value:fmt(eps,ccy),type:'CONSENSUS',confidence:'Low',
     formula:'애널리스트 컨센서스 평균',method:'mean',source:'Bigdata.com consensus (2026-08-13)',
-    missing:(co==='samsung'?['⚠ CONFLICT: 20,330 vs annual feed 69,276 vs 2025 실적 6,712 불일치 → INPUT NOT FULLY VALIDATED','개별 증권사(삼성/키움/미래에셋) EPS 미추출 → per-broker source 없음(리포트는 산업 가정용)']
+    missing:(co==='samsung'?['✅ 실측 검증됨: 2026 Q1/Q2 실적(H1 EPS 17,712)·컨센(48,000/69,276)이 run-rate와 일치. 단 개별 증권사 EPS는 미추출(Bigdata 집계치)','peak 이익 — 사이클 하강 리스크는 별도(2029 −19% 완만)']
                             :['개별 증권사 EPS 미추출 → Bigdata 집계치만'])};
   if(key==='cyclepe')return{label:'Cycle P/E (assumption)',value:m.fv_pe_mid+'x',type:'ASSUMPTION',confidence:'Medium',
     formula:'"메모리 피크=저멀티플" 원칙으로 선택(주관)',
@@ -730,7 +720,8 @@ function renderMC(){
   mk('mcChart',{type:'bar',data:{labels:m.hist.c,datasets:[{data:m.hist.c.map(function(x,i){return {x:x,y:m.hist.n[i]};}),backgroundColor:m.hist.c.map(function(x){return x<m.cur?'rgba(220,38,38,.55)':'rgba(22,163,74,.55)';}),parsing:false,barPercentage:1,categoryPercentage:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:function(t){return fmt(t[0].parsed.x,m.ccy);},label:function(c){return '빈도 '+c.parsed.y;}}}},scales:{x:{type:'linear',min:m.hist.c[0]*0.98,max:maxX,ticks:{callback:function(v){return fmtK(v,m.ccy);},font:{size:10},maxTicksLimit:8}},y:{ticks:{font:{size:10}},title:{display:true,text:'시뮬 빈도',font:{size:10}}}}},plugins:plugs});
   document.getElementById('pctTable').innerHTML='<thead><tr><th>백분위</th><th>공정가치</th><th>현재가대비</th></tr></thead><tbody>'+['5','10','25','50','75','90','95'].map(function(p){var val=m.pct[p];var r=val/m.cur-1;return '<tr><td>P'+p+'</td><td>'+fmt(val,m.ccy)+'</td><td class="'+(r>=0?'up':'down')+'">'+ret(r)+'</td></tr>';}).join('')+'</tbody>';
   document.getElementById('probTable').innerHTML='<thead><tr><th>이벤트</th><th>확률</th></tr></thead><tbody><tr><td>상승(&gt;0%)</td><td>'+pctS(m.p_up)+'</td></tr><tr><td>+10%↑</td><td>'+pctS(m.p_up10)+'</td></tr><tr><td>+30%↑</td><td>'+pctS(m.p_up30)+'</td></tr><tr><td>−10%↓</td><td class="down">'+pctS(m.p_dn10)+'</td></tr><tr><td>−20%↓</td><td class="down">'+pctS(m.p_dn20)+'</td></tr></tbody>';
-  var o=CD.fin[cur].opt;document.getElementById('mcNote').innerHTML='<b>'+m.name+'</b> — 기대 '+ret(m.exp_ret)+', P(상승) '+pctS(m.p_up)+'. 리포트 과낙관: <b>'+o.verdict+'</b>. '+o.effect+' <span class="lbc model">MODEL PROB</span>(컨센 EPS×주관 P/E).';
+  var o=CD.fin[cur].opt;var rel=(cur==='samsung'?'<div class="ok" style="margin-bottom:6px">✅ <b>실측 검증</b> — 삼성 EPS는 2026 Q1/Q2 실적으로 확인된 슈퍼사이클(전 판정 철회). 단 이는 <b>peak 이익</b>이라 MC는 낮은 멀티플(6x) 사용, 핵심 리스크는 사이클 하강 시점(📐설계 탭 참조).</div>':'');
+  document.getElementById('mcNote').innerHTML=rel+'<b>'+m.name+'</b> — 기대 '+ret(m.exp_ret)+', P(상승) '+pctS(m.p_up)+'. 리포트 과낙관: <b>'+o.verdict+'</b>. '+o.effect+' <span class="lbc model">MODEL PROB</span>(컨센 EPS×주관 P/E).';
 }
 function tornadoInit(){
   var tor=[['삼성 HBM4 NVIDIA 퀄',100,'#dc2626'],['컨센 EPS 리비전(2028)',85,'#d97706'],['사이클 P/E',80,'#d97706'],['HBM/범용/NAND ASP',70,'#d97706'],['CXMT 램프',55,'#2563eb'],['하이퍼스케일러 Capex',48,'#2563eb'],['NAND NBM 계약',40,'#16a34a']];
@@ -781,7 +772,96 @@ document.addEventListener('click',function(e){
   if(a.getAttribute('data-fullaudit')){openFullAudit(a.getAttribute('data-fullaudit'),a.getAttribute('data-co'));}
   else if(a.getAttribute('data-lin')){openLin(a.getAttribute('data-lin'),a.getAttribute('data-co'));}
 });
+var IDS={samsung:'B811D5',skhynix:'482909',micron:'49BBBC',sandisk:'E5AAB0'};
+var lastNews=null;var lastReports=null;
+function pAbove(h,cur,mult){var num=0,den=0;for(var i=0;i<h.c.length;i++){den+=h.n[i];if(h.c[i]>cur*mult)num+=h.n[i];}return den?Math.round(num/den*1000)/1000:0;}
+function pBelow(h,cur,mult){var num=0,den=0;for(var i=0;i<h.c.length;i++){den+=h.n[i];if(h.c[i]<cur*mult)num+=h.n[i];}return den?Math.round(num/den*1000)/1000:0;}
+function currentView(){var v=document.querySelector('.pbtn.active');return v?v.getAttribute('data-v'):'home';}
+function rerender(){var v=currentView();if(v==='home')ovInit();else if(v==='screener')screenerInit();else if(v==='memory')renderMemTab(memActiveTab());}
+function refreshQuotes(){
+  var st=document.getElementById('liveStamp');
+  if(!(window.cowork&&window.cowork.callMcpTool)){st.innerHTML='⚠ 실시간 시세는 데스크톱 Cowork에서만 가능 · 이 화면(모바일/웹)은 스냅샷 2026-08-21';return;}
+  st.textContent='⏳ 실시간 시세 불러오는 중…';
+  var order=['samsung','skhynix','micron','sandisk'],done=0,ok=0;
+  order.forEach(function(k){
+    window.cowork.callMcpTool('mcp__4b6a0cee-d177-494b-b93d-81517c1a06e5__bigdata_company_tearsheet',{rp_entity_id:IDS[k],company_type:'Public',sections:['company_overview']})
+    .then(function(r){try{var d=(r&&r.structuredContent)?r.structuredContent:JSON.parse(r.content[0].text);
+      var cm=(d.price_performance&&d.price_performance.current_market)?d.price_performance.current_market:null;
+      var px=cm?cm.current_price:(d.company_overview&&d.company_overview.price);
+      if(px){var m=MC[k];m.cur=px;var eps=CD.fin[k].eps[1];m.cur_pe=Math.round(px/eps*10)/10;m.ev=m.ev;m.exp_ret=Math.round((m.ev/px-1)*1000)/1000;
+        m.p_up=pAbove(m.hist,px,1);m.p_up10=pAbove(m.hist,px,1.1);m.p_up30=pAbove(m.hist,px,1.3);m.p_dn10=pBelow(m.hist,px,0.9);m.p_dn20=pBelow(m.hist,px,0.8);
+        CD.fin[k].cur=px;CD.val[k].cur=px;CD.fin[k].pe27=m.cur_pe;ok++;}
+    }catch(e){console.error('parse '+k,e);}}).catch(function(e){console.error('call '+k,e);})
+    .then(function(){done++;if(done===order.length){var now=new Date();st.innerHTML='🟢 실시간 '+now.toLocaleTimeString('ko-KR')+' ('+ok+'/4 갱신) · Bigdata.com';rerender();}});
+  });
+}
+function feedList(arr,kind){
+  if(!arr||!arr.length)return '<div class="q">최근 2일(D-2) 이내 '+(kind==='reports'?'증권사 리포트':'뉴스')+' 없음.</div>';
+  return arr.slice(0,20).map(function(x){var ts=(x.timestamp||'').slice(0,10);var src=(x.source&&x.source.name)?x.source.name:(x.source||'');
+    return '<div class="arow" style="display:block"><div><b style="font-size:12px">'+(x.headline||x.title||'(제목없음)')+'</b></div><div class="q" style="font-size:10.5px">'+src+' · '+ts+(x.url?' · <a href="'+x.url+'" target="_blank" rel="noopener">원문</a>':'')+'</div></div>';}).join('');
+}
+function loadNews(){
+  var ov=document.getElementById('auditOv'); if(!ov)return;
+  if(!(window.cowork&&window.cowork.callMcpTool)){ov.innerHTML='<div class="auditbox"><span class="close">✕</span><h4>📰 최신 피드</h4><div class="bad">⚠ 외부 데이터 호출은 <b>데스크톱 Cowork에서만</b> 가능. 이 화면(모바일/웹 정적)은 Bigdata 호출 불가.</div></div>';ov.classList.add('on');return;}
+  ov.innerHTML='<div class="auditbox"><span class="close">✕</span><h4>📰 최신 피드</h4><div class="q">⏳ Bigdata에서 뉴스·리포트 불러오는 중…</div></div>';ov.classList.add('on');
+  var end=new Date().toISOString(),start=new Date(Date.now()-2*86400000).toISOString();
+  var base='DRAM HBM NAND memory Samsung SK hynix Micron SanDisk price ASP earnings guidance market share capex';
+  function q(dt){return window.cowork.callMcpTool('mcp__4b6a0cee-d177-494b-b93d-81517c1a06e5__bigdata_search',{request:{search_mode:'fast',query:{text:base,max_chunks:20,filters:{document_type:{mode:'INCLUDE',values:[dt]},timestamp:{start:start,end:end}}}}})
+    .then(function(r){var d=(r&&r.structuredContent)?r.structuredContent:JSON.parse(r.content[0].text);return d.results||[];})
+    .catch(function(e){console.error('search '+dt,e);return [];});}
+  var srt=function(a,b){return Date.parse(b.timestamp||0)-Date.parse(a.timestamp||0);};
+  // 증권사·리서치 신호 → 리포트, 나머지 → 뉴스 (이 인덱스는 sell-side가 뉴스와이어로 요약 재게재됨)
+  var RX=/securit(y|ies)|research|analyst|target price|price target|\brating\b|upgrade|downgrade|estimat|reiterat|initiat|coverage|outperform|overweight|underweight|Morgan Stanley|Goldman|JPMorgan|J\.?P\.? Morgan|Citi|Bank of America|BofA|\bUBS\b|Nomura|Jefferies|Bernstein|Mizuho|Huatai|Daiwa|Macquarie|HSBC|Barclays|Wells Fargo|Kiwoom|Mirae|Hanwha|증권|리서치|목표주가|투자의견|애널리스트/i;
+  function isRep(x){var s=(x.headline||x.title||'')+' '+((x.source&&x.source.name)||'')+' '+((x.chunks&&x.chunks[0]&&x.chunks[0].text)||'');return RX.test(s);}
+  Promise.all([q('NEWS'),q('INVESTMENT-RESEARCH')]).then(function(pair){
+    var all=(pair[0]||[]).concat(pair[1]||[]),seen={},uniq=[];
+    all.forEach(function(x){if(x&&x.id&&!seen[x.id]){seen[x.id]=1;uniq.push(x);}});
+    var irIds={};(pair[1]||[]).forEach(function(x){if(x&&x.id)irIds[x.id]=1;});
+    var reps=[],news=[];uniq.forEach(function(x){if(irIds[x.id]||isRep(x))reps.push(x);else news.push(x);});
+    reps.sort(srt);news.sort(srt);lastReports=reps;lastNews=news;
+    var canAI=!!(window.cowork&&window.cowork.askClaude);
+    var stamp='Bigdata.com · 최근 2일(D-2) · '+new Date().toLocaleString('ko-KR');
+    var h='<div class="auditbox"><span class="close">✕</span><h4>📰 최신 피드 <span class="q" style="font-size:10.5px">'+stamp+'</span></h4>';
+    h+='<div id="feedTabs" style="display:flex;gap:6px;margin:4px 0 8px">'+
+       '<button class="cbtn feedtab" data-fk="reports" style="background:var(--violet);color:#fff;border-color:var(--violet)">📑 리포트 ('+reps.length+')</button>'+
+       '<button class="cbtn feedtab" data-fk="news">📰 뉴스 ('+news.length+')</button></div>';
+    // 리포트 pane
+    h+='<div id="feedReports" class="feedpane">';
+    h+='<div style="margin:2px 0 8px">'+((canAI&&reps.length)?'<button class="cbtn" id="analyzeBtn" style="background:var(--violet);color:#fff;border-color:var(--violet)">🔬 리포트 분석하기 (검산·충돌분석)</button>':(canAI?'<span class="q" style="font-size:10.5px">분석할 리포트(최근 2일)가 없어요 — 뉴스 탭 확인</span>':'<span class="q" style="font-size:10.5px">🔬 분석은 데스크톱 Cowork에서만</span>'))+'</div><div id="anaOut"></div>';
+    h+=feedList(reps,'reports');
+    h+='<div class="src">리포트성(증권사·리서치 언급) · Tier B~C. 이 인덱스는 sell-side가 뉴스와이어로 <b>요약 재게재</b>됨(원문 아님). 단독으로 valuation 가정 변경 금지(§Rule3) — 검산 후 Assumption Review.</div></div>';
+    // 뉴스 pane (초기 숨김)
+    h+='<div id="feedNews" class="feedpane" style="display:none">';
+    h+=feedList(news,'news');
+    h+='<div class="src">뉴스(NEWS) · Tier C. Early Warning·Evidence Discovery용. News→Event→Variable→Assumption Review(§Rule3), valuation 직접 변경 금지.</div></div>';
+    h+='</div>';
+    ov.innerHTML=h;
+    var tabs=ov.querySelectorAll('.feedtab');
+    tabs.forEach(function(t){t.addEventListener('click',function(){var fk=t.getAttribute('data-fk');
+      var rp=document.getElementById('feedReports'),nw=document.getElementById('feedNews');
+      if(rp)rp.style.display=(fk==='reports')?'block':'none';if(nw)nw.style.display=(fk==='news')?'block':'none';
+      tabs.forEach(function(z){z.style.background='';z.style.color='';z.style.borderColor='';});
+      t.style.background='var(--violet)';t.style.color='#fff';t.style.borderColor='var(--violet)';});});
+    var ab=document.getElementById('analyzeBtn'); if(ab)ab.addEventListener('click',analyzeReports);
+  }).catch(function(e){ov.innerHTML='<div class="auditbox"><span class="close">✕</span><h4>📰 최신 피드</h4><div class="bad">호출 오류: '+(e&&e.message?e.message:e)+'</div></div>';console.error(e);});
+}
+function analyzeReports(){
+  var out=document.getElementById('anaOut'); if(!out)return;
+  if(!(window.cowork&&window.cowork.askClaude)){out.innerHTML='<div class="bad">🔬 분석 불가 — askClaude는 데스크톱 Cowork에서만 동작(모바일/Vercel 정적버전 미지원).</div>';return;}
+  var arr=(lastReports&&lastReports.length)?lastReports:lastNews;
+  if(!arr||!arr.length){out.innerHTML='<div class="q">분석할 리포트가 없습니다.</div>';return;}
+  var usingNews=!(lastReports&&lastReports.length);
+  out.innerHTML='<div class="q">⏳ '+(usingNews?'리포트 없음 → 뉴스로 대체 분석 중':'리포트 분석 중')+' — 숫자 추출 · 검산 · 리포트 간 충돌/괴리 분석…</div>';
+  var data=arr.slice(0,20).map(function(x){var ts=(x.timestamp||'').slice(0,10);var src=(x.source&&x.source.name)?x.source.name:(x.source||'');var body='';if(x.chunks&&x.chunks.length){body=x.chunks.map(function(c){return (typeof c==='string')?c:(c.text||'');}).join(' ');}else if(x.summary){body=x.summary;}return (x.headline||x.title||'(제목없음)')+' | 출처:'+src+' | 날짜:'+ts+' | 발췌: '+body;});
+  var prompt='당신은 반도체·메모리(DRAM/HBM/NAND) 전문 리서치 애널리스트다. 아래는 최근 2일 증권사 리포트(또는 뉴스) 발췌들이다. 우리 방법론으로 분석해 한국어로 간결·구조적으로 답하라.\n\n[1] 핵심 숫자 추출: 지표=값 (출처·날짜) 형태로. HBM/DRAM/NAND ASP·bit growth·매출·영업이익·EPS·목표주가·capex 등. 발췌에 없는 값은 지어내지 말고 unknown.\n[2] 내부 검산: 매출=출하×ASP, EPS 브릿지 등 리포트 내부 산수가 정합적인지 (가능한 것만).\n[3] 리포트 간 충돌/괴리: 같은 지표에 서로 다른 값이 있으면 나란히 제시하고 "왜 다른가"(가정 차이: 수요 강도, ASP 가정, 점유율, 사이클 타이밍 등)를 분석. 평균내지 말고 차이의 원인을 찾아라.\n[4] 밸류에이션 가정 함의: 위 내용이 우리 모델 가정에 주는 시사점을 "Assumption Review 후보"로만 제시(자동 변경 금지). 각 항목에 방향(↑/↓/유지)과 신뢰도(Low/Mod/High).\n[5] 과낙관 신호: 컨센서스/역사 최대치 대비 과도한 주장이 있으면 지적.\n\n숫자를 창작하지 말 것. 근거 부족은 "Insufficient Evidence"로 표기.';
+  window.cowork.askClaude(prompt,data).then(function(o){
+    var t=(typeof o==='string')?o:(o&&(o.text||o.content||o.output||o.result))||JSON.stringify(o);
+    out.innerHTML='<div class="ok" style="white-space:pre-wrap;font-size:12px;line-height:1.5"><b>🔬 '+(usingNews?'뉴스':'리포트')+' 분석 (Haiku · 발췌 스니펫 기반 1차)</b>\n\n'+String(t).replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div><div class="src">발췌(스니펫) 기반 1차 분석 — <b>자동으로 valuation 가정을 바꾸지 않음</b>(§Rule3, Assumption Review 후보만). 정식 검산·DCF 반영은 전체 리포트 원문 + DCF 엔진 필요.</div>';
+  }).catch(function(e){out.innerHTML='<div class="bad">분석 오류: '+(e&&e.message?e.message:e)+'</div>';console.error(e);});
+}
 function boot(){
+  var rb=document.getElementById('refreshBtn'); if(rb)rb.addEventListener('click',refreshQuotes);
+  var nb=document.getElementById('newsBtn'); if(nb)nb.addEventListener('click',loadNews);
   var ov=document.getElementById('auditOv');
   if(!ov){ov=document.createElement('div');ov.id='auditOv';document.body.appendChild(ov);
     ov.addEventListener('click',function(e){if(e.target.id==='auditOv'||(e.target.className&&e.target.className.indexOf('close')>=0)){ov.classList.remove('on');}});}
