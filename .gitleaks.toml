@@ -1,27 +1,23 @@
-# gitleaks 설정 — secret-scan.yml (gitleaks/gitleaks-action@v2) 이 루트에서 자동 인식.
-# 기본 룰셋 위에 이 프로젝트 고유 키 형태(OpenDART 40-hex)를 추가하고,
-# 값이 아니라 '이름'만 담은 템플릿 / 기계 생성·이미 마스킹된 산출물만 allowlist 한다.
+# gitleaks 설정 — secret-scan.yml (gitleaks/gitleaks-action@v3) 이 루트에서 자동 인식.
+# 기본 룰셋(useDefault) + 이 프로젝트 고유 규칙 2개. allowlist 없음 — 어느 경로든 예외 없이 탐지.
 
 title = "AI주식리서치 gitleaks"
 
 [extend]
 useDefault = true
 
+# OpenDART 인증키 (40 hex). 대입문 / JSON / 인증키 파라미터 형태 모두.
 [[rules]]
 id = "opendart-api-key"
-description = "OpenDART 인증키 (40 hex) — 대입문 또는 인증키 파라미터"
-regex = '''(?i)(opendart_api_key|crtfc_key)\s*[=:]\s*["']?[0-9a-fA-F]{40}["']?'''
+description = "OpenDART 40-hex key assignment or crtfc param"
+regex = '''(?i)(opendart_api_key|crtfc_key)["']?\s*[=:]\s*["']?[0-9a-fA-F]{40}["']?'''
 keywords = ["opendart_api_key", "crtfc_key"]
 
-[allowlist]
-description = "값 없는 템플릿 + 이미 _redact_meta 로 마스킹된 기계 생성 산출물 (실제 키 대입은 여전히 위 룰이 탐지)"
-paths = [
-  '''(^|/)data_sources/\.env\.example$''',
-  '''(^|/)data_sources/store/raw/''',
-  '''(^|/)web_deploy/index\.html$''',
-  '''반도체_메모리_대시보드/index\.html$''',
-]
-regexes = [
-  # .env.example 의 SEC User-Agent 예시 라인 (실제 값 아님)
-  '''SEC_EDGAR_USER_AGENT=AI Stock Research your-email@example\.com''',
-]
+# SEC EDGAR User-Agent 컨텍스트의 실제 이메일 주소.
+# 같은 줄에 SEC_EDGAR_USER_AGENT / user_agent / user-agent / "User Agent" 토큰이 있고
+# 그 뒤에 이메일 형태가 오면 매칭. 각괄호 플레이스홀더처럼 골뱅이가 없는 값은 매칭되지 않는다.
+[[rules]]
+id = "sec-edgar-user-agent-email"
+description = "Real email in a SEC EDGAR User-Agent field"
+regex = '''(?i)(sec_edgar_user_agent|user[_ -]?agent)[^\n]*?[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}'''
+keywords = ["sec_edgar_user_agent", "user_agent", "user-agent", "user agent", "useragent"]

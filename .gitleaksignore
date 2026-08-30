@@ -1,0 +1,10 @@
+# gitleaks 무시 목록 — 커밋 fingerprint 단위 (commit:file:rule:startline).
+# 파일/폴더 allowlist 아님. 여기 등록된 "과거 커밋의 특정 줄"만 스캔에서 제외된다.
+# 현재/미래 커밋의 동일 패턴은 계속 탐지된다.
+
+# ── b8ded90 "Add research pipeline, valuation engine, and Codespaces setup" ──
+#    도입 시점에 들어간 SEC User-Agent 예제 이메일 3건. 도메인 @example.com =
+#    RFC 2606 예약 도메인(실제 주소 아님). 현재 작업 트리에서는 전부 <CONTACT_EMAIL> 로 교체됨.
+b8ded90c0c29dfe25a3a1125897147630b01d0a6:README.md:sec-edgar-user-agent-email:42
+b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/.env.example:sec-edgar-user-agent-email:10
+b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/sec_edgar/README.md:sec-edgar-user-agent-email:17

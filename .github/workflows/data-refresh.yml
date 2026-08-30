@@ -1,7 +1,8 @@
 name: data-refresh
 
 # 로컬 머신이 네트워크 차단 상태라 라이브 공시 동기화를 GitHub 러너에서 대신 돌린다.
-# 주 1회 + 수동. 갱신된 store/ 만 커밋백한다 (코드 · .env · 대시보드는 절대 건드리지 않음).
+# 주 1회 + 수동. 갱신된 store/ 만 담아 **chore/data-refresh-<UTC시각> 브랜치로 push** 한다.
+# main 에 직접 커밋하지 않는다. PR 은 사용자가 직접 생성한다 (Vercel Production 자동배포 방지).
 
 on:
   schedule:
@@ -24,14 +25,15 @@ jobs:
       PYTHONUTF8: "1"
       PYTHONIOENCODING: "utf-8"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: data_sources/requirements.txt
 
       - name: Install deps
         run: |
@@ -68,24 +70,31 @@ jobs:
           python -m data_sources.tests.test_phase_d
           python -m data_sources.tests.test_phase_e1
 
-      - name: Diff-scope guard + commit
+      - name: Diff-scope guard + push refresh branch
         run: |
           set -euo pipefail
           CHANGED="$(git status --porcelain)"
           if [ -z "$CHANGED" ]; then
-            echo "변경 없음 — 커밋 생략"; exit 0
+            echo "변경 없음 — push 생략"
+            echo "## data-refresh: 변경 없음 (store/ 갱신분 없음)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
           echo "$CHANGED"
           # store/ 밖의 변경이 하나라도 있으면 데이터 잡이 건드릴 게 아니다 → 중단
           OUTSIDE="$(git status --porcelain | awk '{print $2}' | grep -v '^data_sources/store/' || true)"
           if [ -n "$OUTSIDE" ]; then
-            echo "::error::store/ 밖 변경 감지 — 커밋 중단:"; echo "$OUTSIDE"; exit 1
+            echo "::error::store/ 밖 변경 감지 — push 중단:"; echo "$OUTSIDE"; exit 1
           fi
+          BR="chore/data-refresh-$(date -u +%Y%m%d-%H%M)"
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BR"
           git add data_sources/store
-          git commit -m "chore(data): scheduled sync $(date -u +%F)"
-          for i in 1 2 3; do
-            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break
-            echo "push 재시도 $i"; sleep 5
-          done
+          git commit -m "chore(data): live sync $(date -u +%F)"
+          git push origin "$BR"
+          {
+            echo "## data-refresh → \`$BR\` push 완료"
+            echo ""
+            echo "**PR 은 직접 생성하세요:**"
+            echo "https://github.com/${GITHUB_REPOSITORY}/compare/main...${BR}?expand=1"
+          } >> "$GITHUB_STEP_SUMMARY"
