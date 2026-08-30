@@ -36,6 +36,11 @@ jobs:
           pip install -r data_sources/requirements.txt
           # playwright 브라우저는 CI 불필요 (hankyung_global 수집 전용)
 
+      - name: Regenerate store from committed raw/ (offline)
+        # normalized·derived 는 .gitignore 대상 → 클론(체크아웃) 직후 재생성 필요.
+        # 네트워크·API 키 불필요 (Phase D company cache + netguard).
+        run: python -m data_sources.run_sync --all --force --no-network --force-derived
+
       - name: test_phase_b
         run: python -m data_sources.tests.test_phase_b
 
