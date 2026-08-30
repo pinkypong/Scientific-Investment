@@ -1,0 +1,91 @@
+name: data-refresh
+
+# 로컬 머신이 네트워크 차단 상태라 라이브 공시 동기화를 GitHub 러너에서 대신 돌린다.
+# 주 1회 + 수동. 갱신된 store/ 만 커밋백한다 (코드 · .env · 대시보드는 절대 건드리지 않음).
+
+on:
+  schedule:
+    - cron: "0 18 * * 0"   # 매주 일 18:00 UTC = 월 03:00 KST
+  workflow_dispatch:
+
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      OPENDART_API_KEY: ${{ secrets.OPENDART_API_KEY }}
+      SEC_EDGAR_USER_AGENT: ${{ secrets.SEC_EDGAR_USER_AGENT }}
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r data_sources/requirements.txt
+
+      - name: Fail fast if secrets missing
+        run: |
+          test -n "$OPENDART_API_KEY" || { echo "::error::OPENDART_API_KEY secret 미설정"; exit 1; }
+          test -n "$SEC_EDGAR_USER_AGENT" || { echo "::error::SEC_EDGAR_USER_AGENT secret 미설정"; exit 1; }
+
+      - name: Live sync (online)
+        run: python -m data_sources.run_sync --all --force --force-derived
+
+      - name: Health gate
+        run: |
+          python - <<'PY'
+          import json, sys, pathlib
+          h = json.loads(pathlib.Path("data_sources/store/source_health.json").read_text("utf-8"))
+          bad = {k: v.get("status") for k, v in h.items()
+                 if v.get("status") in ("ERROR", "NOT_CONFIGURED")}
+          if bad:
+              print("::error::unhealthy providers:", bad); sys.exit(1)
+          print("health OK:", {k: v.get("status") for k, v in h.items()})
+          PY
+
+      - name: Build check
+        run: python -m data_sources.build_dashboard_data --check
+
+      - name: Regression suite (new data must not break tests)
+        run: |
+          python -m data_sources.tests.test_phase_b
+          python -m data_sources.tests.test_phase_c
+          python -m data_sources.tests.test_phase_d
+          python -m data_sources.tests.test_phase_e1
+
+      - name: Diff-scope guard + commit
+        run: |
+          set -euo pipefail
+          CHANGED="$(git status --porcelain)"
+          if [ -z "$CHANGED" ]; then
+            echo "변경 없음 — 커밋 생략"; exit 0
+          fi
+          echo "$CHANGED"
+          # store/ 밖의 변경이 하나라도 있으면 데이터 잡이 건드릴 게 아니다 → 중단
+          OUTSIDE="$(git status --porcelain | awk '{print $2}' | grep -v '^data_sources/store/' || true)"
+          if [ -n "$OUTSIDE" ]; then
+            echo "::error::store/ 밖 변경 감지 — 커밋 중단:"; echo "$OUTSIDE"; exit 1
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_sources/store
+          git commit -m "chore(data): scheduled sync $(date -u +%F)"
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            echo "push 재시도 $i"; sleep 5
+          done

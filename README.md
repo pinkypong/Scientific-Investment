@@ -41,14 +41,17 @@ python -m data_sources.valuation.context --check                         # cover
 | `OPENDART_API_KEY` | 한국 공시 **실수집** 시에만. 재생성·테스트에는 불필요 |
 | `SEC_EDGAR_USER_AGENT` | SEC 정책상 이름+이메일. 예: `AI Stock Research you@example.com` |
 
-로컬은 `data_sources/.env.example` 을 `.env` 로 복사해 채운다.
+로컬은 `data_sources/.env.example` 을 `.env` 로 복사해 채운다. GitHub Actions 에서는
+Repository secret (`Settings → Secrets and variables → Actions`) 으로 넣는다 — `data-refresh`
+워크플로우만 필요하고 `ci`·`secret-scan` 은 시크릿 없이 돈다. 자세한 건 `docs/workflow.md`.
 
 ## 어디서부터 읽나
 
 1. `AGENTS.md` — 항상 적용 규칙
-2. `docs/research/valuation/next-session.md` — 새 세션 시작점 (현재 Phase A~E1 완료)
-3. 필요할 때만 `docs/research/valuation/pipeline-spec.md` — 전체 스펙
-4. `data_sources/README.md` — 파이프라인 레이아웃·명령
+2. `docs/workflow.md` — 로컬 개발 → GitHub CI/CD 루프, 시크릿 취급, pre-commit 훅
+3. `docs/research/valuation/next-session.md` — 새 세션 시작점 (현재 Phase A~E1 완료)
+4. 필요할 때만 `docs/research/valuation/pipeline-spec.md` — 전체 스펙
+5. `data_sources/README.md` — 파이프라인 레이아웃·명령
 
 긴 문서를 처음부터 전문 요약하지 말 것. 지금 필요한 부분만 읽는다.
 

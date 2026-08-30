@@ -1,0 +1,55 @@
+name: CI
+
+# 테스트 · 빌드 검증. 전부 오프라인(--no-network 상당) — 커밋된 store/raw/ 만 사용하므로
+# 시크릿이 전혀 필요 없다. 라이브 API 동기화는 data-refresh.yml 에서만.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r data_sources/requirements.txt
+          # playwright 브라우저는 CI 불필요 (hankyung_global 수집 전용)
+
+      - name: test_phase_b
+        run: python -m data_sources.tests.test_phase_b
+
+      - name: test_phase_c
+        run: python -m data_sources.tests.test_phase_c
+
+      - name: test_phase_d
+        run: python -m data_sources.tests.test_phase_d
+
+      - name: test_phase_e1
+        run: python -m data_sources.tests.test_phase_e1
+
+      - name: build_dashboard_data --check
+        run: python -m data_sources.build_dashboard_data --check
+
+      - name: valuation.context --check
+        run: python -m data_sources.valuation.context --check

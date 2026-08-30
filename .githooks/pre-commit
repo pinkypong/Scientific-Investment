@@ -1,0 +1,70 @@
+#!/bin/sh
+# 로컬 커밋 방어장치. 활성화:  git config core.hooksPath .githooks
+#   (scripts/setup-hooks.sh 또는 scripts/setup-hooks.ps1)
+#
+# 차단 대상
+#   1. 스테이징된 blob 안의 API 키 패턴 (OpenDART 40-hex, crtfc_key, SEC UA 이메일)
+#   2. 경로가 /.env 로 끝나는 파일
+#   3. data_sources/store/raw/ 밑의 쓰레기 스냅샷 (2KB 미만 또는 _meta.result_count/concept_count == 0)
+#
+# 검증된 오탐이면:  git commit --no-verify
+
+set -u
+fail=0
+note() { printf '%s\n' "$*" >&2; }
+
+# 스테이징된(추가/수정) 파일 목록 — NUL 구분
+staged=$(git diff --cached --name-only --diff-filter=ACM -z | tr '\0' '\n')
+[ -z "$staged" ] && exit 0
+
+printf '%s\n' "$staged" | while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  case "$f" in
+    data_sources/.env.example) continue ;;   # 값 없는 템플릿 — 허용
+  esac
+
+  # ── 2. .env 파일 자체
+  case "$f" in
+    */.env|.env)
+      note "BLOCK  $f  — .env 는 커밋 금지 (data_sources/.env 에만 로컬 보관)"
+      echo x >> "$(git rev-parse --git-dir)/.pc_fail"; continue ;;
+  esac
+
+  blob=$(git show ":$f" 2>/dev/null) || continue
+
+  # ── 1. 시크릿 패턴 (매칭 문자열은 출력하지 않는다)
+  if printf '%s' "$blob" | grep -Eq '(OPENDART_API_KEY|crtfc_key)[[:space:]]*[=:][[:space:]]*"?[0-9a-fA-F]{40}"?'; then
+    note "BLOCK  $f  — OpenDART 키로 보이는 문자열"
+    echo x >> "$(git rev-parse --git-dir)/.pc_fail"; continue
+  fi
+  if printf '%s' "$blob" | grep -Eq 'SEC_EDGAR_USER_AGENT[[:space:]]*=[[:space:]]*[^[:space:]]+@[^[:space:]]+\.[A-Za-z]'; then
+    if ! printf '%s' "$blob" | grep -Eq 'your-email@example\.com'; then
+      note "BLOCK  $f  — 실제 이메일이 담긴 SEC_EDGAR_USER_AGENT"
+      echo x >> "$(git rev-parse --git-dir)/.pc_fail"; continue
+    fi
+  fi
+
+  # ── 3. store/raw 쓰레기 스냅샷
+  case "$f" in
+    data_sources/store/raw/*)
+      sz=$(printf '%s' "$blob" | wc -c)
+      if [ "$sz" -lt 2048 ]; then
+        note "BLOCK  $f  — raw 스냅샷이 ${sz}B (2KB 미만 = 네트워크 실패 스텁 가능성)"
+        echo x >> "$(git rev-parse --git-dir)/.pc_fail"; continue
+      fi
+      if printf '%s' "$blob" | grep -Eq '"(result_count|concept_count)":[[:space:]]*0[[:space:],}]'; then
+        note "BLOCK  $f  — raw _meta 에 result_count/concept_count == 0 (빈 응답)"
+        echo x >> "$(git rev-parse --git-dir)/.pc_fail"; continue
+      fi ;;
+  esac
+done
+
+gd=$(git rev-parse --git-dir)
+if [ -f "$gd/.pc_fail" ]; then
+  n=$(wc -l < "$gd/.pc_fail" | tr -d ' ')
+  rm -f "$gd/.pc_fail"
+  note ""
+  note "pre-commit: ${n}건 차단. 벗어나려면 원인을 고치거나, 확인된 오탐이면  git commit --no-verify"
+  exit 1
+fi
+exit 0
