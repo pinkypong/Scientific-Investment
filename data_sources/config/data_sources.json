@@ -31,7 +31,7 @@
       "enabled": true,
       "source_class": "PRIMARY_OFFICIAL",
       "user_agent": "",
-      "_user_agent_note": "SEC 정책상 이름+이메일 필수. 비우면 환경변수 SEC_EDGAR_USER_AGENT 사용. 예: 'AI Stock Research eigoogy1209@gmail.com'",
+      "_user_agent_note": "SEC 정책상 이름+이메일 필수. 비우면 환경변수 SEC_EDGAR_USER_AGENT 사용. 예: 'AI Stock Research <CONTACT_EMAIL>'",
       "request_delay_sec": 0.4,
       "update_policy_sec": 86400,
       "raw_cache_ttl_sec": 604800,

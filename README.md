@@ -39,7 +39,7 @@ python -m data_sources.valuation.context --check                         # cover
 | 이름 | 필요성 |
 |---|---|
 | `OPENDART_API_KEY` | 한국 공시 **실수집** 시에만. 재생성·테스트에는 불필요 |
-| `SEC_EDGAR_USER_AGENT` | SEC 정책상 이름+이메일. 예: `AI Stock Research you@example.com` |
+| `SEC_EDGAR_USER_AGENT` | SEC 정책상 이름+이메일. 예: `AI Stock Research <CONTACT_EMAIL>` |
 
 로컬은 `data_sources/.env.example` 을 `.env` 로 복사해 채운다. GitHub Actions 에서는
 Repository secret (`Settings → Secrets and variables → Actions`) 으로 넣는다 — `data-refresh`

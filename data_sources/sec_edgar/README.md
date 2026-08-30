@@ -14,7 +14,7 @@ SEC 정책상 `User-Agent`(이름+이메일) 필수 → `SEC_EDGAR_USER_AGENT` �
 
 ## 실행
 ```bash
-export SEC_EDGAR_USER_AGENT="Your Name your-email@example.com"
+export SEC_EDGAR_USER_AGENT="Your Name <CONTACT_EMAIL>"
 python -m data_sources.sec_edgar.adapter --all
 python -m data_sources.sec_edgar.adapter --resolve-cik MU SNDK
 python -m data_sources.run_sync --provider sec_edgar
