@@ -1,0 +1,101 @@
+{
+ "as_of": "2026-08-19",
+ "company": "삼성전자",
+ "ccy": "KRW",
+ "facts": {
+  "revenue": 333606000000000.0,
+  "ebit": 50087000000000.0,
+  "operating_income": 43601000000000.0,
+  "da": 46927000000000.0,
+  "capex": 52153000000000.0,
+  "dnwc_increase": 9614000000000.0,
+  "net_income": 44261000000000.0,
+  "pretax": 49481000000000.0,
+  "tax_paid": 4275000000000.0005,
+  "shares": 6737064000.0,
+  "net_cash": 28944000000000.0,
+  "price": 247500,
+  "mktcap": 1625224000000000.0,
+  "beta": 1.479,
+  "total_debt": 28913000000000.0
+ },
+ "assumptions": {
+  "tax_rate": 0.2,
+  "rf": 0.032,
+  "erp": 0.06,
+  "kd": 0.045,
+  "terminal_g": 0.025,
+  "norm_ebit_margin": 0.14,
+  "rev_growth_path": [
+   0.08,
+   0.07,
+   0.06,
+   0.05,
+   0.04,
+   0.035,
+   0.03,
+   0.03,
+   0.028,
+   0.025
+  ]
+ },
+ "wacc": {
+  "value": 0.1193,
+  "coe": 0.1207,
+  "rf": 0.032,
+  "beta": 1.479,
+  "erp": 0.06,
+  "kd": 0.045,
+  "we": 0.9825,
+  "wd": 0.0175
+ },
+ "fcff0_trough": 25229600000000,
+ "fcff_normalized": 22523872000000,
+ "ev_market": 1596280000000000,
+ "reverse_dcf": {
+  "implied_cagr_trough": 0.2781,
+  "implied_cagr_normalized": 0.2946,
+  "fixed": [
+   "WACC",
+   "terminal_g"
+  ],
+  "solved": "FCFF 10y CAGR"
+ },
+ "forward_dcf": {
+  "per_share": 70999,
+  "ev": 449378863597445,
+  "equity": 478322863597445,
+  "tv_contrib": 0.429,
+  "confidence": "Low",
+  "note": "consensus 오염 → 정규화 ASSUMPTION 기반"
+ },
+ "sensitivity": {
+  "WACC +1%p": 64435,
+  "WACC -1%p": 79129,
+  "Terminal g +0.5%p": 72747,
+  "Terminal g -0.5%p": 69426,
+  "EBIT margin +1%p": 76067,
+  "EBIT margin -1%p": 65930
+ },
+ "data_conflicts": [
+  [
+   "Revenue 2026 consensus +119% YoY vs 2025 actual",
+   "DATA CONFLICT — implausible (>+50%)"
+  ],
+  [
+   "Implied 2026 net margin 44%",
+   "DATA CONFLICT — impossible for Samsung"
+  ],
+  [
+   "EPS 2026 consensus +615% vs 2025 actual 6,712",
+   "DATA CONFLICT — implausible"
+  ]
+ ],
+ "validation": {
+  "T1_wacc_gt_g": true,
+  "T5_wacc_up_value_down": true,
+  "T5_margin_up_value_up": true,
+  "T5_g_up_value_up": true,
+  "T7_missing_input_flagged": true
+ }
+}

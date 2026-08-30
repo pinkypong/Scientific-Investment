@@ -1,0 +1,85 @@
+{
+  "_comment": "데이터 소스 설정 SSOT. 하드코딩(서버 id, entity id, CIK/corp_code, 갱신 정책, TTL, 세션 경로)을 여기로 외부화. data_sources.local.json 이 있으면 그것이 우선(git 미추적 권장). API key 는 .env (data_sources/.env) 로 관리.",
+
+  "dashboard": {
+    "html": "../반도체_메모리_대시보드/index.html",
+    "web_deploy_html": "../web_deploy/index.html",
+    "damodaran_sectors": "../학습자료/damodaran_allsectors.json"
+  },
+
+  "_covered_industry_note": "damodaran_industry 는 sector_damodaran 의 alias(값 동일). valuation 레이어는 damodaran_industry 를 우선 보고 없으면 sector_damodaran 으로 폴백한다. sector_damodaran 은 하위호환을 위해 유지. damodaran_industry_alt 는 분류가 모호할 때의 교차검증용 대체 업종.",
+
+  "covered": [
+    { "slug": "samsung",  "ticker": "005930", "name": "삼성전자",   "market": "KR", "currency": "KRW", "sector_damodaran": "Semiconductor",          "damodaran_industry": "Semiconductor",          "bigdata_entity_id": "B811D5", "dart_corp_code": "00126380" },
+    { "slug": "skhynix",  "ticker": "000660", "name": "SK하이닉스", "market": "KR", "currency": "KRW", "sector_damodaran": "Semiconductor",          "damodaran_industry": "Semiconductor",          "bigdata_entity_id": "482909", "dart_corp_code": "00164779" },
+    { "slug": "micron",   "ticker": "MU",     "name": "Micron",     "market": "US", "currency": "USD", "sector_damodaran": "Semiconductor",          "damodaran_industry": "Semiconductor",          "bigdata_entity_id": "49BBBC", "sec_cik": "0000723125" },
+    { "slug": "sandisk",  "ticker": "SNDK",   "name": "SanDisk",    "market": "US", "currency": "USD", "sector_damodaran": "Computers/Peripherals", "damodaran_industry": "Computers/Peripherals", "damodaran_industry_alt": "Semiconductor", "_damodaran_note": "SanDisk 는 NAND 를 설계·생산하는 메모리 기업(WD 분사, Kioxia 합작 팹)이라 실질은 Semiconductor 에 가깝다. 다만 Damodaran 분류는 WD 계열 스토리지를 Computers/Peripherals 로 집계 → 그 값을 primary 로 두고 Semiconductor 를 교차검증용 alt 로 병기.", "bigdata_entity_id": "E5AAB0", "sec_cik": "0002023554" }
+  ],
+
+  "providers": {
+    "bigdata": {
+      "enabled": true,
+      "mcp_server": "mcp__4b6a0cee-d177-494b-b93d-81517c1a06e5",
+      "_mcp_server_note": "index.html refreshQuotes/loadNews 에서 쓰던 UUID. 환경 바뀌면 여기만 수정. 브라우저측 SRC.mcp_server 로 주입됨.",
+      "source_class": "MARKET_DATA",
+      "role": "price + market_cap 우선. 기업 재무 actual 은 SEC/OpenDART 우선, bigdata 는 cross-check.",
+      "update_policy_sec": 900,
+      "search_query": "DRAM HBM NAND memory Samsung SK hynix Micron SanDisk price ASP earnings guidance market share capex"
+    },
+
+    "sec_edgar": {
+      "enabled": true,
+      "source_class": "PRIMARY_OFFICIAL",
+      "user_agent": "",
+      "_user_agent_note": "SEC 정책상 이름+이메일 필수. 비우면 환경변수 SEC_EDGAR_USER_AGENT 사용. 예: 'AI Stock Research eigoogy1209@gmail.com'",
+      "request_delay_sec": 0.4,
+      "update_policy_sec": 86400,
+      "raw_cache_ttl_sec": 604800,
+      "_raw_cache_note": "Phase D company-level raw cache TTL. provider TTL(update_policy_sec)은 provider 전체 skip 판정(얼마나 자주 시도하나), 이것은 종목 단위 raw 재사용 판정(받아둔 스냅샷을 얼마나 오래 믿나). 공시 원문은 하루 단위로 바뀌지 않으므로 더 길게 잡는다. --force 는 둘 다 우회한다.",
+      "metrics": ["revenue","operating_income","net_income","eps_basic","eps_diluted","cash","debt","total_assets","total_liabilities","equity","inventory","shares_outstanding","operating_cash_flow","capex"]
+    },
+
+    "opendart": {
+      "enabled": true,
+      "source_class": "PRIMARY_OFFICIAL",
+      "base_url": "https://opendart.fss.or.kr/api",
+      "api_key_env": "OPENDART_API_KEY",
+      "_api_key_note": "https://opendart.fss.or.kr 무료 발급 → data_sources/.env 에 OPENDART_API_KEY=... . 없으면 BLOCKED.",
+      "fs_div": "CFS",
+      "_fs_div_note": "CFS=연결(우선), OFS=별도. 연결 없으면 별도로 fallback + notes 표기.",
+      "request_delay_sec": 0.6,
+      "update_policy_sec": 86400,
+      "raw_cache_ttl_sec": 604800,
+      "_raw_cache_note": "Phase D company-level raw cache TTL. provider TTL(update_policy_sec)은 provider 전체 skip 판정(얼마나 자주 시도하나), 이것은 종목 단위 raw 재사용 판정(받아둔 스냅샷을 얼마나 오래 믿나). 공시 원문은 하루 단위로 바뀌지 않으므로 더 길게 잡는다. --force 는 둘 다 우회한다.",
+      "years_back": 4,
+      "reprt_codes": ["11011","11014","11012","11013"]
+    },
+
+    "hankyung_consensus": {
+      "enabled": false,
+      "_note": "Phase A/B 에서 비활성 (report/consensus 제외). 재도입 시 true.",
+      "base_url": "https://consensus.hankyung.com",
+      "list_path": "/analysis/list",
+      "pdf_path": "/analysis/downpdf",
+      "source_class": "SECONDARY_PROFESSIONAL",
+      "request_delay_sec": 1.5,
+      "max_per_ticker": 15,
+      "cookie_file": ""
+    },
+    "hankyung_global": {
+      "enabled": false,
+      "_note": "Phase A/B 에서 비활성 (forward estimates 제외).",
+      "base_url": "https://www.hankyung.com/globalmarket/equities",
+      "source_class": "NEWS",
+      "request_delay_sec": 2.0,
+      "storage_state": "",
+      "user_data_dir": ""
+    }
+  },
+
+  "classification_override": {},
+
+  "cache_ttl_sec": { "market": 300, "reports": 604800, "static": 2592000 },
+
+  "validation": { "extreme_change_ratio": 3.0, "restatement_warn_ratio": 0.15 }
+}

@@ -1,0 +1,60 @@
+{
+  "source": "Aswath Damodaran / NYU Stern (pages.stern.nyu.edu/~adamodar)",
+  "as_of": "2026-01",
+  "region": "US industry aggregates (USD). KR(삼성/SK)는 통화·CRP 조정 필요.",
+  "market": {
+    "implied_ERP_FCFE_2025": 0.0423,
+    "tbond_rate_2025": 0.0418,
+    "note": "US mature-market ERP. Korea ERP ≈ US + Korea CRP(≈0.5~0.8%p) ≈ 4.7~5.0%. 우리 삼성 DCF의 ERP 6%는 다소 높음 → WACC 과대 가능."
+  },
+  "semiconductor": {
+    "n_firms": 66,
+    "beta_levered": 1.52,
+    "cost_of_equity_usd": 0.1072,
+    "cost_of_capital_usd": 0.1055,
+    "equity_weight": 0.9747,
+    "debt_weight": 0.0253,
+    "pretax_cost_of_debt": 0.0529,
+    "margins": {
+      "gross": 0.5897,
+      "net": 0.3045,
+      "operating_pretax": 0.3533,
+      "operating_aftertax": 0.3352,
+      "ebitda": 0.3677,
+      "rnd_to_sales": 0.1536,
+      "sga_to_sales": 0.0617
+    },
+    "multiples": {
+      "ev_ebitda_all": 42.70,
+      "ev_ebitda_posonly": 34.75,
+      "ev_ebit_all": 44.46,
+      "ev_ebit_aftertax_all": 51.72,
+      "ev_ebitda_rnd": 30.12
+    },
+    "caveat": "AI붐 고점 → EV 멀티플 팽창. 사이클 기업(메모리)의 peak EBITDA에 곱하면 이중낙관. cycle-mid EBITDA 또는 정규화 마진 사용."
+  },
+  "semiconductor_equip": {
+    "n_firms": 31,
+    "beta_levered": 1.40,
+    "cost_of_equity_usd": 0.1018,
+    "cost_of_capital_usd": 0.0989,
+    "margins": {"gross": 0.4632, "net": 0.2132, "operating_pretax": 0.2617, "ebitda": 0.2906},
+    "multiples": {"ev_ebitda_all": 26.18, "ev_ebit_all": 28.94}
+  },
+  "total_market_us": {
+    "beta": 0.91,
+    "cost_of_equity": 0.0802,
+    "cost_of_capital": 0.0696,
+    "net_margin": 0.0974,
+    "operating_margin_pretax": 0.1439,
+    "ev_ebitda_all": 23.95,
+    "ev_ebit_all": 31.12
+  },
+  "usage_rules": [
+    "정상마진 벤치마크: 메모리 트로프/피크가 아닌 '사이클 평균' 판단 기준. 반도체 순마진 30%는 fabless(Nvidia 등) 포함 → 메모리 단독은 더 낮고 변동 큼.",
+    "베타: 반도체 levered 1.52는 business risk 벤치마크. 우리 삼성 1.479와 정합.",
+    "ERP: Korea ≈ US(4.23%)+CRP. 6% 재검토.",
+    "EV/EBITDA 42.7x를 메모리 peak EBITDA에 곱하지 말 것(§Dark Side).",
+    "매년 1월 갱신 → 연 1회 재수집 필요."
+  ]
+}

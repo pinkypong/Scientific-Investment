@@ -1,0 +1,118 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Visa 종합 밸류에이션 뷰 (프로토타입)</title>
+<style>
+:root{--bg:#0f1420;--card:#171e2e;--line:#2a3549;--sub:#93a1b8;--tx:#e8eef7;--g:#16a34a;--r:#dc2626;--a:#f59e0b;--b:#3b82f6;--v:#8b5cf6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 -apple-system,'Segoe UI',Roboto,'Malgun Gothic',sans-serif;padding:18px}
+.wrap{max-width:960px;margin:0 auto}
+h1{font-size:20px;margin:0 0 2px}.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid var(--line);color:var(--sub);margin-left:6px}
+.sub{color:var(--sub);font-size:12px;margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0}
+.card h2{font-size:14px;margin:0 0 10px}
+.kpis{display:flex;flex-wrap:wrap;gap:10px}
+.kpi{flex:1;min-width:130px;background:#111827;border:1px solid var(--line);border-radius:10px;padding:10px}
+.kpi .l{font-size:11px;color:var(--sub)}.kpi .v{font-size:19px;font-weight:700;margin-top:2px}
+.up{color:var(--g)}.down{color:var(--r)}.warn{color:var(--a)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--sub);font-weight:600;font-size:11px}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px}
+.pg{background:rgba(22,163,74,.15);color:#4ade80}.pr{background:rgba(220,38,38,.15);color:#f87171}.pa{background:rgba(245,158,11,.15);color:#fbbf24}.pb{background:rgba(59,130,246,.15);color:#93c5fd}
+.gray{background:rgba(148,163,184,.2);color:#cbd5e1}
+.note{font-size:11.5px;color:var(--sub);margin-top:8px}.mono{font-variant-numeric:tabular-nums}
+.bar{height:26px;border-radius:6px;background:linear-gradient(90deg,#1e293b,#334155);position:relative;margin:14px 0 6px}
+.bar .rng{position:absolute;top:0;bottom:0;background:rgba(59,130,246,.35);border-left:2px solid var(--b);border-right:2px solid var(--b)}
+.bar .mk{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--tx)}.bar .mk.px{background:var(--r)}.bar .mk.fv{background:var(--g)}
+.scale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--sub)}
+.flag{background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.4);border-radius:8px;padding:8px 10px;font-size:12px;margin:6px 0}
+.flagA{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:8px 10px;font-size:12px;margin:6px 0}
+.ins{background:rgba(148,163,184,.08);border:1px dashed var(--line);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--sub);margin:6px 0}
+.foot{color:var(--sub);font-size:11px;margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+</style></head><body><div class="wrap">
+
+<h1>Visa (V) 종합 밸류에이션 뷰 <span class="tag">PROTOTYPE</span><span class="tag">교차섹터 예시</span></h1>
+<p class="sub">종합 7단계 × 다모다란 5-체크 · 실데이터 2026-08-25 · 섹터=결제 네트워크(고마진 컴파운더, 은행 아님·사이클 아님) · Bigdata.com</p>
+
+<div class="card">
+  <h2>① 스냅샷 & 핵심 결론</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="l">현재가</div><div class="v mono">$381.72</div></div>
+    <div class="kpi"><div class="l">MC 공정가치(평균)</div><div class="v mono">$396</div></div>
+    <div class="kpi"><div class="l">기대수익</div><div class="v mono">+3.7%</div></div>
+    <div class="kpi"><div class="l">P(상승)</div><div class="v mono">47.0%</div></div>
+    <div class="kpi"><div class="l">P(&gt;+30%)</div><div class="v mono">17.1%</div></div>
+    <div class="kpi"><div class="l">P(손실&gt;20%)</div><div class="v warn mono">23.7%</div></div>
+  </div>
+  <div class="flag">🟣 <b>삼성·마이크론과 정반대 사례.</b> 삼성의 낮은 P/E(3.6x)는 <b>사이클 착시</b>(피크 이익), Visa의 높은 P/E(32.5x)는 <b>품질</b>(순마진 50.8%·ROIC 34% 해자). 같은 스킬, <b>반대 처리</b> — 은행식 P/B·ROE도, 사이클 정규화도 아닌 <b>안정 2단계 FCFE + PEG + FCF수익률</b>. <b>결론: 대체로 적정</b>(평균 +3.7%, 중앙값 −2.3%)이나 <b>하락확률 23.7%로 밴드가 넓음</b> — 할인율(Ke)·성장 가정이 좌우.</div>
+</div>
+
+<div class="card">
+  <h2>② 방법별 종합 (triangulation) — 평균 내지 말 것</h2>
+  <table>
+    <thead><tr><th>방법</th><th>값 / 밴드</th><th>대비 현재가</th><th>판정</th></tr></thead>
+    <tbody>
+      <tr><td>2단계 FCFE × MC (평균)<br><span class="note">Ke~N(8.6%,0.9) · g1~N(10%,2.5) · 터미널~N(3.5%,0.6) · 20,000 sims</span></td><td class="num mono">$396</td><td class="num up mono">+3.7%</td><td><span class="pill pb">MODEL</span></td></tr>
+      <tr><td>MC 중앙값(P50)</td><td class="num mono">$373</td><td class="num down mono">−2.3%</td><td><span class="pill pb">MODEL</span></td></tr>
+      <tr><td>MC 밴드 (P10–P90)</td><td class="num mono">$263 – $555</td><td class="num mono">−31% ~ +45%</td><td><span class="pill pb">분포</span></td></tr>
+      <tr><td>Reverse DCF (시장 요구)</td><td class="num mono">영구성장 ≈ 4.5%</td><td class="num mono">—</td><td><span class="pill pb">보수적</span></td></tr>
+      <tr><td>상대가치 — P/E(TTM) · PEG</td><td class="num mono">32.5x · 2.19</td><td class="num mono">—</td><td><span class="pill pb">품질 프리미엄</span></td></tr>
+      <tr><td>FCF 수익률</td><td class="num mono">2.94%</td><td class="num mono">—</td><td><span class="pill pa">낮음(고평가 톤)</span></td></tr>
+    </tbody>
+  </table>
+  <div class="bar" id="bar"><div class="rng"></div><div class="mk px"></div><div class="mk fv"></div></div>
+  <div class="scale"><span>P10 $263</span><span style="color:var(--r)">현재가 $382</span><span style="color:var(--g)">FV $396</span><span>P90 $555</span></div>
+  <div class="flagA">⚠ <b>가치 = 할인율에 극도로 민감</b>(밴드가 넓은 이유). Ke 7.4%(다모다란 저ERP)면 크게 저평가, Ke 10%면 고평가. MC는 이 불확실성을 분포로 담음.</div>
+</div>
+
+<div class="card">
+  <h2>③ 다모다란 벤치마크 대조 (섹터 라벨이 안 맞는 사례)</h2>
+  <table>
+    <thead><tr><th>지표</th><th>Visa (실측)</th><th>업종 "Financial Svcs<br>(Non-bank)" 집계</th><th>해석</th></tr></thead>
+    <tbody>
+      <tr><td>Beta / Ke</td><td class="num mono">0.759 / 7.39%</td><td class="num mono">0.97 / 8.27%</td><td>저베타. Ke가 가치 최대 스윙 요인</td></tr>
+      <tr><td>영업마진</td><td class="num mono">60.7%</td><td class="num mono">18.5%</td><td><span class="pill pa">미스핏</span> 집계가 Visa에 안 맞음</td></tr>
+      <tr><td>Fwd P/E</td><td class="num mono">~28x</td><td class="num mono">16.4x</td><td>품질/성장 프리미엄</td></tr>
+      <tr><td>P/B</td><td class="num mono">20.8</td><td class="num mono">3.66</td><td>은행식 P/B·ROE 프레임 부적절(대출 안 함)</td></tr>
+      <tr><td>ROE / ROIC</td><td class="num mono">61% / 34%</td><td class="num mono">28.8% / —</td><td>ROIC≫WACC = 지속 해자</td></tr>
+    </tbody>
+  </table>
+  <div class="flag">📌 <b>교훈:</b> Bigdata·다모다란은 Visa를 "Financials"로 분류하지만 그 <b>업종 집계는 Visa에 안 맞음</b>(영업마진 18% vs 61%). Visa는 대출 없는 <b>네트워크(톨게이트)</b> → 라벨이 아니라 <b>비즈니스 모델</b>로 방법 선택(Method 8 §8a). 참고 유사군: Business&Consumer Svcs(ROIC 28%·PE 18.7).</div>
+</div>
+
+<div class="card">
+  <h2>④ 다모다란 5-체크 판정</h2>
+  <table>
+    <thead><tr><th>체크</th><th>내용</th><th>판정</th></tr></thead>
+    <tbody>
+      <tr><td>1. 정규화</td><td>사이클 아님 — TTM 마진(순 50.8%)은 피크가 아니라 <b>구조적 해자</b>. 정규화 하향 불필요</td><td><span class="pill pg">해당없음</span></td></tr>
+      <tr><td>2. WACC/베타</td><td>β0.759 → Ke 7.39%. MC에서 Ke를 분포로 처리(N(8.6%,0.9)). <b>가치 최대 스윙 요인</b></td><td><span class="pill pa">민감</span></td></tr>
+      <tr><td>3. 성장-재투자</td><td>자산경량(capex/매출 3.5%) → 성장에 재투자 거의 불필요, FCF 전환 우수. 일관적</td><td><span class="pill pg">정합</span></td></tr>
+      <tr><td>4. 상대 companion</td><td>P/E 32.5·PEG 2.19 = 품질/성장 프리미엄. ROIC 34%≫WACC가 정당화. "싸지 않음"</td><td><span class="pill pb">품질</span></td></tr>
+      <tr><td>5. Value vs Price</td><td>Reverse DCF: 시장은 영구성장 4.5%만 요구(보수적). 성장 지속 시 상방, 리스크=규제</td><td><span class="pill pb">중립</span></td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>종합 판정: 고품질 컴파운더 · 대체로 적정</b>(평균 +3.7%, 중앙값 −2.3%, 하락확률 23.7%). 상·하방은 ①할인율 ②성장 지속성 ③규제리스크(인터체인지·반독점·실시간결제·스테이블코인)에 달림.</div>
+</div>
+
+<div class="card">
+  <h2>⑤ 정직한 공백 & 리스크</h2>
+  <div class="ins">• 2단계 성장 g(평균 10%)·터미널(3.5%)·Ke(8.6%) 분포는 <b>ASSUMPTION</b> — 컨센 5y 성장(≈15%)·역사 대비 추가 검증 필요.</div>
+  <div class="ins">• MC 변수 독립 가정(Ke·g·gt 무상관) — 경제적 상관이 있으면 밴드 폭이 달라질 수 있음(다모다란 §16-17).</div>
+  <div class="ins">• Ke는 다모다란 저ERP(4.23%) 기반 → 주관적 주식위험에 따라 결과 크게 변동.</div>
+  <div class="ins">• 규제/기술 파괴(스테이블코인·실시간결제·반독점)가 터미널 성장의 핵심 Kill Condition.</div>
+</div>
+
+<div class="foot">프로토타입 · 대시보드 미반영 · BUY/SELL 아님. 데이터: Bigdata.com(FMP, 2026-08-25 실측) · 다모다란 NYU(2026.1) · 2단계 FCFE 몬테카를로(자체, 투명 가정).</div>
+
+</div>
+<script>
+(function(){
+  var lo=263, hi=555, px=381.72, fv=396, p25=309, p75=456;
+  function pos(x){return Math.max(0,Math.min(100,(x-lo)/(hi-lo)*100));}
+  var b=document.getElementById('bar');
+  b.querySelector('.px').style.left=pos(px)+'%';
+  b.querySelector('.fv').style.left=pos(fv)+'%';
+  var r=b.querySelector('.rng'); r.style.left=pos(p25)+'%'; r.style.right=(100-pos(p75))+'%';
+})();
+</script>
+</body></html>

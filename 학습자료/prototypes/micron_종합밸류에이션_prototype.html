@@ -1,0 +1,129 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Micron 종합 밸류에이션 뷰 (프로토타입)</title>
+<style>
+:root{--bg:#0f1420;--card:#171e2e;--line:#2a3549;--sub:#93a1b8;--tx:#e8eef7;--g:#16a34a;--r:#dc2626;--a:#f59e0b;--b:#3b82f6;--v:#8b5cf6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 -apple-system,'Segoe UI',Roboto,'Malgun Gothic',sans-serif;padding:18px}
+.wrap{max-width:960px;margin:0 auto}
+h1{font-size:20px;margin:0 0 2px}.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid var(--line);color:var(--sub);margin-left:6px}
+.sub{color:var(--sub);font-size:12px;margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0}
+.card h2{font-size:14px;margin:0 0 10px;letter-spacing:.02em}
+.kpis{display:flex;flex-wrap:wrap;gap:10px}
+.kpi{flex:1;min-width:130px;background:#111827;border:1px solid var(--line);border-radius:10px;padding:10px}
+.kpi .l{font-size:11px;color:var(--sub)}.kpi .v{font-size:19px;font-weight:700;margin-top:2px}
+.up{color:var(--g)}.down{color:var(--r)}.warn{color:var(--a)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--sub);font-weight:600;font-size:11px}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px}
+.pg{background:rgba(22,163,74,.15);color:#4ade80}.pr{background:rgba(220,38,38,.15);color:#f87171}.pa{background:rgba(245,158,11,.15);color:#fbbf24}.pb{background:rgba(59,130,246,.15);color:#93c5fd}
+.note{font-size:11.5px;color:var(--sub);margin-top:8px}
+.bar{height:26px;border-radius:6px;background:linear-gradient(90deg,#1e293b,#334155);position:relative;margin:14px 0 6px}
+.bar .rng{position:absolute;top:0;bottom:0;background:rgba(59,130,246,.35);border-left:2px solid var(--b);border-right:2px solid var(--b)}
+.bar .mk{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--tx)}
+.bar .mk.px{background:var(--r)}.bar .mk.fv{background:var(--g)}
+.scale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--sub)}
+.flag{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:8px 10px;font-size:12px;margin:6px 0}
+.ins{background:rgba(148,163,184,.08);border:1px dashed var(--line);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--sub);margin:6px 0}
+.foot{color:var(--sub);font-size:11px;margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.mono{font-variant-numeric:tabular-nums}
+</style></head><body><div class="wrap">
+
+<h1>Micron 종합 밸류에이션 뷰 <span class="tag">PROTOTYPE</span><span class="tag">대시보드 미반영</span></h1>
+<p class="sub">종합 7단계(triangulation) × 다모다란 5-체크 · 스냅샷 기준가 $940.76 · MC/컨센 데이터 = data/mc.json·cdata.json · 벤치마크 = damodaran_allsectors.json(반도체, US 2026.1)</p>
+
+<div class="card">
+  <h2>① 스냅샷 & 핵심 결론</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="l">현재가(스냅샷)</div><div class="v mono">$940.76</div></div>
+    <div class="kpi"><div class="l">MC 공정가치(평균)</div><div class="v mono up">$1,063.8</div></div>
+    <div class="kpi"><div class="l">기대수익</div><div class="v up mono">+13.1%</div></div>
+    <div class="kpi"><div class="l">P(상승)</div><div class="v mono">63.5%</div></div>
+    <div class="kpi"><div class="l">P(&gt;+30%)</div><div class="v mono">28.7%</div></div>
+    <div class="kpi"><div class="l">P(손실&gt;20%)</div><div class="v warn mono">15.7%</div></div>
+  </div>
+  <div class="note"><b>한 줄 결론:</b> 여러 방법이 <b>완만한 상승(+11~13%)</b>으로 수렴. "P/E 5.7배라 싸다"는 <b>사이클 착시</b>(피크 EPS에 낮은 배수는 정상). 과낙관 신호 없음 — 오히려 멀티플 보수적, EPS는 FY28까지 상승. 단 <b>마이크론 전용 DCF·정규화 EPS·EV/EBITDA가 아직 없어</b> 종합의 한 축이 비어 있음(아래 ⑤).</div>
+</div>
+
+<div class="card">
+  <h2>② 방법별 종합 (triangulation) — 평균 내지 않고 나란히</h2>
+  <table>
+    <thead><tr><th>방법</th><th>값 / 밴드</th><th>대비 현재가</th><th>판정</th></tr></thead>
+    <tbody>
+      <tr><td>사이클 P/E × MC (평균)<br><span class="note">FY27 EPS $163.8 × cycle P/E mid 6.5x</span></td><td class="num mono">$1,063.8</td><td class="num up mono">+13.1%</td><td><span class="pill pb">MODEL</span></td></tr>
+      <tr><td>MC 중앙값(P50)</td><td class="num mono">$1,044.5</td><td class="num up mono">+11.0%</td><td><span class="pill pb">MODEL</span></td></tr>
+      <tr><td>MC 밴드 (P10–P90)</td><td class="num mono">$681 – $1,471</td><td class="num mono">−28% ~ +56%</td><td><span class="pill pb">분포</span></td></tr>
+      <tr><td>상대가치 — 현 fwd P/E(FY27)</td><td class="num mono">5.7x</td><td class="num mono">—</td><td><span class="pill pa">사이클 착시</span></td></tr>
+      <tr><td>정식 DCF / Reverse DCF</td><td class="num">미산출</td><td class="num">—</td><td><span class="pill" style="background:rgba(148,163,184,.2);color:#cbd5e1">INSUFF</span></td></tr>
+      <tr><td>베이지안(구조전환)</td><td class="num">해당 없음</td><td class="num">—</td><td><span class="pill" style="background:rgba(148,163,184,.2);color:#cbd5e1">N/A</span></td></tr>
+    </tbody>
+  </table>
+  <div class="bar" id="bar">
+    <div class="rng" style="left:0%;right:0%"></div>
+    <div class="mk px" title="현재가 $940.76"></div>
+    <div class="mk fv" title="MC 공정가치 $1063.8"></div>
+  </div>
+  <div class="scale"><span>P10 $681</span><span style="color:var(--r)">현재가 $941</span><span style="color:var(--g)">FV $1,064</span><span>P90 $1,471</span></div>
+</div>
+
+<div class="card">
+  <h2>③ 다모다란 반도체 벤치마크 대조 (US, 2026.1)</h2>
+  <table>
+    <thead><tr><th>지표</th><th>Micron(추정/스냅샷)</th><th>반도체 업종 벤치마크</th><th>해석</th></tr></thead>
+    <tbody>
+      <tr><td>Beta / WACC</td><td class="num">— / (권장 ~10.5%)</td><td class="num mono">1.52 / 10.55%</td><td>DCF 시 업종 WACC ~10.5%(USD) 적용 근거</td></tr>
+      <tr><td>Fwd P/E</td><td class="num mono">5.7x</td><td class="num mono">37.29x</td><td><span class="pill pa">착시</span> 업종은 fabless·AI로 팽창. 5.7x는 <b>피크 EPS</b> 기준 → 싼 게 아님</td></tr>
+      <tr><td>EV/EBITDA</td><td class="num">미산출</td><td class="num mono">42.7x</td><td>업종 배수를 <b>피크 EBITDA에 곱 금지</b>(이중낙관)</td></tr>
+      <tr><td>ROE / ROIC</td><td class="num">(피크 근처 추정)</td><td class="num mono">31.4% / 27.2%</td><td>높은 ROIC = 사이클 <b>고점 수익성</b> 신호</td></tr>
+      <tr><td>순마진</td><td class="num">(피크)</td><td class="num mono">30.5%</td><td>업종엔 고마진 fabless 포함 → 메모리 단독은 변동 큼</td></tr>
+      <tr><td>기대성장(5y)</td><td class="num">—</td><td class="num mono">22.9%</td><td>성장-재투자(capex) 일관성 점검 필요</td></tr>
+    </tbody>
+  </table>
+  <div class="flag">⚠ <b>사이클 착시 경고:</b> 업종 fwd P/E 37x를 Micron FY27 EPS에 곱하면 $6,108이 나옴 — 명백히 비현실적. 메모리는 <b>피크 이익 × 낮은 사이클 배수</b>가 정답(다모다란 §Dark Side).</div>
+</div>
+
+<div class="card">
+  <h2>④ 다모다란 5-체크 판정</h2>
+  <table>
+    <thead><tr><th>체크</th><th>내용</th><th>판정</th></tr></thead>
+    <tbody>
+      <tr><td>1. 정규화</td><td>FY27 $163.8은 피크-사이클 EPS. 업종 37x가 아닌 <b>cycle P/E 6.5x</b> 적용 = 올바른 사이클 처리</td><td><span class="pill pg">정합</span></td></tr>
+      <tr><td>2. WACC/베타</td><td>MC는 cycle P/E 사용(DCF 아님). 업종 WACC 10.5%·β1.52는 합리적 → DCF 만들 때 기준</td><td><span class="pill pa">보완필요</span></td></tr>
+      <tr><td>3. 성장-재투자</td><td>메모리는 capex 과다. 성장 가정에 재투자·ROIC 일관성 미검증</td><td><span class="pill pa">보완필요</span></td></tr>
+      <tr><td>4. 상대 companion</td><td>낮은 P/E는 피크 EPS 착시. cycle P/E로 통제해 처리함</td><td><span class="pill pg">정합</span></td></tr>
+      <tr><td>5. Value vs Price</td><td>MC 기대 +13%로 완만. 큰 미스프라이싱 아님</td><td><span class="pill pb">중립</span></td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>종합 판정: 과낙관 아님 / 멀티플 보수적.</b> 여러 방법이 완만한 상승으로 정합. cdata.json verdict("과낙관 아님")과 일치.</div>
+</div>
+
+<div class="card">
+  <h2>⑤ 정직한 공백 (다음에 채울 것)</h2>
+  <div class="ins">• <b>마이크론 전용 DCF·Reverse DCF</b> 미산출 → 현재 종합은 MC(사이클 P/E)에 의존. Samsung처럼 정식 DCF 필요.</div>
+  <div class="ins">• <b>정규화 EPS</b>(사이클 평균 마진 기반) 미산출 → 피크 EPS만 사용 중. 정규화 버전을 밴드 하단으로 병렬 제시 예정.</div>
+  <div class="ins">• <b>Micron EV/EBITDA·ROIC 실측</b> 미연결 → 업종 벤치마크와 정량 비교 불가한 칸 존재.</div>
+  <div class="ins">• 스냅샷 기준가($940.76)는 mc.json 값 — 실시간 갱신 시 최신가로 재계산 필요(최근 관측 ~$974).</div>
+</div>
+
+<div class="foot">
+프로토타입 · 대시보드(index.html) 미반영 · BUY/SELL 아님, 사용자 판단용.<br>
+데이터: Bigdata.com(가격·컨센 EPS) · 몬테카를로(자체) · 다모다란 NYU(업종 벤치마크, 2026.1). US·USD 집계는 통화·CRP 조정 전제.
+</div>
+
+</div>
+<script>
+// 밴드 마커 위치 계산 (P10~P90 스케일)
+(function(){
+  var lo=681.13, hi=1471.0, px=940.76, fv=1063.77;
+  function pos(x){return Math.max(0,Math.min(100,(x-lo)/(hi-lo)*100));}
+  var b=document.getElementById('bar');
+  b.querySelector('.px').style.left=pos(px)+'%';
+  b.querySelector('.fv').style.left=pos(fv)+'%';
+  // 파란 범위 = P25~P75
+  var p25=847.54,p75=1260.83;
+  var rng=b.querySelector('.rng');
+  rng.style.left=pos(p25)+'%'; rng.style.right=(100-pos(p75))+'%';
+})();
+</script>
+</body></html>

@@ -1,0 +1,54 @@
+Advertising | -0.30% | 10.07% | 14.06% | 15.12 | 21.15
+Aerospace/Defense | 4.99% | 8.65% | 10.69% | 33.42 | 41.06
+Air Transport | 2.51% | 5.32% | 10.27% | 9.99 | 21.02
+Apparel | 3.85% | 9.11% | 11.47% | 13.89 | 16.12
+Auto & Truck | 1.29% | 2.32% | 7.49% | 51.85 | 162.97
+Auto Parts | 0.72% | 5.67% | 9.04% | 9.11 | 14.18
+Bank (Money Center) | 28.89% | 0.00% | 0.00% | NA | NA
+Banks (Regional) | 27.49% | 0.00% | 0.00% | NA | NA
+Beverage (Alcoholic) | 0.56% | 22.76% | 29.52% | 8.31 | 10.77
+Beverage (Soft) | 13.40% | 20.53% | 22.78% | 18.24 | 20.15
+Broadcasting | 2.06% | 12.33% | 18.21% | 7.66 | 11.30
+Brokerage & Investment Banking | 14.45% | 0.00% | 0.00% | NA | NA
+Building Materials | 7.42% | 12.64% | 17.32% | 11.81 | 15.99
+Business & Consumer Services | 7.03% | 12.27% | 15.65% | 16.17 | 20.53
+Cable TV | 7.08% | 18.49% | 32.37% | 6.35 | 11.27
+Chemical (Basic) | -3.73% | 2.67% | 12.34% | 6.85 | 29.58
+Chemical (Specialty) | 2.91% | 12.17% | 18.01% | 14.70 | 21.34
+Computer Services | 4.45% | 7.41% | 8.98% | 16.46 | 19.36
+Computers/Peripherals | 17.78% | 22.48% | 25.32% | 26.18 | 29.48
+Drugs (Biotechnology) | -5.00% | 8.97% | 15.38% | 51.49 | 90.38
+Drugs (Pharmaceutical) | 18.54% | 29.54% | 33.59% | 18.58 | 21.12
+Electronics (General) | 6.47% | 10.42% | 12.36% | 25.93 | 30.48
+Entertainment | 4.43% | 10.60% | 17.77% | 24.39 | 41.76
+Financial Svcs. (Non-bank & Insurance) | 22.19% | 18.48% | 21.02% | 89.94 | 101.99
+Food Processing | 2.82% | 10.63% | 15.25% | 9.63 | 13.64
+Healthcare Products | 9.61% | 15.34% | 20.34% | 23.42 | 30.79
+Healthcare Support Services | 1.25% | 3.00% | 3.87% | 11.84 | 15.31
+Hospitals/Healthcare Facilities | 6.30% | 13.36% | 15.80% | 10.69 | 13.14
+Household Products | 11.68% | 18.62% | 22.34% | 13.69 | 16.28
+Insurance (General) | 12.37% | 21.31% | 23.57% | 18.35 | 20.15
+Insurance (Life) | 7.80% | 10.61% | 11.50% | 11.16 | 12.06
+Insurance (Prop/Cas.) | 11.13% | 15.25% | 14.73% | 10.10 | 9.73
+Investments & Asset Management | 18.36% | 25.50% | 11.65% | 47.09 | 21.78
+Machinery | 10.58% | 15.86% | 19.62% | 17.46 | 21.33
+Metals & Mining | 10.52% | 23.85% | 29.36% | 13.74 | 16.98
+Oil/Gas (Production and Exploration) | 14.63% | 25.42% | 43.21% | 6.21 | 10.39
+Power | 12.73% | 21.47% | 35.33% | 13.29 | 21.99
+R.E.I.T. | 13.23% | 24.64% | 43.79% | 24.32 | 47.96
+Restaurant/Dining | 9.37% | 15.79% | 19.47% | 21.40 | 30.20
+Retail (General) | 5.61% | 6.80% | 10.11% | 20.87 | 32.44
+Retail (Special Lines) | 5.19% | 7.73% | 9.85% | 16.50 | 20.13
+Semiconductor | 30.45% | 35.33% | 36.77% | 42.70 | 44.46
+Semiconductor Equip | 21.32% | 26.17% | 29.06% | 26.18 | 28.94
+Software (Entertainment) | 29.93% | 33.85% | 34.90% | 26.16 | 27.11
+Software (Internet) | -0.93% | 3.69% | 9.52% | 100.45 | NA
+Software (System & Application) | 25.49% | 32.98% | 35.93% | 31.75 | 34.36
+Steel | 1.93% | 4.10% | 10.58% | 11.05 | 28.47
+Telecom (Wireless) | 12.24% | 20.98% | 34.57% | 10.75 | 18.83
+Telecom. Equipment | 16.09% | 20.70% | 23.95% | 27.20 | 31.15
+Telecom. Services | 14.20% | 20.47% | 34.70% | 7.54 | 12.56
+Tobacco | 26.65% | 43.54% | 42.22% | 15.15 | 14.64
+Utility (General) | 14.18% | 23.49% | 34.92% | 15.04 | 22.63
+Utility (Water) | 21.16% | 33.72% | 45.73% | 15.65 | 21.27
+Total Market | 9.74% | 12.82% | 16.56% | 23.95 | 31.12

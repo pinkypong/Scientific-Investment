@@ -1,0 +1,14 @@
+# Codespaces/CI 는 Linux 다. 텍스트는 레포 안에서 LF 로 정규화한다.
+* text=auto eol=lf
+
+# JSONL 스토어는 append-only — 줄 단위 diff 가 의미 있으므로 텍스트로 다룬다.
+*.jsonl text eol=lf
+*.json  text eol=lf
+*.py    text eol=lf
+*.md    text eol=lf
+
+# 바이너리 (혹시 추가될 경우 diff/변환 방지)
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.xlsx  binary

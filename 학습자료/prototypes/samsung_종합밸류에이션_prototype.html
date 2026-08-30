@@ -1,0 +1,118 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>삼성전자 종합 밸류에이션 뷰 (프로토타입)</title>
+<style>
+:root{--bg:#0f1420;--card:#171e2e;--line:#2a3549;--sub:#93a1b8;--tx:#e8eef7;--g:#16a34a;--r:#dc2626;--a:#f59e0b;--b:#3b82f6;--v:#8b5cf6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 -apple-system,'Segoe UI',Roboto,'Malgun Gothic',sans-serif;padding:18px}
+.wrap{max-width:960px;margin:0 auto}
+h1{font-size:20px;margin:0 0 2px}.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid var(--line);color:var(--sub);margin-left:6px}
+.sub{color:var(--sub);font-size:12px;margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0}
+.card h2{font-size:14px;margin:0 0 10px}
+.kpis{display:flex;flex-wrap:wrap;gap:10px}
+.kpi{flex:1;min-width:120px;background:#111827;border:1px solid var(--line);border-radius:10px;padding:10px}
+.kpi .l{font-size:11px;color:var(--sub)}.kpi .v{font-size:18px;font-weight:700;margin-top:2px}
+.up{color:var(--g)}.down{color:var(--r)}.warn{color:var(--a)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--sub);font-weight:600;font-size:11px}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px}
+.pg{background:rgba(22,163,74,.15);color:#4ade80}.pr{background:rgba(220,38,38,.15);color:#f87171}.pa{background:rgba(245,158,11,.15);color:#fbbf24}.pb{background:rgba(59,130,246,.15);color:#93c5fd}
+.gray{background:rgba(148,163,184,.2);color:#cbd5e1}
+.note{font-size:11.5px;color:var(--sub);margin-top:8px}.mono{font-variant-numeric:tabular-nums}
+.bar{height:26px;border-radius:6px;background:linear-gradient(90deg,#1e293b,#334155);position:relative;margin:14px 0 6px}
+.bar .rng{position:absolute;top:0;bottom:0;background:rgba(59,130,246,.35);border-left:2px solid var(--b);border-right:2px solid var(--b)}
+.bar .mk{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--tx)}.bar .mk.px{background:var(--r)}.bar .mk.fv{background:var(--g)}
+.scale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--sub)}
+.flag{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.35);border-radius:8px;padding:8px 10px;font-size:12px;margin:6px 0}
+.flagA{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:8px 10px;font-size:12px;margin:6px 0}
+.ins{background:rgba(148,163,184,.08);border:1px dashed var(--line);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--sub);margin:6px 0}
+.foot{color:var(--sub);font-size:11px;margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+</style></head><body><div class="wrap">
+
+<h1>삼성전자 종합 밸류에이션 뷰 <span class="tag">PROTOTYPE</span><span class="tag">대시보드 미반영</span></h1>
+<p class="sub">종합 7단계 × 다모다란 5-체크 · 스냅샷 ₩247,500 · 섹터=반도체(사이클+슈퍼사이클) · KRW(통화·CRP 조정 대상)</p>
+
+<div class="card">
+  <h2>① 스냅샷 & 핵심 결론</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="l">현재가</div><div class="v mono">₩247,500</div></div>
+    <div class="kpi"><div class="l">MC 공정가치(사이클P/E)</div><div class="v up mono">₩416,598</div></div>
+    <div class="kpi"><div class="l">MC 기대수익</div><div class="v up mono">+68.3%</div></div>
+    <div class="kpi"><div class="l">P(상승)</div><div class="v mono">81.9%</div></div>
+    <div class="kpi"><div class="l">정규화 DCF</div><div class="v down mono">₩70,999</div></div>
+    <div class="kpi"><div class="l">DCF 신뢰도</div><div class="v warn">Low</div></div>
+  </div>
+  <div class="flag">🔴 <b>이 종목의 핵심 = 방법 간 대충돌.</b> 사이클 P/E(MC)는 <b>+68%</b>, 정규화 DCF는 <b>−71%</b>. <b>평균 내면 안 됨</b> — 원인을 규명해야 함(아래 ④). 결론: 2026 실적은 슈퍼사이클로 <b>검증</b>됐고, 충돌의 원인은 DCF의 <b>정규화 마진 가정(14%)이 너무 낮게</b> 박힌 것 + WACC(ERP 6%) 과다. 단일 공정가치보다 <b>밴드+조건</b>으로 봐야 함.</div>
+</div>
+
+<div class="card">
+  <h2>② 방법별 종합 (triangulation) — 평균 내지 말 것</h2>
+  <table>
+    <thead><tr><th>방법</th><th>값</th><th>대비 현재가</th><th>판정</th></tr></thead>
+    <tbody>
+      <tr><td>사이클 P/E × MC (평균)<br><span class="note">2027 EPS ₩69,276 × cycle P/E mid 6.0x</span></td><td class="num mono">₩416,598</td><td class="num up mono">+68.3%</td><td><span class="pill pb">MODEL</span></td></tr>
+      <tr><td>MC 중앙값(P50)</td><td class="num mono">₩395,984</td><td class="num up mono">+60.0%</td><td><span class="pill pb">MODEL</span></td></tr>
+      <tr><td>MC 밴드 (P10–P90)</td><td class="num mono">₩196,222 – ₩660,160</td><td class="num mono">−21% ~ +167%</td><td><span class="pill pb">분포</span></td></tr>
+      <tr><td>정규화 Forward DCF<br><span class="note">정규화 EBIT마진 14% 가정 · confidence Low</span></td><td class="num mono down">₩70,999</td><td class="num down mono">−71.3%</td><td><span class="pill pr">가정 결함</span></td></tr>
+      <tr><td>Reverse DCF (시장 요구)</td><td class="num mono">FCFF CAGR ≈ 28%</td><td class="num mono">—</td><td><span class="pill pa">고성장 요구</span></td></tr>
+      <tr><td>현 fwd P/E (2027 EPS)</td><td class="num mono">3.6x</td><td class="num mono">—</td><td><span class="pill pa">사이클 착시</span></td></tr>
+    </tbody>
+  </table>
+  <div class="bar" id="bar">
+    <div class="rng"></div><div class="mk px"></div><div class="mk fv"></div>
+  </div>
+  <div class="scale"><span>P10 ₩196k</span><span style="color:var(--r)">현재가 ₩247.5k</span><span style="color:var(--g)">MC FV ₩416.6k</span><span>P90 ₩660k</span></div>
+  <div class="note">※ 정규화 DCF ₩70,999는 이 분포의 <b>왼쪽 밖</b>(P10보다 낮음) — 가정 결함으로 신뢰도 Low.</div>
+</div>
+
+<div class="card">
+  <h2>③ 다모다란 반도체 벤치마크 대조 (US, 2026.1)</h2>
+  <table>
+    <thead><tr><th>지표</th><th>삼성(사용/스냅샷)</th><th>반도체 업종</th><th>해석</th></tr></thead>
+    <tbody>
+      <tr><td>Beta / WACC</td><td class="num mono">1.479 / 11.93%(KRW)</td><td class="num mono">1.52 / 10.55%(USD)</td><td>β는 정합 ✅. WACC는 ERP 6% 때문 과다 → 아래 5-체크 2</td></tr>
+      <tr><td>ERP</td><td class="num mono">6.0%</td><td class="num mono">4.23%(US)</td><td><span class="pill pa">과다</span> 한국 ≈ US+CRP ≈ 4.8% → WACC↓ 여지 → 가치↑</td></tr>
+      <tr><td>Fwd P/E</td><td class="num mono">3.6x</td><td class="num mono">37.29x</td><td><span class="pill pa">착시</span> 피크 EPS 기준 → 싼 게 아님</td></tr>
+      <tr><td>EV/EBITDA</td><td class="num">—</td><td class="num mono">42.7x</td><td>피크 EBITDA에 곱 금지</td></tr>
+      <tr><td>ROE / ROIC</td><td class="num">(피크 高)</td><td class="num mono">31.4% / 27.2%</td><td>피크 수익성 국면</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>④ 다모다란 5-체크 판정</h2>
+  <table>
+    <thead><tr><th>체크</th><th>내용</th><th>판정</th></tr></thead>
+    <tbody>
+      <tr><td>1. 정규화</td><td>MC는 피크 EPS×사이클 P/E 6.0x로 올바르게 처리. <b>그러나 DCF는 정규화 마진 14%로 과소</b> — 실제 2026 슈퍼사이클(연 OP 수백조)과 모순 → DCF 재설정 필요</td><td><span class="pill pr">불일치</span></td></tr>
+      <tr><td>2. WACC/베타</td><td>β1.479 ≈ 업종 1.52 정합. 단 ERP 6% 과다 → WACC 11.93% 과대 → 가치 과소</td><td><span class="pill pa">하향 여지</span></td></tr>
+      <tr><td>3. 성장-재투자</td><td>Reverse DCF가 요구하는 FCFF CAGR ~28%는 매우 높음 → 사이클 지속성이 관건</td><td><span class="pill pa">리스크</span></td></tr>
+      <tr><td>4. 상대 companion</td><td>fwd P/E 3.6x는 피크 EPS 착시. cycle P/E로 통제함</td><td><span class="pill pg">정합</span></td></tr>
+      <tr><td>5. Value vs Price</td><td>MC(+68%)와 DCF(−71%)가 미해결 충돌. 원인=정규화 마진+WACC. 단일값 신뢰 낮음</td><td><span class="pill pr">미해결</span></td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>종합 판정: 실적은 슈퍼사이클로 검증. 그러나 방법 충돌이 커 단일 공정가치 신뢰 낮음.</b> 핵심 다음 작업 = ①정규화 마진 재설정한 DCF 재실행 ②ERP를 한국 기준(≈4.8%)으로 낮춰 WACC 재산출 ③사이클 지속성(HBM4 퀄) 모니터.</div>
+</div>
+
+<div class="card">
+  <h2>⑤ 정직한 공백</h2>
+  <div class="ins">• 현재 정규화 DCF는 <b>구버전 가정(14% 마진, "컨센 오염" 판정 시절)</b> — 슈퍼사이클 확인 후 재설정 안 됨. 재실행 시 DCF가 MC 쪽으로 크게 상향될 가능성.</div>
+  <div class="ins">• ERP 6% → 한국 CRP 기반 ≈4.8%로 교체 시 WACC·가치 재계산 필요.</div>
+  <div class="ins">• 스냅샷 ₩247,500 (최근 관측 ~₩281,500) — 실시간 갱신 시 재계산.</div>
+</div>
+
+<div class="foot">프로토타입 · index.html 미반영 · BUY/SELL 아님. 데이터: Bigdata.com·자체 MC·samsung_dcf.json·다모다란 NYU(2026.1). KRW는 통화·CRP 조정 전제.</div>
+
+</div>
+<script>
+(function(){
+  var lo=196222, hi=660160, px=247500, fv=416598, p25=282633, p75=528135;
+  function pos(x){return Math.max(0,Math.min(100,(x-lo)/(hi-lo)*100));}
+  var b=document.getElementById('bar');
+  b.querySelector('.px').style.left=pos(px)+'%';
+  b.querySelector('.fv').style.left=pos(fv)+'%';
+  var r=b.querySelector('.rng'); r.style.left=pos(p25)+'%'; r.style.right=(100-pos(p75))+'%';
+})();
+</script>
+</body></html>

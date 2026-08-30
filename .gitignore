@@ -1,0 +1,52 @@
+# ── Secrets — 절대 커밋 금지 ─────────────────────────────────────────
+# 실제 키는 data_sources/.env 에만. Codespaces 에서는 Repository secret 으로 주입한다.
+.env
+*.env
+**/.env
+!data_sources/.env.example
+data_sources/config/data_sources.local.json
+
+# ── Python ───────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# ── store ────────────────────────────────────────────────────────────
+# 기본은 전부 무시하고, **재생성이 불가능한 것만** 예외로 되살린다.
+#   raw/               = 유일 원본(공시 원문 payload). 여기서 normalized 를 100% 재생성
+#   _migrated.jsonl    = 대시보드 리터럴에서 시드한 price 4건 — raw 가 없어 재생성 불가
+#   archive/           = REPORT/ASSUMPTION 격리 보관분 — 위와 같은 이유
+#   mc_dashboard.jsonl = legacy MC 파생 20건(core_eligible=false). migrate_inline_to_store 의
+#                        산출물이라 --force-derived 로는 안 나온다. 빠지면 DS 가 56→36 노드가 된다.
+# 무시되는 것: derived/actual_metrics · _cache/ · dashboard_snapshot/ · sync.log · sync_state · source_health
+#   → 클론 후 `run_sync --all --force --no-network --force-derived` 로 전부 복구된다.
+data_sources/store/*
+!data_sources/store/raw/
+!data_sources/store/normalized/
+!data_sources/store/archive/
+!data_sources/store/derived/
+
+data_sources/store/normalized/*
+!data_sources/store/normalized/_migrated.jsonl
+
+data_sources/store/derived/*
+!data_sources/store/derived/mc_dashboard.jsonl
+
+**/*.bak
+*.jsonl.bak
+
+# ── 대용량 원본 (OneDrive 보관, Codespace 작업엔 불필요) ──────────────
+반도체_메모리_대시보드/원본자료/
+
+# ── superseded (data_sources/ 로 흡수됨) ─────────────────────────────
+리포트_파이프라인/
+
+# ── 개인 설정 ────────────────────────────────────────────────────────
+.claude/settings.local.json
+
+# ── OS ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

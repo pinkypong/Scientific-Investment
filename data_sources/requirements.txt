@@ -1,0 +1,11 @@
+# data_sources 파이프라인 의존성
+#   pip install -r data_sources/requirements.txt
+#   playwright install chromium      # hankyung_global 수집에만 필요
+
+requests>=2.31
+beautifulsoup4>=4.12
+lxml>=5.0
+pymupdf>=1.24          # import fitz — 한경 컨센서스 PDF 텍스트 추출
+playwright>=1.44       # 한경 글로벌마켓 예상실적(JS 렌더)
+
+# 표준 라이브러리만 쓰는 부분(common/*, store, build_dashboard_data, migrate)은 위 패키지 없이도 동작.
