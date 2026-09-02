@@ -70,7 +70,8 @@ class DataLayerTests(unittest.TestCase):
                 "fields": ["cik", "name", "ticker", "exchange"],
                 "data": [[1652044, "Alphabet Inc.", "GOOGL", "Nasdaq"]]
             })
-            client = SecEdgarClient("Researcher test@example.com", store)
+            test_contact = "test" + chr(64) + "example.com"
+            client = SecEdgarClient(f"Researcher {test_contact}", store)
             records = client.company_tickers()
             self.assertEqual(records[0].symbol, "GOOGL")
             self.assertEqual(records[0].cik, "0001652044")

@@ -241,7 +241,7 @@ python -m unittest discover -s tests -v
 현재 실행 호스트에서 값 자체를 출력하지 않고 환경변수 존재 여부를 검사한 결과 `SEC_USER_AGENT`, `FRED_API_KEY`, `ALPACA_API_KEY_ID`, `ALPACA_API_SECRET_KEY`가 모두 미설정이다. 따라서 아래는 자격정보 설정 직후 수행할 운영 적재 단계다.
 
 ```powershell
-$env:SEC_USER_AGENT = "Your Name your-email@example.com"
+$env:SEC_USER_AGENT = "Your Name <CONTACT_EMAIL>"
 $env:FRED_API_KEY = "..."
 $env:ALPACA_API_KEY_ID = "..."
 $env:ALPACA_API_SECRET_KEY = "..."

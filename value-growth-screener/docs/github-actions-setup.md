@@ -50,7 +50,7 @@ git push -u origin vgs-pipeline
 
 | 워크플로 참조 | 용도 | 비고 |
 |---|---|---|
-| `SEC_USER_AGENT` | SEC EDGAR User-Agent | `"이름 email@example.com"` 형식. 비밀은 아니지만 SEC가 식별 연락처 요구 |
+| `SEC_USER_AGENT` | SEC EDGAR User-Agent | `"이름 <CONTACT_EMAIL>"` 형식. 비밀은 아니지만 SEC가 식별 연락처 요구 |
 | `FRED_API_KEY` | FRED/ALFRED | https://fred.stlouisfed.org/docs/api/api_key.html |
 | `ALPACA_API_KEY_ID` | Alpaca | Key ID |
 | `ALPACA_API_SECRET_KEY` | Alpaca | Secret |
