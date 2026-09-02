@@ -1,0 +1,120 @@
+{
+  "security": {
+    "ticker": "DEMO",
+    "name": "Synthetic Compounder",
+    "sector": "Technology",
+    "currency": "USD"
+  },
+  "as_of": "2026-09-01",
+  "objective": {
+    "market": {
+      "price": 95.0,
+      "cash": 2000.0,
+      "debt": 1000.0,
+      "diluted_shares": 100.0,
+      "market_cap": 9500.0,
+      "enterprise_value": 8500.0
+    },
+    "financials": {
+      "revenue_ttm": 10000.0,
+      "ebit_margin_ttm": 0.22,
+      "ocf_ttm": 1900.0,
+      "net_income_ttm": 1600.0,
+      "ebitda_ttm": 2500.0
+    },
+    "ratios": {
+      "roic": 0.18,
+      "wacc": 0.09,
+      "ocf_to_net_income": 1.1875,
+      "accrual_ratio": 0.01,
+      "debt_to_ebitda": 0.4,
+      "interest_coverage": 18.0,
+      "share_dilution_yoy": 0.005
+    },
+    "consensus": {
+      "forward_eps": 18.0,
+      "revenue_growth_3y": 0.11,
+      "eps_growth_3y": 0.15,
+      "revision_90d": 0.03,
+      "target_median": 130.0
+    },
+    "risk": {
+      "beta": 1.05,
+      "max_drawdown_1y": -0.24
+    },
+    "portfolio": {
+      "correlation": 0.45,
+      "concentration_reduction": 0.08
+    },
+    "signals": {
+      "institutional_change_pct": 0.02,
+      "workforce_yoy_pct": 0.06,
+      "ravenpack_sentiment": 0.25
+    },
+    "capital": {
+      "risk_free_rate": 0.042,
+      "beta": 1.05,
+      "equity_risk_premium": 0.045,
+      "country_risk_premium": 0.0,
+      "pre_tax_cost_debt": 0.055,
+      "tax_rate": 0.21,
+      "debt_value": 1000.0,
+      "equity_value": 9500.0
+    }
+  },
+  "assumptions": {
+    "valuation_method": "fcff",
+    "confidence": "medium",
+    "rationale": "Synthetic test only; not an investment opinion.",
+    "relative_cross_check": {
+      "method": "pe",
+      "target_multiple": 18.0
+    },
+    "scenarios": {
+      "bear": {
+        "probability": 0.25,
+        "forecast_years": 5,
+        "revenue_growth_start": 0.04,
+        "revenue_growth_end": 0.025,
+        "target_ebit_margin": 0.19,
+        "tax_rate": 0.22,
+        "sales_to_capital": 1.5,
+        "wacc": 0.11,
+        "terminal_growth": 0.02,
+        "terminal_roic": 0.10
+      },
+      "base": {
+        "probability": 0.50,
+        "forecast_years": 5,
+        "revenue_growth_start": 0.11,
+        "revenue_growth_end": 0.05,
+        "target_ebit_margin": 0.24,
+        "tax_rate": 0.21,
+        "sales_to_capital": 1.8,
+        "wacc": 0.09,
+        "terminal_growth": 0.025,
+        "terminal_roic": 0.12
+      },
+      "bull": {
+        "probability": 0.25,
+        "forecast_years": 5,
+        "revenue_growth_start": 0.17,
+        "revenue_growth_end": 0.07,
+        "target_ebit_margin": 0.28,
+        "tax_rate": 0.20,
+        "sales_to_capital": 2.1,
+        "wacc": 0.08,
+        "terminal_growth": 0.03,
+        "terminal_roic": 0.15
+      }
+    }
+  },
+  "sources": [
+    {
+      "provider": "Synthetic fixture",
+      "document_id": "DEMO-ONLY",
+      "observed_at": "2026-09-01T00:00:00Z",
+      "fields": ["objective.*"]
+    }
+  ]
+}
