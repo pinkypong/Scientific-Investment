@@ -136,15 +136,16 @@ def test_opendart_raw_meta_has_no_crtfc_key():
 
 
 def test_redact_meta_strips_secrets():
+    dummy_key = "ABC123" + "def456"
     m = store._redact_meta({
         "endpoint": "example.invalid/api/x",
-        "request_url": "https://example.invalid/api/x.json?corp_code=1&crtfc_key=ABC123def456&bsns_year=2026",
-        "crtfc_key": "ABC123def456",
-        "params": {"crtfc_key": "ABC123def456", "corp_code": "00126380"},
+        "request_url": f"https://example.invalid/api/x.json?corp_code=1&crtfc_key={dummy_key}&bsns_year=2026",
+        "crtfc_key": dummy_key,
+        "params": {"crtfc_key": dummy_key, "corp_code": "00126380"},
         "reprt_codes": ["11011", "11014"],
     })
     s = json.dumps(m, ensure_ascii=False)
-    assert "ABC123def456" not in s, "redact 실패 — secret 잔존"
+    assert dummy_key not in s, "redact 실패 — secret 잔존"
     assert "[REDACTED]" in s
     assert m["endpoint"] == "example.invalid/api/x"      # 비-secret 보존
     assert m["reprt_codes"] == ["11011", "11014"]

@@ -9,6 +9,12 @@ b8ded90c0c29dfe25a3a1125897147630b01d0a6:README.md:sec-edgar-user-agent-email:42
 b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/.env.example:sec-edgar-user-agent-email:10
 b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/sec_edgar/README.md:sec-edgar-user-agent-email:17
 
+#    같은 커밋의 추가 예제 3건: 설정 설명의 @example.com 주소 1건과
+#    테스트 전용 더미 API 키 2건. 현재 작업 트리에서는 리터럴을 제거함.
+b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/config/data_sources.json:sec-edgar-user-agent-email:34
+b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/tests/test_phase_c.py:generic-api-key:142
+b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/tests/test_phase_c.py:generic-api-key:143
+
 # ── 1a9bd32 "Add isolated VGS data-collection workflow" ──
 #    VGS 문서에 복사된 @example.com 예제 주소 3건. 실제 주소가 아니며,
 #    현재 작업 트리에서는 전부 <CONTACT_EMAIL> 로 교체됨.

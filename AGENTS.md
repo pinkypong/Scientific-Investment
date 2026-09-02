@@ -46,3 +46,15 @@ Projects\<프로젝트명>\
 
 - 반도체/메모리/AI 종목·리포트 분석은 **semiconductor-ai-investment-research 스킬**(계정 저장, 모바일에서도 작동)의 13블록·검산·확률 프레임워크를 따른다.
 - 목표주가·컨센서스는 진실이 아님. 확률은 근거를 밝히고 subjective/frequency를 구분.
+
+## 5. 푸시 전 보안 검증 (필수)
+
+- 커밋·푸시 전에 저장소의 실제 CI 설정인 `.gitleaks.toml`로 staged 변경과 Git 이력을 모두 검사한다.
+  ```powershell
+  gitleaks git --staged --config .gitleaks.toml --redact .
+  gitleaks git --config .gitleaks.toml --redact .
+  ```
+- Gitleaks가 설치되지 않았거나, pre-commit 훅에서 `command not found` 등 도구 오류가 나거나, 검사를 재현하지 못하면 **통과로 간주하지 말고 푸시를 중단**한다.
+- 로컬 훅의 정규식만 믿지 말고 `.github/workflows/secret-scan.yml`과 `.gitleaks.toml`의 규칙·allowlist·fingerprint 동작을 확인한다.
+- SEC User-Agent 문서 예시는 이메일 리터럴(`@example.com` 포함) 대신 `<CONTACT_EMAIL>`을 사용한다. 테스트가 이메일 형식을 요구하면 소스에 주소 리터럴을 남기지 않고 런타임에 조립한다.
+- 오탐 예외는 파일/폴더 전체 allowlist가 아니라 검증된 과거 커밋의 정확한 fingerprint만 `.gitleaksignore`에 추가한다.
