@@ -41,7 +41,7 @@ python -m vgs.cli screen examples/synthetic_compounder.json --config config/defa
 미국 데이터 계층의 기본 명령은 다음과 같다. 키는 파일이나 명령 인자에 넣지 않는다.
 
 ```powershell
-$env:SEC_USER_AGENT = "Your Name your-email@example.com"
+$env:SEC_USER_AGENT = "Your Name <CONTACT_EMAIL>"
 $env:ALPACA_API_KEY_ID = "..."
 $env:ALPACA_API_SECRET_KEY = "..."
 $env:FRED_API_KEY = "..."

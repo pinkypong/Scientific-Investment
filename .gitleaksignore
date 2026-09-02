@@ -8,3 +8,10 @@
 b8ded90c0c29dfe25a3a1125897147630b01d0a6:README.md:sec-edgar-user-agent-email:42
 b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/.env.example:sec-edgar-user-agent-email:10
 b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/sec_edgar/README.md:sec-edgar-user-agent-email:17
+
+# ── 1a9bd32 "Add isolated VGS data-collection workflow" ──
+#    VGS 문서에 복사된 @example.com 예제 주소 3건. 실제 주소가 아니며,
+#    현재 작업 트리에서는 전부 <CONTACT_EMAIL> 로 교체됨.
+1a9bd32c11dcebb2727299c730f15616f99c67dd:value-growth-screener/README.md:sec-edgar-user-agent-email:44
+1a9bd32c11dcebb2727299c730f15616f99c67dd:value-growth-screener/CLAUDE_COWORK_HANDOFF.md:sec-edgar-user-agent-email:244
+1a9bd32c11dcebb2727299c730f15616f99c67dd:value-growth-screener/docs/github-actions-setup.md:sec-edgar-user-agent-email:53
