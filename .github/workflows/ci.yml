@@ -54,6 +54,9 @@ jobs:
       - name: test_phase_e1
         run: python -m data_sources.tests.test_phase_e1
 
+      - name: test_phase_e2
+        run: python -m data_sources.tests.test_phase_e2
+
       - name: build_dashboard_data --check
         run: python -m data_sources.build_dashboard_data --check
 
