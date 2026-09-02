@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.secrets.ps1
+*.secrets.ps1
+inputs/
+data/raw/*
+data/cache/*
+data/normalized/*
+data/reports/*
+!data/README.md
+!data/raw/.gitkeep
+!data/cache/.gitkeep
+!data/normalized/.gitkeep
+!data/reports/.gitkeep

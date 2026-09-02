@@ -1,0 +1,127 @@
+# =============================================================================
+# VGS data-collection workflow  --  ISOLATED from the existing dashboard.
+#
+# INSTALL: copy this file to  <repo-root>/.github/workflows/vgs-collect-us-data.yml
+#          in the Scientific-Investment repo. The Value-Growth-Screener project
+#          must live at  <repo-root>/value-growth-screener/ .
+#
+# The Scientific-Investment repo is used ONLY as an execution host so these
+# steps can read its Repository Secrets. Nothing here reads, writes, or shares
+# the dashboard's code, outputs, artifacts, schedule, or concurrency group.
+#   - workflow file name : vgs-*         (own namespace)
+#   - concurrency group   : vgs-collect-us-data
+#   - artifact name       : vgs-data-*
+#   - output path         : value-growth-screener/data/  (never repo root)
+#   - schedule            : none (manual dispatch only; add a vgs-only cron here
+#                           if wanted -- keep it off the dashboard's cadence)
+#   - permissions         : contents:read  (never commits back)
+# =============================================================================
+name: vgs-collect-us-data
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "smoke = GOOGL only, short ranges (verify keys/limits). full = 7 holdings, 2023-2026."
+        type: choice
+        options: [smoke, full]
+        default: smoke
+      as_of:
+        description: "as-of / vintage date (YYYY-MM-DD) -- also the end date for bars and FRED"
+        default: "2026-09-01"
+
+# Own group -> never queues behind or cancels the dashboard's runs.
+concurrency:
+  group: vgs-collect-us-data
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: value-growth-screener
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: src
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve parameters
+        id: p
+        run: |
+          if [ "${{ inputs.mode }}" = "full" ]; then
+            echo "symbols=GOOGL MRVL MU SNDK ADI NVDA QCOM" >> "$GITHUB_OUTPUT"
+            echo "bar_start=2023-01-01"                     >> "$GITHUB_OUTPUT"
+            echo "fred_start=2020-01-01"                    >> "$GITHUB_OUTPUT"
+          else
+            echo "symbols=GOOGL"        >> "$GITHUB_OUTPUT"
+            echo "bar_start=2026-06-01" >> "$GITHUB_OUTPUT"
+            echo "fred_start=2026-01-01" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: SEC security master
+        continue-on-error: true
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python -m vgs.cli sec-security-master --data-root data
+
+      - name: FRED macro (vintage-fixed)
+        continue-on-error: true
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: >
+          python -m vgs.cli fred
+          --start ${{ steps.p.outputs.fred_start }}
+          --end ${{ inputs.as_of }}
+          --vintage-date ${{ inputs.as_of }}
+          --data-root data
+
+      - name: Alpaca daily bars (IEX)
+        continue-on-error: true
+        env:
+          ALPACA_API_KEY_ID: ${{ secrets.ALPACA_API_KEY_ID }}
+          ALPACA_API_SECRET_KEY: ${{ secrets.ALPACA_API_SECRET_KEY }}
+        run: >
+          python -m vgs.cli alpaca-bars ${{ steps.p.outputs.symbols }}
+          --start ${{ steps.p.outputs.bar_start }}
+          --end ${{ inputs.as_of }}
+          --feed iex --data-root data
+
+      - name: Summarize
+        if: always()
+        run: |
+          {
+            echo "### vgs-collect-us-data  (mode: ${{ inputs.mode }}, as_of: ${{ inputs.as_of }})"
+            echo '```'
+            ls -la data/normalized 2>/dev/null || echo "no data/normalized"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload data artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vgs-data-${{ inputs.mode }}-${{ github.run_id }}
+          path: value-growth-screener/data/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Fail if nothing was collected
+        if: always()
+        run: |
+          produced=$(find data/normalized data/cache -type f \
+            \( -name '*.jsonl' -o -name '*.json' \) 2>/dev/null | wc -l)
+          echo "normalized/cache output files: $produced"
+          if [ "$produced" -eq 0 ]; then
+            echo "::error::no data files were produced -- check secret names/values in the step logs above"
+            exit 1
+          fi

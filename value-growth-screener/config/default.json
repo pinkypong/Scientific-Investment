@@ -1,0 +1,28 @@
+{
+  "gates": {
+    "minimum_objective_score": 65,
+    "minimum_margin_of_safety": 0.15,
+    "minimum_completeness": 0.70,
+    "minimum_provenance_coverage": 0.80,
+    "maximum_critical_flags": 0
+  },
+  "collection": {
+    "tier1_sections": ["company_overview", "financial_ratios", "key_metrics"],
+    "tier2_sections": ["analyst_estimates", "latest_earnings"],
+    "tier2_top_n": 10,
+    "tier3_top_n": 5,
+    "market_snapshot_ttl_hours": 24,
+    "company_snapshot_ttl_hours": 24,
+    "filing_ttl_hours": 168,
+    "sentiment_ttl_hours": 24
+  },
+  "quality_thresholds": {
+    "ocf_to_net_income_warning": 0.60,
+    "accrual_ratio_warning": 0.05,
+    "accrual_ratio_critical": 0.10,
+    "debt_to_ebitda_warning": 4.0,
+    "interest_coverage_warning": 3.0,
+    "share_dilution_warning": 0.05,
+    "roic_wacc_spread_warning": 0.0
+  }
+}

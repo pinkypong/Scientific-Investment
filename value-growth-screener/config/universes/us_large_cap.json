@@ -1,0 +1,22 @@
+{
+  "name": "US large-cap screening universe",
+  "current_constituent_proxies": [
+    {
+      "name": "S&P 500",
+      "fund": "SPY",
+      "provider": "State Street",
+      "input_file": "data/raw/spy-holdings.csv"
+    },
+    {
+      "name": "Nasdaq-100",
+      "fund": "QQQ",
+      "provider": "Invesco",
+      "input_file": "data/raw/qqq-holdings.csv"
+    }
+  ],
+  "forced_symbols": ["GOOGL", "MRVL", "MU", "SNDK", "ADI", "NVDA", "QCOM"],
+  "notes": [
+    "ETF holdings are current-universe proxies, not canonical historical index membership.",
+    "Use point-in-time constituent data before any historical backtest."
+  ]
+}
