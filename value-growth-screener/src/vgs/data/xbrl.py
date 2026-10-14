@@ -19,7 +19,12 @@ INSTANT_TAGS = {
     "assets": ("Assets",),
     "debt": ("LongTermDebtAndFinanceLeaseObligations", "LongTermDebt", "LongTermDebtAndCapitalLeaseObligations"),
     "diluted_shares": ("EntityCommonStockSharesOutstanding",),
+    # Parent-only equity: residual income values the common shareholders' claim, so NCI is excluded.
+    "book_equity": ("StockholdersEquity",),
 }
+# Cycle statistics need enough fiscal years to span at least one full cycle; fewer → None.
+CYCLE_MIN_YEARS = 5
+CYCLE_MAX_YEARS = 10
 
 
 @dataclass(frozen=True)
@@ -166,4 +171,22 @@ def reported_growth(fiscal_years: dict[str, dict[int, float]], ttm: dict[str, fl
     if now is not None and before is not None and before > 0:
         yoy = now / before - 1
     return {"revenue_cagr_3y": cagr, "revenue_yoy_ttm": yoy, "ebit_margin_change_3y": margin_change,
-            "basis_fiscal_year": last}
+            "basis_fiscal_year": last, **cycle_margins(revenue, operating)}
+
+
+def cycle_margins(revenue: dict[int, float], operating: dict[int, float]) -> dict[str, float | int | None]:
+    """Reported FY EBIT margins over the last CYCLE_MAX_YEARS years: simple mean, range, latest.
+
+    Simple (not revenue-weighted) mean so trough years count as much as peak years. These are
+    descriptive facts; nothing here assumes the margin will revert to the average."""
+    years = sorted(year for year in revenue if year in operating and revenue[year] > 0)
+    if years:
+        years = [year for year in years if year > years[-1] - CYCLE_MAX_YEARS]
+    empty = {"ebit_margin_cycle_avg": None, "ebit_margin_cycle_min": None, "ebit_margin_cycle_max": None,
+             "ebit_margin_latest_fy": None, "cycle_years": len(years), "cycle_first_fiscal_year": None}
+    if len(years) < CYCLE_MIN_YEARS:
+        return empty
+    margins = [operating[year] / revenue[year] for year in years]
+    return {"ebit_margin_cycle_avg": sum(margins) / len(margins), "ebit_margin_cycle_min": min(margins),
+            "ebit_margin_cycle_max": max(margins), "ebit_margin_latest_fy": margins[-1],
+            "cycle_years": len(years), "cycle_first_fiscal_year": years[0]}

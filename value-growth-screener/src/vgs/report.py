@@ -81,6 +81,16 @@ def render_markdown(result: dict[str, Any]) -> str:
         )
     else:
         lines.append("- 상대가치 가정이 없어 계산하지 않음")
+    sourced = [(row["name"], row["inputs"]) for row in computed.get("scenario_valuation", []) if row.get("inputs")]
+    if cross and cross.get("inputs"):
+        sourced.append((f"cross-check ({cross['method']})", cross["inputs"]))
+    if sourced:
+        lines.extend(["", "### 가치평가 입력 출처", "",
+                      "`objective.*`는 공시 사실, `assumptions.*`는 사람이 정한 가정이다.", "",
+                      "| 시나리오 | 입력 | 값 | 출처 |", "|---|---|---:|---|"])
+        for name, inputs in sourced:
+            for key, item in inputs.items():
+                lines.append(f"| {name} | `{key}` | {item['value']:.6g} | `{item['source']}` |")
     wacc = computed.get("wacc_build")
     lines.extend(["", "### WACC 구성", ""])
     if wacc:

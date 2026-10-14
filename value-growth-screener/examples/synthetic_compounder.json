@@ -21,7 +21,8 @@
       "ocf_ttm": 1900.0,
       "net_income_ttm": 1600.0,
       "ebitda_ttm": 2500.0,
-      "eps_ttm": 16.0
+      "eps_ttm": 16.0,
+      "book_value": 8000.0
     },
     "ratios": {
       "roic": 0.18,
@@ -35,7 +36,13 @@
     "history": {
       "revenue_cagr_3y": 0.11,
       "revenue_yoy_ttm": 0.09,
-      "ebit_margin_change_3y": 0.02
+      "ebit_margin_change_3y": 0.02,
+      "ebit_margin_cycle_avg": 0.2,
+      "ebit_margin_cycle_min": 0.16,
+      "ebit_margin_cycle_max": 0.23,
+      "ebit_margin_latest_fy": 0.22,
+      "cycle_years": 8,
+      "cycle_first_fiscal_year": 2018
     },
     "risk": {
       "beta": 1.05,

@@ -24,9 +24,10 @@
 ## 객관 필드 그룹
 
 - `market`: price, cash, debt, diluted_shares, market_cap, enterprise_value
-- `financials`: revenue_ttm, ebit_margin_ttm, ocf_ttm, net_income_ttm, ebitda_ttm, eps_ttm, tangible_book_value
+- `financials`: revenue_ttm, ebit_margin_ttm, ocf_ttm, net_income_ttm, ebitda_ttm, eps_ttm, tangible_book_value, book_value(지배주주 자본, XBRL `StockholdersEquity`)
 - `ratios`: roic, wacc, ocf_to_net_income, accrual_ratio, debt_to_ebitda, interest_coverage, share_dilution_yoy
 - `history`: revenue_cagr_3y, revenue_yoy_ttm, ebit_margin_change_3y — 공시된 FY·분기 값으로만 계산 (`vgs.data.xbrl.reported_growth`)
+  - 사이클 사실: ebit_margin_cycle_avg/min/max, ebit_margin_latest_fy, cycle_years, cycle_first_fiscal_year — 최근 최대 10개 FY의 공시 EBIT 마진 단순평균·범위 (`vgs.data.xbrl.cycle_margins`). FY가 5개 미만이면 None. 점수에는 쓰지 않는다(검토 메모: `docs/cycle-position-review.md`).
 - `risk`: beta, max_drawdown_1y
 - `portfolio`: correlation, concentration_reduction
 - `signals`: institutional_change_pct, workforce_yoy_pct, ravenpack_sentiment
@@ -35,7 +36,20 @@
 
 `wacc`의 시장 입력값은 객관적 관측치로 보관할 수 있지만 DCF에 실제 적용하는 WACC는 `assumptions.scenarios.*.wacc`에 둔다. 이 구분은 ‘관측값’과 ‘모델 선택’을 혼동하지 않기 위함이다.
 
-DCF 종목에는 `relative_cross_check`를 추가해 PE/EV-EBITDA/P-TBV로 별도 검산할 수 있다. ETF는 `etf_lookthrough_pe` 방법으로 현재 look-through PE, 목표 PE, 평가기간 이익성장을 분리 입력한다.
+DCF 종목에는 `relative_cross_check`를 추가해 PE/EV-EBITDA/P-TBV/RI/EPV로 별도 검산할 수 있다.
+
+## 절대가치 방법 (`assumptions.valuation_method`)
+
+| 방법 | 공시 사실(objective) | 사람 가정(assumptions) |
+|---|---|---|
+| `fcff` | revenue_ttm, ebit_margin_ttm, cash, debt, diluted_shares | 성장률 경로, 목표마진, 세율, sales_to_capital, wacc, terminal_growth, terminal_roic |
+| `ri` 잔여이익 | book_value, net_income_ttm(시작 ROE 기본값), diluted_shares | target_roe, cost_of_equity, payout_ratio, terminal_growth, forecast_years, (선택) roe_start |
+| `epv` 이익력가치 | revenue_ttm, history.ebit_margin_cycle_avg, cash, debt, diluted_shares | tax_rate, wacc, (선택) normalized_revenue · normalized_ebit_margin · maintenance_capex_adjustment |
+
+- RI: 가치 = 장부가 + Σ(ROE−자기자본비용)×기초장부가 할인 + 잔존가치. ROE는 roe_start→target_roe로 선형 수렴. 장부가는 항상 공시값.
+- EPV: 성장 없는 가치 = 정상화 NOPAT ÷ WACC − 부채 + 현금. 정상화 마진 기본값은 공시 사이클 평균 마진이다.
+- RI·EPV 결과의 `inputs`는 숫자마다 `{value, source}`를 담는다. source가 `objective.*`이면 공시 사실, `assumptions.*`이면 가정이다. 선택 가정을 넣으면 해당 사실을 덮고 출처가 가정으로 바뀐다.
+- 시장 입력 CAPM과 base 가정이 200bp 넘게 다르면 경고한다: `epv`는 WACC(`WACC_ASSUMPTION_GAP`), `ri`는 자기자본비용(`COE_ASSUMPTION_GAP`). ETF는 `etf_lookthrough_pe` 방법으로 현재 look-through PE, 목표 PE, 평가기간 이익성장을 분리 입력한다.
 
 ## 자료 일관성 규칙
 

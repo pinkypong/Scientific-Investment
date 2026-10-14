@@ -13,7 +13,7 @@ from vgs.data.holdings import parse_ndx_holdings, parse_spy_holdings
 from vgs.data.models import MarketBar, SecurityRecord
 from vgs.data.sec import SecEdgarClient
 from vgs.data.universe import build_universe, read_holdings_csv
-from vgs.data.xbrl import normalize_companyfacts
+from vgs.data.xbrl import cycle_margins, normalize_companyfacts
 
 
 def minimal_xlsx(rows):
@@ -151,6 +151,22 @@ class DataLayerTests(unittest.TestCase):
         self.assertAlmostEqual(history["revenue_yoy_ttm"], 0.10, places=6)
         self.assertAlmostEqual(history["ebit_margin_change_3y"], 20 / 133.1 - 0.10, places=6)
         self.assertEqual(history["basis_fiscal_year"], 2024)
+        # Two FY operating-income years are too few for a cycle average.
+        self.assertIsNone(history["ebit_margin_cycle_avg"])
+        self.assertEqual(history["cycle_years"], 2)
+
+    def test_cycle_margins_window_and_stats(self):
+        revenue = {year: 100.0 for year in range(2013, 2025)}
+        operating = {year: m for year, m in zip(range(2013, 2025),
+                                                [50, 50, 10, 20, -5, 30, 25, 5, 15, 40, 35, 30])}
+        stats = cycle_margins(revenue, operating)
+        # Only the last 10 FYs (2015-2024) count; the 2013-2014 peaks fall outside the window.
+        self.assertEqual(stats["cycle_years"], 10)
+        self.assertEqual(stats["cycle_first_fiscal_year"], 2015)
+        self.assertAlmostEqual(stats["ebit_margin_cycle_avg"], 0.205)
+        self.assertAlmostEqual(stats["ebit_margin_cycle_min"], -0.05)
+        self.assertAlmostEqual(stats["ebit_margin_cycle_max"], 0.40)
+        self.assertAlmostEqual(stats["ebit_margin_latest_fy"], 0.30)
 
     def test_ken_french_parser(self):
         text = "notes\n,Mkt-RF,SMB,HML,RF\n20260901,1.00,-0.50,0.25,0.01\nfooter"

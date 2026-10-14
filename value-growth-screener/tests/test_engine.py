@@ -82,6 +82,64 @@ class EngineTests(unittest.TestCase):
         expected = self.payload["objective"]["financials"]["eps_ttm"] * 18.0
         self.assertAlmostEqual(result["computed"]["relative_cross_check"]["fair_value_per_share"], expected)
 
+    def _single_scenario(self, method, scenario):
+        payload = deepcopy(self.payload)
+        payload["assumptions"]["valuation_method"] = method
+        payload["assumptions"]["scenarios"] = {"base": {"probability": 1.0, **scenario}}
+        return payload
+
+    def test_ri_without_excess_return_equals_book(self):
+        payload = self._single_scenario("ri", {"roe_start": 0.10, "target_roe": 0.10, "cost_of_equity": 0.10,
+                                               "payout_ratio": 0.4, "terminal_growth": 0.02})
+        row = analyze_security(payload, self.config)["computed"]["scenario_valuation"][0]
+        self.assertAlmostEqual(row["fair_value_per_share"], 8000.0 / 100.0)
+        self.assertAlmostEqual(row["book_value_share"], 1.0)
+
+    def test_ri_hand_calculation_and_sources(self):
+        payload = self._single_scenario("ri", {"forecast_years": 2, "target_roe": 0.12, "cost_of_equity": 0.10,
+                                               "payout_ratio": 0.5, "terminal_growth": 0.0})
+        row = analyze_security(payload, self.config)["computed"]["scenario_valuation"][0]
+        # Book 8000; ROE 20% (reported 1600/8000) then 12%; half retained.
+        # y1 RI 1600-800, book -> 8800; y2 RI 1056-880, book -> 9328; terminal (0.12-0.10)*9328/0.10.
+        expected = 8000 + 800 / 1.1 + 176 / 1.1 ** 2 + (0.02 * 9328 / 0.10) / 1.1 ** 2
+        self.assertAlmostEqual(row["fair_value_per_share"], expected / 100.0)
+        self.assertEqual(row["inputs"]["book_value"]["source"], "objective.financials.book_value")
+        self.assertTrue(row["inputs"]["roe_start"]["source"].startswith("objective.financials.net_income_ttm"))
+        self.assertEqual(row["inputs"]["target_roe"]["source"], "assumptions.scenarios.base.target_roe")
+
+    def test_ri_cost_of_equity_must_exceed_growth(self):
+        payload = self._single_scenario("ri", {"target_roe": 0.12, "cost_of_equity": 0.03,
+                                               "payout_ratio": 0.5, "terminal_growth": 0.03})
+        result = analyze_security(payload, self.config)
+        self.assertIn("VALUATION_INPUT", {flag["code"] for flag in result["flags"]})
+
+    def test_epv_defaults_to_reported_cycle_margin(self):
+        payload = self._single_scenario("epv", {"tax_rate": 0.21, "wacc": 0.09})
+        row = analyze_security(payload, self.config)["computed"]["scenario_valuation"][0]
+        expected = (10000 * 0.20 * (1 - 0.21) / 0.09 - 1000 + 2000) / 100
+        self.assertAlmostEqual(row["fair_value_per_share"], expected)
+        self.assertEqual(row["inputs"]["normalized_ebit_margin"]["source"], "objective.history.ebit_margin_cycle_avg")
+        self.assertEqual(row["inputs"]["normalized_revenue"]["source"], "objective.financials.revenue_ttm")
+        self.assertEqual(row["inputs"]["maintenance_capex_adjustment"]["source"], "default: 0")
+
+    def test_epv_assumed_margin_is_labelled_and_missing_fact_is_critical(self):
+        payload = self._single_scenario("epv", {"tax_rate": 0.21, "wacc": 0.09, "normalized_ebit_margin": 0.15})
+        row = analyze_security(payload, self.config)["computed"]["scenario_valuation"][0]
+        self.assertEqual(row["inputs"]["normalized_ebit_margin"]["source"],
+                         "assumptions.scenarios.base.normalized_ebit_margin")
+        payload = self._single_scenario("epv", {"tax_rate": 0.21, "wacc": 0.09})
+        del payload["objective"]["history"]["ebit_margin_cycle_avg"]
+        result = analyze_security(payload, self.config)
+        self.assertIn("VALUATION_INPUT", {flag["code"] for flag in result["flags"]})
+        self.assertEqual(result["computed"]["scenario_valuation"], [])
+
+    def test_epv_cross_check_renders_sources(self):
+        payload = deepcopy(self.payload)
+        payload["assumptions"]["relative_cross_check"] = {"method": "epv", "tax_rate": 0.21, "wacc": 0.09}
+        result = analyze_security(payload, self.config)
+        self.assertEqual(result["computed"]["relative_cross_check"]["method"], "epv")
+        self.assertIn("objective.history.ebit_margin_cycle_avg", render_markdown(result))
+
     def test_growth_score_uses_reported_history(self):
         payload = deepcopy(self.payload)
         payload["objective"]["history"] = {"revenue_cagr_3y": 0.18, "revenue_yoy_ttm": 0.25,

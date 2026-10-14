@@ -6,6 +6,10 @@ The engine never writes calculated values back into either branch.
 Analyst forecasts (consensus EPS, target prices, estimate revisions) are not facts.
 They are excluded from every score, gate and default valuation input. If a payload
 still carries an ``objective.consensus`` block, it is ignored and flagged.
+
+Absolute methods: ``fcff`` (DCF), ``ri`` (residual income) and ``epv`` (earnings power
+value). RI and EPV return an ``inputs`` map recording, per number, whether it is a reported
+fact (``objective.*``) or a human assumption (``assumptions.*``).
 """
 
 from __future__ import annotations
@@ -188,6 +192,110 @@ def _fcff_value(objective: dict[str, Any], scenario: dict[str, Any]) -> dict[str
     }
 
 
+def _fact_or_assumption(objective: dict[str, Any], scenario: dict[str, Any], key: str,
+                        fact_path: str, origin: str) -> dict[str, Any]:
+    """Resolve one valuation input and record where it came from.
+
+    An explicit scenario value is a human assumption; otherwise the reported fact is used."""
+    if key in scenario:
+        return {"value": float(scenario[key]), "source": f"{origin}.{key}"}
+    value = _number(_get(objective, fact_path))
+    if value is None:
+        raise KeyError(f"{key} (no assumption and no fact at objective.{fact_path})")
+    return {"value": value, "source": f"objective.{fact_path}"}
+
+
+def _ri_value(objective: dict[str, Any], scenario: dict[str, Any], origin: str) -> dict[str, Any]:
+    """Residual income: book equity + PV of (ROE - cost of equity) x opening book.
+
+    Book value is always the reported fact. ROE fades linearly from roe_start (default:
+    reported TTM ROE) to target_roe; the terminal value capitalizes the year-N+1 residual
+    income at (cost_of_equity - terminal_growth)."""
+    book = _fact_or_assumption(objective, {}, "book_value", "financials.book_value", origin)
+    shares = float(objective["market"]["diluted_shares"])
+    if "roe_start" in scenario:
+        roe_start = {"value": float(scenario["roe_start"]), "source": f"{origin}.roe_start"}
+    else:
+        net_income = float(objective["financials"]["net_income_ttm"])
+        roe_start = {"value": net_income / book["value"],
+                     "source": "objective.financials.net_income_ttm / objective.financials.book_value"}
+    inputs = {"book_value": book, "roe_start": roe_start}
+    for key in ("target_roe", "cost_of_equity", "payout_ratio", "terminal_growth"):
+        inputs[key] = {"value": float(scenario[key]), "source": f"{origin}.{key}"}
+    years = int(scenario.get("forecast_years", 5))
+    coe = inputs["cost_of_equity"]["value"]
+    growth = inputs["terminal_growth"]["value"]
+    payout = inputs["payout_ratio"]["value"]
+    target_roe = inputs["target_roe"]["value"]
+    if years < 1 or shares <= 0 or book["value"] <= 0:
+        raise ValueError("years, shares, and book value must be positive")
+    if not 0.0 <= payout <= 1.0:
+        raise ValueError("payout_ratio must be between 0 and 1")
+    if coe <= growth:
+        raise ValueError("cost of equity must be greater than terminal growth")
+
+    opening = book["value"]
+    pv_explicit = 0.0
+    for year in range(1, years + 1):
+        progress = (year - 1) / (years - 1) if years > 1 else 1.0
+        roe = roe_start["value"] + (target_roe - roe_start["value"]) * progress
+        earnings = roe * opening
+        pv_explicit += (earnings - coe * opening) / ((1.0 + coe) ** year)
+        opening += earnings * (1.0 - payout)
+    terminal_ri = (target_roe - coe) * opening
+    pv_terminal = terminal_ri / (coe - growth) / ((1.0 + coe) ** years)
+    equity_value = book["value"] + pv_explicit + pv_terminal
+    return {
+        "equity_value": equity_value,
+        "fair_value_per_share": equity_value / shares,
+        "terminal_value_share": pv_terminal / equity_value if equity_value > 0 else 0.0,
+        "book_value_share": book["value"] / equity_value if equity_value > 0 else 0.0,
+        "inputs": inputs,
+    }
+
+
+def _epv_value(objective: dict[str, Any], scenario: dict[str, Any], origin: str) -> dict[str, Any]:
+    """Earnings power value (no growth): normalized NOPAT / WACC, then net debt to equity.
+
+    The normalized EBIT margin defaults to the reported cycle-average FY margin; any
+    override shows up in ``inputs`` as an assumption."""
+    inputs = {
+        "normalized_revenue": _fact_or_assumption(objective, scenario, "normalized_revenue",
+                                                  "financials.revenue_ttm", origin),
+        "normalized_ebit_margin": _fact_or_assumption(objective, scenario, "normalized_ebit_margin",
+                                                      "history.ebit_margin_cycle_avg", origin),
+    }
+    for key in ("tax_rate", "wacc"):
+        inputs[key] = {"value": float(scenario[key]), "source": f"{origin}.{key}"}
+    # Signed NOPAT adjustment, e.g. D&A in excess of maintenance capex. Zero unless assumed.
+    has_adjustment = "maintenance_capex_adjustment" in scenario
+    inputs["maintenance_capex_adjustment"] = {
+        "value": float(scenario.get("maintenance_capex_adjustment", 0.0)),
+        "source": f"{origin}.maintenance_capex_adjustment" if has_adjustment else "default: 0"}
+    shares = float(objective["market"]["diluted_shares"])
+    cash = float(objective["market"]["cash"])
+    debt = float(objective["market"]["debt"])
+    wacc = inputs["wacc"]["value"]
+    if shares <= 0 or wacc <= 0:
+        raise ValueError("shares and WACC must be positive")
+    nopat = (inputs["normalized_revenue"]["value"] * inputs["normalized_ebit_margin"]["value"]
+             * (1.0 - inputs["tax_rate"]["value"]) + inputs["maintenance_capex_adjustment"]["value"])
+    enterprise_value = nopat / wacc
+    equity_value = enterprise_value - debt + cash
+    return {"enterprise_value": enterprise_value, "equity_value": equity_value,
+            "fair_value_per_share": equity_value / shares, "normalized_nopat": nopat, "inputs": inputs}
+
+
+def _value(objective: dict[str, Any], scenario: dict[str, Any], method: str, origin: str) -> dict[str, Any]:
+    if method == "fcff":
+        return _fcff_value(objective, scenario)
+    if method == "ri":
+        return _ri_value(objective, scenario, origin)
+    if method == "epv":
+        return _epv_value(objective, scenario, origin)
+    return _relative_value(objective, scenario, method)
+
+
 def _wacc_build(objective: dict[str, Any]) -> dict[str, float] | None:
     """Build a market-value WACC from observable capital-market inputs when supplied."""
     capital = objective.get("capital", {})
@@ -268,7 +376,7 @@ def _scenario_values(payload: dict[str, Any]) -> tuple[list[dict[str, Any]], lis
     price = _number(_get(objective, "market.price"))
     for name, scenario in scenarios.items():
         try:
-            value = _fcff_value(objective, scenario) if method == "fcff" else _relative_value(objective, scenario, method)
+            value = _value(objective, scenario, method, f"assumptions.scenarios.{name}")
             fair = value["fair_value_per_share"]
             probability = float(scenario.get("probability", 0.0))
             rows.append({"name": name, "probability": probability, **value,
@@ -405,17 +513,25 @@ def analyze_security(payload: dict[str, Any], config: dict[str, Any] | None = No
     margin_of_safety = (anchor_fair - price) / anchor_fair if anchor_fair and price is not None and anchor_fair > 0 else None
     wacc_build = _wacc_build(objective)
     reverse_growth = None
-    if assumptions.get("valuation_method", "fcff") == "fcff" and "base" in assumptions.get("scenarios", {}):
-        reverse_growth = _reverse_dcf(objective, assumptions["scenarios"]["base"])
-        base_wacc = _number(assumptions["scenarios"]["base"].get("wacc"))
-        if wacc_build and base_wacc is not None and abs(base_wacc - wacc_build["wacc"]) > 0.02:
+    method = assumptions.get("valuation_method", "fcff")
+    base = assumptions.get("scenarios", {}).get("base")
+    if base is not None and method == "fcff":
+        reverse_growth = _reverse_dcf(objective, base)
+    if base is not None and wacc_build and method in ("fcff", "epv"):
+        base_wacc = _number(base.get("wacc"))
+        if base_wacc is not None and abs(base_wacc - wacc_build["wacc"]) > 0.02:
             flags.append(Flag("warning", "WACC_ASSUMPTION_GAP",
                               "Base-case WACC differs from the market-input WACC build by more than 200 bps."))
+    if base is not None and wacc_build and method == "ri":
+        base_coe = _number(base.get("cost_of_equity"))
+        if base_coe is not None and abs(base_coe - wacc_build["cost_of_equity"]) > 0.02:
+            flags.append(Flag("warning", "COE_ASSUMPTION_GAP",
+                              "Base-case cost of equity differs from the market-input CAPM build by more than 200 bps."))
     relative_cross_check = None
     cross = assumptions.get("relative_cross_check")
     if cross:
         try:
-            relative_cross_check = _relative_value(objective, cross, cross["method"])
+            relative_cross_check = _value(objective, cross, cross["method"], "assumptions.relative_cross_check")
             relative_cross_check["method"] = cross["method"]
             relative_cross_check["upside"] = (
                 relative_cross_check["fair_value_per_share"] / price - 1.0 if price and price > 0 else None
