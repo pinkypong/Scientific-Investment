@@ -51,7 +51,8 @@
       "update_policy_sec": 86400,
       "raw_cache_ttl_sec": 604800,
       "_raw_cache_note": "Phase D company-level raw cache TTL. provider TTL(update_policy_sec)은 provider 전체 skip 판정(얼마나 자주 시도하나), 이것은 종목 단위 raw 재사용 판정(받아둔 스냅샷을 얼마나 오래 믿나). 공시 원문은 하루 단위로 바뀌지 않으므로 더 길게 잡는다. --force 는 둘 다 우회한다.",
-      "years_back": 4,
+      "years_back": 12,
+      "_years_back_note": "2026-10-14: 4→12. 사이클 2~3회(2015~) 비교용. fnlttSinglAcntAll 은 2015 사업연도부터만 제공되므로 12 이상은 의미 없음. 호출 수 = 연수 x reprt_codes(4) x 종목.",
       "reprt_codes": ["11011","11014","11012","11013"]
     },
 
