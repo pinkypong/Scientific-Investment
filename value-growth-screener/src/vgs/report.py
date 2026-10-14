@@ -98,7 +98,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         "| 구성 | 점수 | 최대 |",
         "|---|---:|---:|",
         f"| 수익성·현금전환 품질 | {score['quality']:.2f} | 30 |",
-        f"| 성장·추정치 변화 | {score['growth_and_revisions']:.2f} | 20 |",
+        f"| 실적 성장(공시) | {score['growth_actual']:.2f} | 20 |",
         f"| 재무안정성 | {score['balance_sheet']:.2f} | 20 |",
         f"| 시장위험·분산효과 | {score['market_risk_and_diversification']:.2f} | 20 |",
         f"| 기관·고용·미디어 보조신호 | {score['auxiliary_signals']:.2f} | 10 |",

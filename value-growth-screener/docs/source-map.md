@@ -2,7 +2,7 @@
 
 | 데이터 축 | Bigdata.com 저비용 호출 | 상위 후보 심층 호출 | 정규화 목적지 |
 |---|---|---|---|
-| 재무·밸류·추정치 | company tearsheet의 overview/ratios/key metrics | analyst estimates/latest earnings | `objective.market`, `financials`, `ratios`, `consensus` |
+| 재무·밸류 | company tearsheet의 overview/ratios/key metrics, SEC XBRL | latest earnings | `objective.market`, `financials`, `ratios`, `history` |
 | SEC·실적·콜 | search 메타데이터 | fetch로 선택 공시·콜 원문 | `sources`, 품질·위험 플래그 |
 | 뉴스·리서치·심리 | sentiment tearsheet 집계 | 주요 이벤트 검색·선택 fetch | `signals.ravenpack_sentiment` |
 | ETF | ETF tearsheet 핵심 섹션 | 구성·팩터·유동성 상세 | `objective.etf`, `risk`, `portfolio` |

@@ -5,7 +5,7 @@ Bigdata.com에서 필요한 데이터만 단계적으로 받아 로컬에서 DCF
 ## 핵심 원칙
 
 - 객관적 원자료(`objective`)와 분석자 가정(`assumptions`)을 같은 필드에 저장하지 않는다.
-- 객관 근거 점수는 ROIC-WACC, 현금전환, accrual, 레버리지, 성장·추정치 변화, 변동성·분산, 보조신호만 사용한다.
+- 객관 근거 점수는 ROIC-WACC, 현금전환, accrual, 레버리지, 공시된 실적 성장, 변동성·분산, 보조신호만 사용한다. 애널리스트 추정치는 어떤 점수에도 쓰지 않는다.
 - DCF/상대가치의 상승여력과 안전마진은 가정 의존 결과이므로 객관 점수와 별도 게이트로 사용한다.
 - 데이터가 빠지면 0으로 채우지 않고 완전성을 낮춘다.
 - 출처가 필드에 연결되지 않은 숫자는 ‘객관 데이터’로 인정하지 않고 출처 연결률 게이트에서 탈락시킨다.
@@ -17,7 +17,7 @@ Bigdata.com에서 필요한 데이터만 단계적으로 받아 로컬에서 DCF
 
 | 축 | 1차 스크린 | 심층 스크린 |
 |---|---|---|
-| 재무·밸류·추정치 | overview/ratios/key metrics | estimates/latest earnings |
+| 재무·밸류 | overview/ratios/key metrics, SEC XBRL 실적 성장 | latest earnings (추정치 제외) |
 | SEC·실적·콜 | 신규 이벤트 유무 | 핵심 공시와 콜 원문 |
 | 뉴스·리서치·심리 | 30일 집계 | 주요 이벤트와 RavenPack 변화 |
 | ETF | 구성·성과·변동성·HHI | 팩터 노출·상관·유동성 |
@@ -80,7 +80,7 @@ SEC EDGAR·Alpaca·Ken French·FRED 직접 adapter, provider-neutral Security Ma
 
 2026-09-01 실데이터 적재 결과는 SPY/NDX 보유행 605개, 중복 제거 518종목이다. 현재 미국 보유 7종목이 모두 포함됐다. Ken French FF5 15,854행과 Momentum 26,173행도 적재했으며 제공 파일의 최신일은 2026-06-30이다.
 
-Codex의 Bigdata MCP 연결은 Python 실행 파일이 직접 부를 수 없다. Bigdata 기반 estimates·RavenPack·기관·고용 데이터는 Codex가 상위 후보만 조회해 정규화 JSON으로 넘긴다. 직접 Bigdata API 자격증명이 생기면 동일 데이터 계약을 유지한 채 adapter를 추가한다.
+Codex의 Bigdata MCP 연결은 Python 실행 파일이 직접 부를 수 없다. Bigdata 기반 RavenPack·기관·고용 데이터는 Codex가 상위 후보만 조회해 정규화 JSON으로 넘긴다. 직접 Bigdata API 자격증명이 생기면 동일 데이터 계약을 유지한 채 adapter를 추가한다.
 
 현재 미국 작업 상태와 다음 구현 순서는 [CLAUDE_COWORK_HANDOFF.md](CLAUDE_COWORK_HANDOFF.md)에 유지한다.
 

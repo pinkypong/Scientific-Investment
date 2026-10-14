@@ -20,7 +20,8 @@
       "ebit_margin_ttm": 0.22,
       "ocf_ttm": 1900.0,
       "net_income_ttm": 1600.0,
-      "ebitda_ttm": 2500.0
+      "ebitda_ttm": 2500.0,
+      "eps_ttm": 16.0
     },
     "ratios": {
       "roic": 0.18,
@@ -31,12 +32,10 @@
       "interest_coverage": 18.0,
       "share_dilution_yoy": 0.005
     },
-    "consensus": {
-      "forward_eps": 18.0,
-      "revenue_growth_3y": 0.11,
-      "eps_growth_3y": 0.15,
-      "revision_90d": 0.03,
-      "target_median": 130.0
+    "history": {
+      "revenue_cagr_3y": 0.11,
+      "revenue_yoy_ttm": 0.09,
+      "ebit_margin_change_3y": 0.02
     },
     "risk": {
       "beta": 1.05,
@@ -81,10 +80,10 @@
         "sales_to_capital": 1.5,
         "wacc": 0.11,
         "terminal_growth": 0.02,
-        "terminal_roic": 0.10
+        "terminal_roic": 0.1
       },
       "base": {
-        "probability": 0.50,
+        "probability": 0.5,
         "forecast_years": 5,
         "revenue_growth_start": 0.11,
         "revenue_growth_end": 0.05,
@@ -101,7 +100,7 @@
         "revenue_growth_start": 0.17,
         "revenue_growth_end": 0.07,
         "target_ebit_margin": 0.28,
-        "tax_rate": 0.20,
+        "tax_rate": 0.2,
         "sales_to_capital": 2.1,
         "wacc": 0.08,
         "terminal_growth": 0.03,
@@ -114,7 +113,9 @@
       "provider": "Synthetic fixture",
       "document_id": "DEMO-ONLY",
       "observed_at": "2026-09-01T00:00:00Z",
-      "fields": ["objective.*"]
+      "fields": [
+        "objective.*"
+      ]
     }
   ]
 }

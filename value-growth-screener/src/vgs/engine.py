@@ -2,6 +2,10 @@
 
 Raw facts and human assumptions are intentionally accepted in separate branches.
 The engine never writes calculated values back into either branch.
+
+Analyst forecasts (consensus EPS, target prices, estimate revisions) are not facts.
+They are excluded from every score, gate and default valuation input. If a payload
+still carries an ``objective.consensus`` block, it is ignored and flagged.
 """
 
 from __future__ import annotations
@@ -31,6 +35,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
     },
 }
 
+# Objective subtrees that are forecasts, not observations. Never scored, never counted
+# toward completeness or provenance coverage.
+EXCLUDED_OBJECTIVE_GROUPS = ("consensus",)
+
 REQUIRED_FACTS = (
     "market.price", "market.cash", "market.debt", "market.diluted_shares",
     "financials.revenue_ttm", "financials.ebit_margin_ttm",
@@ -38,8 +46,8 @@ REQUIRED_FACTS = (
     "ratios.roic", "ratios.wacc", "ratios.debt_to_ebitda",
     "ratios.interest_coverage", "ratios.accrual_ratio",
     "ratios.share_dilution_yoy", "ratios.ocf_to_net_income",
-    "consensus.revenue_growth_3y", "consensus.eps_growth_3y",
-    "consensus.revision_90d", "risk.beta", "risk.max_drawdown_1y",
+    "history.revenue_cagr_3y", "history.revenue_yoy_ttm",
+    "history.ebit_margin_change_3y", "risk.beta", "risk.max_drawdown_1y",
     "portfolio.correlation", "portfolio.concentration_reduction",
 )
 
@@ -85,7 +93,7 @@ def _leaf_paths(data: dict[str, Any], prefix: str = "objective") -> list[str]:
 
 
 def _provenance_coverage(objective: dict[str, Any], sources: list[dict[str, Any]]) -> float:
-    paths = _leaf_paths(objective)
+    paths = _leaf_paths({k: v for k, v in objective.items() if k not in EXCLUDED_OBJECTIVE_GROUPS})
     if not paths:
         return 0.0
     patterns: list[str] = []
@@ -213,13 +221,14 @@ def _wacc_build(objective: dict[str, Any]) -> dict[str, float] | None:
 
 def _relative_value(objective: dict[str, Any], scenario: dict[str, Any], method: str) -> dict[str, float]:
     market = objective.get("market", {})
-    consensus = objective.get("consensus", {})
     financials = objective.get("financials", {})
     shares = float(market["diluted_shares"])
     cash = float(market.get("cash", 0.0))
     debt = float(market.get("debt", 0.0))
     if method == "pe":
-        eps = float(scenario.get("forward_eps", consensus["forward_eps"]))
+        # Reported (TTM) or analyst-chosen normalized EPS only. An explicit scenario
+        # "eps" is an assumption and stays in the assumptions branch.
+        eps = float(scenario.get("eps", financials["eps_ttm"]))
         fair = eps * float(scenario["target_multiple"])
         return {"equity_value": fair * shares, "fair_value_per_share": fair}
     if method == "ev_ebitda":
@@ -234,7 +243,7 @@ def _relative_value(objective: dict[str, Any], scenario: dict[str, Any], method:
         return {"equity_value": equity_value, "fair_value_per_share": equity_value / shares}
     if method == "etf_lookthrough_pe":
         price = float(market["price"])
-        current_multiple = float(scenario.get("current_multiple", objective["etf"]["lookthrough_forward_pe"]))
+        current_multiple = float(scenario.get("current_multiple", objective["etf"]["lookthrough_trailing_pe"]))
         target_multiple = float(scenario["target_multiple"])
         earnings_growth = float(scenario.get("earnings_growth_horizon", 0.0))
         if current_multiple <= 0:
@@ -341,10 +350,11 @@ def _objective_score(objective: dict[str, Any], critical_count: int) -> dict[str
         + 0.20 * _linear(_number(_get(objective, "ratios.accrual_ratio")), 0.12, -0.03)
         + 0.10 * _linear(_number(_get(objective, "ratios.share_dilution_yoy")), 0.08, -0.02)
     )
+    # Reported growth only: what the filings already show, not what analysts expect.
     growth = 20 * (
-        0.40 * _linear(_number(_get(objective, "consensus.revenue_growth_3y")), -0.03, 0.18)
-        + 0.40 * _linear(_number(_get(objective, "consensus.eps_growth_3y")), -0.05, 0.22)
-        + 0.20 * _linear(_number(_get(objective, "consensus.revision_90d")), -0.10, 0.10)
+        0.45 * _linear(_number(_get(objective, "history.revenue_cagr_3y")), -0.03, 0.18)
+        + 0.30 * _linear(_number(_get(objective, "history.revenue_yoy_ttm")), -0.10, 0.25)
+        + 0.25 * _linear(_number(_get(objective, "history.ebit_margin_change_3y")), -0.05, 0.05)
     )
     balance = 20 * (
         0.55 * _linear(_number(_get(objective, "ratios.debt_to_ebitda")), 5.0, 0.0)
@@ -364,7 +374,7 @@ def _objective_score(objective: dict[str, Any], critical_count: int) -> dict[str
     )
     if critical_count:
         auxiliary = 0.0
-    parts = {"quality": round(quality, 2), "growth_and_revisions": round(growth, 2),
+    parts = {"quality": round(quality, 2), "growth_actual": round(growth, 2),
              "balance_sheet": round(balance, 2), "market_risk_and_diversification": round(market_risk, 2),
              "auxiliary_signals": round(auxiliary, 2)}
     parts["total"] = round(sum(parts.values()), 2)
@@ -377,6 +387,10 @@ def analyze_security(payload: dict[str, Any], config: dict[str, Any] | None = No
     objective = payload.get("objective", {})
     assumptions = payload.get("assumptions", {})
     flags = _quality_flags(objective, cfg)
+    for group in EXCLUDED_OBJECTIVE_GROUPS:
+        if group in objective:
+            flags.append(Flag("warning", "ANALYST_INPUT_EXCLUDED",
+                              f"objective.{group} is a forecast, not an observation; it was ignored."))
     scenarios, valuation_flags = _scenario_values(payload)
     flags.extend(valuation_flags)
     for row in scenarios:

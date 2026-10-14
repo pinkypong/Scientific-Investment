@@ -83,6 +83,8 @@ def normalize_companyfacts(companyfacts: dict[str, Any], as_of: str) -> dict[str
     date.fromisoformat(as_of)
     quarters: dict[str, list[NormalizedFact]] = {}
     ttm: dict[str, float | None] = {}
+    prior_ttm: dict[str, float | None] = {}
+    fiscal_years: dict[str, dict[int, float]] = {}
     sources: dict[str, list[str]] = {}
     for metric, tags in FLOW_TAGS.items():
         rows = _available_fact_rows(companyfacts, metric, tags, as_of, ("USD",))
@@ -107,9 +109,20 @@ def normalize_companyfacts(companyfacts: dict[str, Any], as_of: str) -> dict[str
         latest_by_end: dict[str, NormalizedFact] = {}
         for row in sorted(discrete, key=lambda value: (value.period_end, value.filed)):
             latest_by_end[row.period_end] = row
-        ordered = sorted(latest_by_end.values(), key=lambda value: value.period_end)[-4:]
+        all_ordered = sorted(latest_by_end.values(), key=lambda value: value.period_end)
+        ordered = all_ordered[-4:]
         quarters[metric] = ordered
         ttm[metric] = sum(row.value for row in ordered) if len(ordered) == 4 else None
+        previous = all_ordered[-8:-4]
+        prior_ttm[metric] = sum(row.value for row in previous) if len(previous) == 4 else None
+        fy_values: dict[int, NormalizedFact] = {}
+        for row in annual:
+            if row.fiscal_period == "FY" and row.fiscal_year:
+                # SEC "fy" is the filing's fiscal year; the period itself is identified by its end date.
+                period_year = int(row.period_end[:4])
+                if period_year not in fy_values or row.filed > fy_values[period_year].filed:
+                    fy_values[period_year] = row
+        fiscal_years[metric] = {year: row.value for year, row in sorted(fy_values.items())}
         sources[metric] = sorted({row.source_tag for row in ordered})
     instants: dict[str, dict[str, Any] | None] = {}
     for metric, tags in INSTANT_TAGS.items():
@@ -120,11 +133,37 @@ def normalize_companyfacts(companyfacts: dict[str, Any], as_of: str) -> dict[str
         instants[metric] = latest.as_dict() if latest else None
     ocf, capex = ttm.get("operating_cash_flow"), ttm.get("capital_expenditure")
     ttm["free_cash_flow"] = ocf - capex if ocf is not None and capex is not None else None
+    history = reported_growth(fiscal_years, ttm, prior_ttm)
     return {
         "entity": companyfacts.get("entityName"), "cik": str(companyfacts.get("cik", "")).zfill(10),
         "as_of": as_of, "generated_at": datetime.now(timezone.utc).isoformat(),
         "ttm": ttm, "latest": instants,
         "quarters": {metric: [row.as_dict() for row in rows] for metric, rows in quarters.items()},
         "source_tags": sources,
-        "methodology": "filed<=as_of; discrete 60-120d quarters; Q4=FY-Q1-Q2-Q3 when necessary",
+        "history": history,
+        "fiscal_years": {metric: {str(year): value for year, value in rows.items()} for metric, rows in fiscal_years.items()},
+        "methodology": ("filed<=as_of; discrete 60-120d quarters; Q4=FY-Q1-Q2-Q3 when necessary; "
+                        "history uses reported FY values only (no estimates)"),
     }
+
+
+def reported_growth(fiscal_years: dict[str, dict[int, float]], ttm: dict[str, float | None],
+                    prior_ttm: dict[str, float | None]) -> dict[str, float | None]:
+    """Growth measured from filings only. Each value is None when its inputs are missing or not positive."""
+    revenue = fiscal_years.get("revenue", {})
+    operating = fiscal_years.get("operating_income", {})
+    years = sorted(revenue)
+    last = years[-1] if years else None
+    base = last - 3 if last is not None else None
+    cagr = None
+    if last is not None and base in revenue and revenue[base] > 0 and revenue[last] > 0:
+        cagr = (revenue[last] / revenue[base]) ** (1 / 3) - 1
+    margin_change = None
+    if last is not None and base in revenue and last in operating and base in operating and revenue[last] > 0 and revenue[base] > 0:
+        margin_change = operating[last] / revenue[last] - operating[base] / revenue[base]
+    yoy = None
+    now, before = ttm.get("revenue"), prior_ttm.get("revenue")
+    if now is not None and before is not None and before > 0:
+        yoy = now / before - 1
+    return {"revenue_cagr_3y": cagr, "revenue_yoy_ttm": yoy, "ebit_margin_change_3y": margin_change,
+            "basis_fiscal_year": last}
