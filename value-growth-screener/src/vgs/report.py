@@ -118,13 +118,45 @@ def render_markdown(result: dict[str, Any]) -> str:
         "| 필드 | 값 |",
         "|---|---:|",
     ])
+    # Lists (ttm_series, cycle_groups) get their own tables below.
     for path, value in _flatten(result.get("objective", {})):
+        if isinstance(value, list):
+            continue
         rendered = f"{value:.6g}" if isinstance(value, float) else str(value)
         lines.append(f"| `{path}` | {rendered} |")
+    series = result.get("objective", {}).get("history", {}).get("ttm_series") or []
+    if series:
+        lines.extend(["", "### 공시 TTM 시계열 (`objective.history.ttm_series`)", "",
+                      "연속 4개 분기 합. 빈 칸은 분기 누락으로 계산하지 않은 값이다. 사이클 구간은 엔진이 정하지 않는다.", "",
+                      "| 분기말 | 매출 | 영업이익 | 영업이익률 | 순이익 | 영업현금흐름 | Capex | Q4 차감산출 |",
+                      "|---|---:|---:|---:|---:|---:|---:|---|"])
+        for point in series:
+            lines.append(
+                f"| {point['period_end']} | {_num(point.get('revenue'), 0)} | {_num(point.get('operating_income'), 0)} | "
+                f"{_pct(point.get('ebit_margin'))} | {_num(point.get('net_income'), 0)} | "
+                f"{_num(point.get('operating_cash_flow'), 0)} | {_num(point.get('capital_expenditure'), 0)} | "
+                f"{'Y' if point.get('includes_derived_q4') else ''} |")
     lines.extend(["", "## 주관적 가정", "", "| 필드 | 값 |", "|---|---:|"])
     for path, value in _flatten(result.get("assumptions", {})):
+        if isinstance(value, list):
+            continue
         rendered = f"{value:.6g}" if isinstance(value, float) else str(value)
         lines.append(f"| `{path}` | {rendered} |")
+    groups = computed.get("cycle_comparison") or []
+    if groups:
+        lines.extend(["", "### 사용자 지정 구간 비교 (`assumptions.cycle_groups`)", "",
+                      "구간 경계는 사람이 정한 가정이다. 평균은 겹치는 rolling TTM 점들의 단순평균이다.", "",
+                      "| 구간 | 기간 | TTM 점 | 매출 처음→끝 | 매출 변화 | 영업이익률 평균 | 최저(시점) | 최고(시점) |",
+                      "|---|---|---:|---|---:|---:|---|---|"])
+        for g in groups:
+            if g.get("error"):
+                lines.append(f"| {g['label']} | {g['start']}~{g['end']} | - | {g['error']} | | | | |")
+                continue
+            lines.append(
+                f"| {g['label']} | {g['start']}~{g['end']} | {g['points']} | "
+                f"{_num(g['revenue_first'], 0)}→{_num(g['revenue_last'], 0)} | {_pct(g['revenue_change'])} | "
+                f"{_pct(g['ebit_margin_mean'])} | {_pct(g['ebit_margin_min'])} ({g['ebit_margin_min_at'] or '-'}) | "
+                f"{_pct(g['ebit_margin_max'])} ({g['ebit_margin_max_at'] or '-'}) |")
     lines.extend(["", "## 데이터 품질·위험 플래그", ""])
     flags = result.get("flags", [])
     if flags:

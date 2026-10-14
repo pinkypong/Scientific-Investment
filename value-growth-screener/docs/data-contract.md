@@ -27,7 +27,7 @@
 - `financials`: revenue_ttm, ebit_margin_ttm, ocf_ttm, net_income_ttm, ebitda_ttm, eps_ttm, tangible_book_value, book_value(지배주주 자본, XBRL `StockholdersEquity`)
 - `ratios`: roic, wacc, ocf_to_net_income, accrual_ratio, debt_to_ebitda, interest_coverage, share_dilution_yoy
 - `history`: revenue_cagr_3y, revenue_yoy_ttm, ebit_margin_change_3y — 공시된 FY·분기 값으로만 계산 (`vgs.data.xbrl.reported_growth`)
-  - 사이클 사실: ebit_margin_cycle_avg/min/max, ebit_margin_latest_fy, cycle_years, cycle_first_fiscal_year — 최근 최대 10개 FY의 공시 EBIT 마진 단순평균·범위 (`vgs.data.xbrl.cycle_margins`). FY가 5개 미만이면 None. 점수에는 쓰지 않는다(검토 메모: `docs/cycle-position-review.md`).
+  - `ttm_series`: 최근 40개 분기말(10년)의 rolling TTM 원자료 목록 (`vgs.data.xbrl.ttm_series`). 각 점은 period_end, revenue, operating_income, net_income, operating_cash_flow, capital_expenditure, ebit_margin, includes_derived_q4, accessions. 연속 4개 분기가 모두 있을 때만 합산하고, 아니면 None으로 남긴다(보간 없음). 분기마다 as_of 이전 최신 공시값을 쓰므로 정정 공시가 원공시를 대체한다.
 - `risk`: beta, max_drawdown_1y
 - `portfolio`: correlation, concentration_reduction
 - `signals`: institutional_change_pct, workforce_yoy_pct, ravenpack_sentiment
@@ -44,11 +44,11 @@ DCF 종목에는 `relative_cross_check`를 추가해 PE/EV-EBITDA/P-TBV/RI/EPV�
 |---|---|---|
 | `fcff` | revenue_ttm, ebit_margin_ttm, cash, debt, diluted_shares | 성장률 경로, 목표마진, 세율, sales_to_capital, wacc, terminal_growth, terminal_roic |
 | `ri` 잔여이익 | book_value, net_income_ttm(시작 ROE 기본값), diluted_shares | target_roe, cost_of_equity, payout_ratio, terminal_growth, forecast_years, (선택) roe_start |
-| `epv` 이익력가치 | revenue_ttm, history.ebit_margin_cycle_avg, cash, debt, diluted_shares | tax_rate, wacc, (선택) normalized_revenue · normalized_ebit_margin · maintenance_capex_adjustment |
+| `epv` 이익력가치 | cash, debt, diluted_shares | normalized_revenue, normalized_ebit_margin, tax_rate, wacc, maintenance_capex_adjustment (모두 필수, 기본값 없음) |
 
 - RI: 가치 = 장부가 + Σ(ROE−자기자본비용)×기초장부가 할인 + 잔존가치. ROE는 roe_start→target_roe로 선형 수렴. 장부가는 항상 공시값.
-- EPV: 성장 없는 가치 = 정상화 NOPAT ÷ WACC − 부채 + 현금. 정상화 마진 기본값은 공시 사이클 평균 마진이다.
-- RI·EPV 결과의 `inputs`는 숫자마다 `{value, source}`를 담는다. source가 `objective.*`이면 공시 사실, `assumptions.*`이면 가정이다. 선택 가정을 넣으면 해당 사실을 덮고 출처가 가정으로 바뀐다.
+- EPV: 성장 없는 가치 = (정상화 매출 × 정상화 마진 × (1−세율) + 유지capex 조정) ÷ WACC − 부채 + 현금. 정상화는 판단이므로 엔진이 기본값을 채우지 않는다. 하나라도 빠지면 `VALUATION_INPUT` critical.
+- RI·EPV 결과의 `inputs`는 숫자마다 `{value, source}`를 담는다. source가 `objective.*`이면 공시 사실, `assumptions.*`이면 가정이다.
 - 시장 입력 CAPM과 base 가정이 200bp 넘게 다르면 경고한다: `epv`는 WACC(`WACC_ASSUMPTION_GAP`), `ri`는 자기자본비용(`COE_ASSUMPTION_GAP`). ETF는 `etf_lookthrough_pe` 방법으로 현재 look-through PE, 목표 PE, 평가기간 이익성장을 분리 입력한다.
 
 ## 자료 일관성 규칙
@@ -57,3 +57,18 @@ DCF 종목에는 `relative_cross_check`를 추가해 PE/EV-EBITDA/P-TBV/RI/EPV�
 - SEC 원문과 제3자 집계치가 다르면 SEC 값을 우선하고 차이를 플래그로 남긴다.
 - 제공자별 기간 라벨이 맞지 않거나 마진 정의가 불명확하면 값을 버리지 말고 `sources`와 품질 플래그에 기록한다.
 - 결측치는 0으로 대체하지 않는다. 완전성 점수와 게이트가 처리한다.
+
+## 사이클 구간 (`assumptions.cycle_groups`)
+
+엔진은 사이클을 추정하거나 구간을 나누지 않는다. 사이클을 어떻게 해석할지는 사이클마다 다르기 때문이다.
+사람이 `ttm_series`를 보고 구간을 정하면, 엔진은 그 구간 안의 TTM 점에 대해 산술 통계만 낸다.
+
+```json
+"cycle_groups": [
+  {"label": "2016-2019", "start": "2016-01-01", "end": "2019-12-31"},
+  {"label": "2020-2023", "start": "2020-01-01", "end": "2023-12-31"}
+]
+```
+
+결과 `computed.cycle_comparison`: 구간별 TTM 점 개수, 처음·끝 분기말, 처음·끝 매출과 변화율, 영업이익률 평균·최저·최고(시점 포함).
+평균은 겹치는 rolling TTM 점들의 단순평균이다. 이 결과는 점수·플래그·게이트에 쓰이지 않는다.

@@ -10,6 +10,9 @@ still carries an ``objective.consensus`` block, it is ignored and flagged.
 Absolute methods: ``fcff`` (DCF), ``ri`` (residual income) and ``epv`` (earnings power
 value). RI and EPV return an ``inputs`` map recording, per number, whether it is a reported
 fact (``objective.*``) or a human assumption (``assumptions.*``).
+
+Cycles are never inferred. ``objective.history.ttm_series`` holds reported rolling TTM
+points; only date ranges a person puts in ``assumptions.cycle_groups`` are summarized.
 """
 
 from __future__ import annotations
@@ -192,17 +195,17 @@ def _fcff_value(objective: dict[str, Any], scenario: dict[str, Any]) -> dict[str
     }
 
 
-def _fact_or_assumption(objective: dict[str, Any], scenario: dict[str, Any], key: str,
-                        fact_path: str, origin: str) -> dict[str, Any]:
-    """Resolve one valuation input and record where it came from.
-
-    An explicit scenario value is a human assumption; otherwise the reported fact is used."""
-    if key in scenario:
-        return {"value": float(scenario[key]), "source": f"{origin}.{key}"}
-    value = _number(_get(objective, fact_path))
+def _fact(objective: dict[str, Any], path: str) -> dict[str, Any]:
+    """A reported input, tagged with its objective path."""
+    value = _number(_get(objective, path))
     if value is None:
-        raise KeyError(f"{key} (no assumption and no fact at objective.{fact_path})")
-    return {"value": value, "source": f"objective.{fact_path}"}
+        raise KeyError(f"objective.{path}")
+    return {"value": value, "source": f"objective.{path}"}
+
+
+def _assumed(scenario: dict[str, Any], key: str, origin: str) -> dict[str, Any]:
+    """A human assumption, tagged with its assumptions path. Missing → KeyError, never a default."""
+    return {"value": float(scenario[key]), "source": f"{origin}.{key}"}
 
 
 def _ri_value(objective: dict[str, Any], scenario: dict[str, Any], origin: str) -> dict[str, Any]:
@@ -211,17 +214,17 @@ def _ri_value(objective: dict[str, Any], scenario: dict[str, Any], origin: str) 
     Book value is always the reported fact. ROE fades linearly from roe_start (default:
     reported TTM ROE) to target_roe; the terminal value capitalizes the year-N+1 residual
     income at (cost_of_equity - terminal_growth)."""
-    book = _fact_or_assumption(objective, {}, "book_value", "financials.book_value", origin)
+    book = _fact(objective, "financials.book_value")
     shares = float(objective["market"]["diluted_shares"])
     if "roe_start" in scenario:
-        roe_start = {"value": float(scenario["roe_start"]), "source": f"{origin}.roe_start"}
+        roe_start = _assumed(scenario, "roe_start", origin)
     else:
         net_income = float(objective["financials"]["net_income_ttm"])
         roe_start = {"value": net_income / book["value"],
                      "source": "objective.financials.net_income_ttm / objective.financials.book_value"}
     inputs = {"book_value": book, "roe_start": roe_start}
     for key in ("target_roe", "cost_of_equity", "payout_ratio", "terminal_growth"):
-        inputs[key] = {"value": float(scenario[key]), "source": f"{origin}.{key}"}
+        inputs[key] = _assumed(scenario, key, origin)
     years = int(scenario.get("forecast_years", 5))
     coe = inputs["cost_of_equity"]["value"]
     growth = inputs["terminal_growth"]["value"]
@@ -257,21 +260,12 @@ def _ri_value(objective: dict[str, Any], scenario: dict[str, Any], origin: str) 
 def _epv_value(objective: dict[str, Any], scenario: dict[str, Any], origin: str) -> dict[str, Any]:
     """Earnings power value (no growth): normalized NOPAT / WACC, then net debt to equity.
 
-    The normalized EBIT margin defaults to the reported cycle-average FY margin; any
-    override shows up in ``inputs`` as an assumption."""
-    inputs = {
-        "normalized_revenue": _fact_or_assumption(objective, scenario, "normalized_revenue",
-                                                  "financials.revenue_ttm", origin),
-        "normalized_ebit_margin": _fact_or_assumption(objective, scenario, "normalized_ebit_margin",
-                                                      "history.ebit_margin_cycle_avg", origin),
-    }
-    for key in ("tax_rate", "wacc"):
-        inputs[key] = {"value": float(scenario[key]), "source": f"{origin}.{key}"}
-    # Signed NOPAT adjustment, e.g. D&A in excess of maintenance capex. Zero unless assumed.
-    has_adjustment = "maintenance_capex_adjustment" in scenario
-    inputs["maintenance_capex_adjustment"] = {
-        "value": float(scenario.get("maintenance_capex_adjustment", 0.0)),
-        "source": f"{origin}.maintenance_capex_adjustment" if has_adjustment else "default: 0"}
+    Normalization is a judgement, so every operating input is a required assumption with no
+    default; the reported TTM series is there for the person choosing them."""
+    inputs = {key: _assumed(scenario, key, origin)
+              for key in ("normalized_revenue", "normalized_ebit_margin", "tax_rate", "wacc",
+                          # Signed NOPAT adjustment, e.g. D&A in excess of maintenance capex.
+                          "maintenance_capex_adjustment")}
     shares = float(objective["market"]["diluted_shares"])
     cash = float(objective["market"]["cash"])
     debt = float(objective["market"]["debt"])
@@ -413,6 +407,38 @@ def _reverse_dcf(objective: dict[str, Any], base: dict[str, Any]) -> float | Non
         return None
 
 
+def _cycle_comparison(objective: dict[str, Any], groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Statistics of reported rolling-TTM points inside each human-chosen date range.
+
+    The engine never decides where a cycle starts or ends; ``assumptions.cycle_groups``
+    does. Rolling TTM points overlap, so the mean is of TTM points, not of discrete years."""
+    series = _get(objective, "history.ttm_series") or []
+    rows = []
+    for group in groups:
+        label, start, end = group.get("label"), str(group.get("start", "")), str(group.get("end", ""))
+        row: dict[str, Any] = {"label": label, "start": start, "end": end}
+        if not start or not end or start > end:
+            rows.append({**row, "error": "start/end must be ISO dates with start <= end"})
+            continue
+        points = [p for p in series if start <= str(p.get("period_end", "")) <= end]
+        margins = [(p["ebit_margin"], p["period_end"]) for p in points if _number(p.get("ebit_margin")) is not None]
+        revenues = [p for p in points if _number(p.get("revenue")) is not None]
+        row.update({"points": len(points),
+                    "first_period_end": points[0]["period_end"] if points else None,
+                    "last_period_end": points[-1]["period_end"] if points else None,
+                    "revenue_first": revenues[0]["revenue"] if revenues else None,
+                    "revenue_last": revenues[-1]["revenue"] if revenues else None,
+                    "ebit_margin_mean": sum(m for m, _ in margins) / len(margins) if margins else None,
+                    "ebit_margin_min": min(margins)[0] if margins else None,
+                    "ebit_margin_min_at": min(margins)[1] if margins else None,
+                    "ebit_margin_max": max(margins)[0] if margins else None,
+                    "ebit_margin_max_at": max(margins)[1] if margins else None})
+        first, last = row["revenue_first"], row["revenue_last"]
+        row["revenue_change"] = last / first - 1.0 if first and last is not None and first > 0 else None
+        rows.append(row)
+    return rows
+
+
 def _quality_flags(objective: dict[str, Any], config: dict[str, Any]) -> list[Flag]:
     t = config["quality_thresholds"]
     flags: list[Flag] = []
@@ -538,6 +564,7 @@ def analyze_security(payload: dict[str, Any], config: dict[str, Any] | None = No
             )
         except (KeyError, TypeError, ValueError, ZeroDivisionError) as exc:
             flags.append(Flag("warning", "RELATIVE_CROSS_CHECK", str(exc)))
+    cycle_comparison = _cycle_comparison(objective, assumptions.get("cycle_groups") or [])
     present = sum(_get(objective, path) is not None for path in REQUIRED_FACTS)
     completeness = present / len(REQUIRED_FACTS)
     provenance_coverage = _provenance_coverage(objective, payload.get("sources", []))
@@ -566,6 +593,7 @@ def analyze_security(payload: dict[str, Any], config: dict[str, Any] | None = No
                      "base_fair_value": anchor_fair, "upside": upside, "margin_of_safety": margin_of_safety,
                      "reverse_dcf_implied_initial_growth": reverse_growth,
                      "relative_cross_check": relative_cross_check, "wacc_build": wacc_build,
+                     "cycle_comparison": cycle_comparison,
                      "objective_score": score, "risk_adjusted_opportunity_score": opportunity_score,
                      "data_completeness": completeness, "provenance_coverage": provenance_coverage,
                      "decision": "PASS_DEEP_DIVE" if passed else "WATCH_OR_REJECT"},

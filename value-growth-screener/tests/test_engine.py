@@ -113,32 +113,55 @@ class EngineTests(unittest.TestCase):
         result = analyze_security(payload, self.config)
         self.assertIn("VALUATION_INPUT", {flag["code"] for flag in result["flags"]})
 
-    def test_epv_defaults_to_reported_cycle_margin(self):
-        payload = self._single_scenario("epv", {"tax_rate": 0.21, "wacc": 0.09})
-        row = analyze_security(payload, self.config)["computed"]["scenario_valuation"][0]
-        expected = (10000 * 0.20 * (1 - 0.21) / 0.09 - 1000 + 2000) / 100
-        self.assertAlmostEqual(row["fair_value_per_share"], expected)
-        self.assertEqual(row["inputs"]["normalized_ebit_margin"]["source"], "objective.history.ebit_margin_cycle_avg")
-        self.assertEqual(row["inputs"]["normalized_revenue"]["source"], "objective.financials.revenue_ttm")
-        self.assertEqual(row["inputs"]["maintenance_capex_adjustment"]["source"], "default: 0")
+    EPV = {"normalized_revenue": 9000.0, "normalized_ebit_margin": 0.18, "tax_rate": 0.21, "wacc": 0.09,
+           "maintenance_capex_adjustment": 50.0}
 
-    def test_epv_assumed_margin_is_labelled_and_missing_fact_is_critical(self):
-        payload = self._single_scenario("epv", {"tax_rate": 0.21, "wacc": 0.09, "normalized_ebit_margin": 0.15})
-        row = analyze_security(payload, self.config)["computed"]["scenario_valuation"][0]
-        self.assertEqual(row["inputs"]["normalized_ebit_margin"]["source"],
-                         "assumptions.scenarios.base.normalized_ebit_margin")
-        payload = self._single_scenario("epv", {"tax_rate": 0.21, "wacc": 0.09})
-        del payload["objective"]["history"]["ebit_margin_cycle_avg"]
-        result = analyze_security(payload, self.config)
-        self.assertIn("VALUATION_INPUT", {flag["code"] for flag in result["flags"]})
-        self.assertEqual(result["computed"]["scenario_valuation"], [])
+    def test_epv_hand_calculation_all_inputs_assumed(self):
+        row = analyze_security(self._single_scenario("epv", self.EPV), self.config)["computed"]["scenario_valuation"][0]
+        expected = ((9000 * 0.18 * (1 - 0.21) + 50) / 0.09 - 1000 + 2000) / 100
+        self.assertAlmostEqual(row["fair_value_per_share"], expected)
+        for key in self.EPV:
+            self.assertEqual(row["inputs"][key]["source"], f"assumptions.scenarios.base.{key}")
+
+    def test_epv_has_no_defaults(self):
+        for key in self.EPV:
+            scenario = {k: v for k, v in self.EPV.items() if k != key}
+            result = analyze_security(self._single_scenario("epv", scenario), self.config)
+            self.assertIn("VALUATION_INPUT", {flag["code"] for flag in result["flags"]}, key)
+            self.assertEqual(result["computed"]["scenario_valuation"], [], key)
 
     def test_epv_cross_check_renders_sources(self):
         payload = deepcopy(self.payload)
-        payload["assumptions"]["relative_cross_check"] = {"method": "epv", "tax_rate": 0.21, "wacc": 0.09}
+        payload["assumptions"]["relative_cross_check"] = {"method": "epv", **self.EPV}
         result = analyze_security(payload, self.config)
         self.assertEqual(result["computed"]["relative_cross_check"]["method"], "epv")
-        self.assertIn("objective.history.ebit_margin_cycle_avg", render_markdown(result))
+        self.assertIn("assumptions.relative_cross_check.normalized_ebit_margin", render_markdown(result))
+
+    def test_cycle_groups_are_user_defined_only(self):
+        payload = deepcopy(self.payload)
+        margins = [0.30, 0.10, -0.05, 0.20, 0.40, 0.25]
+        payload["objective"]["history"]["ttm_series"] = [
+            {"period_end": end, "revenue": 100.0 + i * 10, "ebit_margin": m}
+            for i, (end, m) in enumerate(zip(["2019-12-31", "2020-12-31", "2021-12-31",
+                                              "2022-12-31", "2023-12-31", "2024-12-31"], margins))]
+        baseline = analyze_security(payload, self.config)
+        self.assertEqual(baseline["computed"]["cycle_comparison"], [])  # no groups -> no cycle stats
+        payload["assumptions"]["cycle_groups"] = [
+            {"label": "down", "start": "2019-01-01", "end": "2021-12-31"},
+            {"label": "up", "start": "2022-01-01", "end": "2024-12-31"},
+            {"label": "bad", "start": "2024-01-01", "end": "2023-01-01"}]
+        result = analyze_security(payload, self.config)
+        down, up, bad = result["computed"]["cycle_comparison"]
+        self.assertEqual(down["points"], 3)
+        self.assertAlmostEqual(down["ebit_margin_mean"], (0.30 + 0.10 - 0.05) / 3)
+        self.assertEqual((down["ebit_margin_min"], down["ebit_margin_min_at"]), (-0.05, "2021-12-31"))
+        self.assertAlmostEqual(down["revenue_change"], 120.0 / 100.0 - 1)
+        self.assertEqual((up["ebit_margin_max"], up["ebit_margin_max_at"]), (0.40, "2023-12-31"))
+        self.assertIn("error", bad)
+        # Grouping is display only: scores and flags are unchanged.
+        self.assertEqual(result["computed"]["objective_score"], baseline["computed"]["objective_score"])
+        self.assertEqual(result["flags"], baseline["flags"])
+        self.assertIn("사용자 지정 구간 비교", render_markdown(result))
 
     def test_growth_score_uses_reported_history(self):
         payload = deepcopy(self.payload)

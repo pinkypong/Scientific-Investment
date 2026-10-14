@@ -22,9 +22,9 @@ INSTANT_TAGS = {
     # Parent-only equity: residual income values the common shareholders' claim, so NCI is excluded.
     "book_equity": ("StockholdersEquity",),
 }
-# Cycle statistics need enough fiscal years to span at least one full cycle; fewer → None.
-CYCLE_MIN_YEARS = 5
-CYCLE_MAX_YEARS = 10
+# Rolling TTM points shown (40 quarter-ends = 10 years). Display length only: no cycle is
+# inferred from it; grouping into cycles is a human assumption (engine: cycle_groups).
+TTM_SERIES_POINTS = 40
 
 
 @dataclass(frozen=True)
@@ -91,6 +91,7 @@ def normalize_companyfacts(companyfacts: dict[str, Any], as_of: str) -> dict[str
     prior_ttm: dict[str, float | None] = {}
     fiscal_years: dict[str, dict[int, float]] = {}
     sources: dict[str, list[str]] = {}
+    histories: dict[str, list[NormalizedFact]] = {}
     for metric, tags in FLOW_TAGS.items():
         rows = _available_fact_rows(companyfacts, metric, tags, as_of, ("USD",))
         discrete = [row for row in rows if (days := _duration_days(row)) is not None and 60 <= days <= 120]
@@ -115,6 +116,7 @@ def normalize_companyfacts(companyfacts: dict[str, Any], as_of: str) -> dict[str
         for row in sorted(discrete, key=lambda value: (value.period_end, value.filed)):
             latest_by_end[row.period_end] = row
         all_ordered = sorted(latest_by_end.values(), key=lambda value: value.period_end)
+        histories[metric] = all_ordered
         ordered = all_ordered[-4:]
         quarters[metric] = ordered
         ttm[metric] = sum(row.value for row in ordered) if len(ordered) == 4 else None
@@ -146,9 +148,12 @@ def normalize_companyfacts(companyfacts: dict[str, Any], as_of: str) -> dict[str
         "quarters": {metric: [row.as_dict() for row in rows] for metric, rows in quarters.items()},
         "source_tags": sources,
         "history": history,
+        "ttm_series": ttm_series(histories),
         "fiscal_years": {metric: {str(year): value for year, value in rows.items()} for metric, rows in fiscal_years.items()},
         "methodology": ("filed<=as_of; discrete 60-120d quarters; Q4=FY-Q1-Q2-Q3 when necessary; "
-                        "history uses reported FY values only (no estimates)"),
+                        "history uses reported FY values only (no estimates); "
+                        "ttm_series = rolling sum of 4 consecutive quarters, latest filing<=as_of per quarter "
+                        "(restated values replace originals), gaps left empty"),
     }
 
 
@@ -171,22 +176,43 @@ def reported_growth(fiscal_years: dict[str, dict[int, float]], ttm: dict[str, fl
     if now is not None and before is not None and before > 0:
         yoy = now / before - 1
     return {"revenue_cagr_3y": cagr, "revenue_yoy_ttm": yoy, "ebit_margin_change_3y": margin_change,
-            "basis_fiscal_year": last, **cycle_margins(revenue, operating)}
+            "basis_fiscal_year": last}
 
 
-def cycle_margins(revenue: dict[int, float], operating: dict[int, float]) -> dict[str, float | int | None]:
-    """Reported FY EBIT margins over the last CYCLE_MAX_YEARS years: simple mean, range, latest.
 
-    Simple (not revenue-weighted) mean so trough years count as much as peak years. These are
-    descriptive facts; nothing here assumes the margin will revert to the average."""
-    years = sorted(year for year in revenue if year in operating and revenue[year] > 0)
-    if years:
-        years = [year for year in years if year > years[-1] - CYCLE_MAX_YEARS]
-    empty = {"ebit_margin_cycle_avg": None, "ebit_margin_cycle_min": None, "ebit_margin_cycle_max": None,
-             "ebit_margin_latest_fy": None, "cycle_years": len(years), "cycle_first_fiscal_year": None}
-    if len(years) < CYCLE_MIN_YEARS:
-        return empty
-    margins = [operating[year] / revenue[year] for year in years]
-    return {"ebit_margin_cycle_avg": sum(margins) / len(margins), "ebit_margin_cycle_min": min(margins),
-            "ebit_margin_cycle_max": max(margins), "ebit_margin_latest_fy": margins[-1],
-            "cycle_years": len(years), "cycle_first_fiscal_year": years[0]}
+def _consecutive(previous: NormalizedFact, current: NormalizedFact) -> bool:
+    gap = (date.fromisoformat(current.period_end) - date.fromisoformat(previous.period_end)).days
+    return 75 <= gap <= 105  # one fiscal quarter, allowing 52/53-week calendars
+
+
+def ttm_series(histories: dict[str, list[NormalizedFact]],
+               points: int = TTM_SERIES_POINTS) -> list[dict[str, Any]]:
+    """Rolling TTM per quarter-end, oldest first, for the last ``points`` revenue quarter-ends.
+
+    A metric's TTM at a quarter-end is the sum of that quarter and the three before it, only
+    when all four exist and are consecutive; otherwise it is None (never interpolated). Each
+    point lists the accession numbers it was built from."""
+    rolling: dict[str, dict[str, tuple[float, list[NormalizedFact]]]] = {}
+    for metric, rows in histories.items():
+        rolling[metric] = {}
+        for index in range(3, len(rows)):
+            window = rows[index - 3:index + 1]
+            if all(_consecutive(a, b) for a, b in zip(window, window[1:])):
+                rolling[metric][rows[index].period_end] = (sum(row.value for row in window), window)
+    series = []
+    # Every revenue quarter-end with three earlier quarters gets a row, so gaps show as None.
+    for end in [row.period_end for row in histories.get("revenue", [])[3:]][-points:]:
+        point: dict[str, Any] = {"period_end": end}
+        accessions: set[str] = set()
+        derived_q4 = False
+        for metric in FLOW_TAGS:
+            value, window = rolling.get(metric, {}).get(end, (None, []))
+            point[metric] = value
+            accessions.update(row.accession for row in window if row.accession)
+            derived_q4 = derived_q4 or any(row.derived for row in window)
+        revenue, operating = point["revenue"], point["operating_income"]
+        point["ebit_margin"] = operating / revenue if operating is not None and revenue else None
+        point["includes_derived_q4"] = derived_q4
+        point["accessions"] = sorted(accessions)
+        series.append(point)
+    return series
