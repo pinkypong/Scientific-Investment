@@ -57,6 +57,9 @@ jobs:
       - name: test_phase_e2
         run: python -m data_sources.tests.test_phase_e2
 
+      - name: Vercel quotes function tests (node, offline)
+        run: node --test scripts/test_quotes_function.mjs
+
       - name: build_dashboard_data --check
         run: python -m data_sources.build_dashboard_data --check
 

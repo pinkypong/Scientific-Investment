@@ -778,9 +778,38 @@ function pAbove(h,cur,mult){var num=0,den=0;for(var i=0;i<h.c.length;i++){den+=h
 function pBelow(h,cur,mult){var num=0,den=0;for(var i=0;i<h.c.length;i++){den+=h.n[i];if(h.c[i]<cur*mult)num+=h.n[i];}return den?Math.round(num/den*1000)/1000:0;}
 function currentView(){var v=document.querySelector('.pbtn.active');return v?v.getAttribute('data-v'):'home';}
 function rerender(){var v=currentView();if(v==='home')ovInit();else if(v==='screener')screenerInit();else if(v==='memory')renderMemTab(memActiveTab());}
+// 시세 하나를 화면 데이터(MC, CD)에 반영한다. Cowork 경로와 Vercel 경로가 같이 쓴다.
+function applyLivePrice(k,px){
+  if(!(typeof px==='number'&&isFinite(px)&&px>0))return false;
+  var m=MC[k];m.cur=px;var eps=CD.fin[k].eps[1];m.cur_pe=Math.round(px/eps*10)/10;m.exp_ret=Math.round((m.ev/px-1)*1000)/1000;
+  m.p_up=pAbove(m.hist,px,1);m.p_up10=pAbove(m.hist,px,1.1);m.p_up30=pAbove(m.hist,px,1.3);m.p_dn10=pBelow(m.hist,px,0.9);m.p_dn20=pBelow(m.hist,px,0.8);
+  CD.fin[k].cur=px;CD.val[k].cur=px;CD.fin[k].pe27=m.cur_pe;return true;
+}
+// 미국 종목은 Vercel 서버 함수(/api/quotes, Alpaca·몇 시간 캐시), 한국 종목은 수동 입력 파일.
+var QUOTE_US={micron:'MU',sandisk:'SNDK'};
+var QUOTE_KR={samsung:'005930',skhynix:'000660'};
+function escHtml(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function refreshQuotesWeb(st){
+  st.textContent='⏳ 시세 불러오는 중…';
+  function getJson(url){return fetch(url,{cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error(url+' '+r.status);return r.json();});}
+  Promise.all([getJson('/api/quotes').catch(function(e){console.error(e);return null;}),
+               getJson('/data/manual_quotes.json').catch(function(e){console.error(e);return null;})])
+  .then(function(res){
+    var us=res[0],kr=res[1],parts=[],n=0,k;
+    if(us&&us.quotes){var hit=0,t='';for(k in QUOTE_US){var q=us.quotes[QUOTE_US[k]];if(q&&applyLivePrice(k,q.price)){hit++;n++;t=q.as_of||t;}}
+      parts.push('🟢 미국 '+hit+'/2 · Alpaca IEX'+(t?' · 체결 '+escHtml(new Date(t).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})):''));}
+    else parts.push('⚠ 미국 시세 서버 응답 없음 (스냅샷 유지)');
+    if(kr&&kr.quotes){var miss=[];for(k in QUOTE_KR){var e=kr.quotes[QUOTE_KR[k]];
+        if(e&&e.as_of&&applyLivePrice(k,e.price)){n++;parts.push('✍ '+escHtml(e.name||k)+' 수동 '+escHtml(e.as_of));}else miss.push(e&&e.name?e.name:k);}
+      if(miss.length)parts.push('⚠ 수동 입력 필요: '+escHtml(miss.join(', '))+' (스냅샷 유지)');}
+    else parts.push('⚠ 한국 수동 시세 파일 없음 (스냅샷 유지)');
+    st.innerHTML=parts.join(' · ');
+    if(n)rerender();
+  });
+}
 function refreshQuotes(){
   var st=document.getElementById('liveStamp');
-  if(!(window.cowork&&window.cowork.callMcpTool)){st.innerHTML='⚠ 실시간 시세는 데스크톱 Cowork에서만 가능 · 이 화면(모바일/웹)은 스냅샷 2026-08-21';return;}
+  if(!(window.cowork&&window.cowork.callMcpTool)){refreshQuotesWeb(st);return;}
   st.textContent='⏳ 실시간 시세 불러오는 중…';
   var order=['samsung','skhynix','micron','sandisk'],done=0,ok=0;
   order.forEach(function(k){
@@ -788,9 +817,7 @@ function refreshQuotes(){
     .then(function(r){try{var d=(r&&r.structuredContent)?r.structuredContent:JSON.parse(r.content[0].text);
       var cm=(d.price_performance&&d.price_performance.current_market)?d.price_performance.current_market:null;
       var px=cm?cm.current_price:(d.company_overview&&d.company_overview.price);
-      if(px){var m=MC[k];m.cur=px;var eps=CD.fin[k].eps[1];m.cur_pe=Math.round(px/eps*10)/10;m.ev=m.ev;m.exp_ret=Math.round((m.ev/px-1)*1000)/1000;
-        m.p_up=pAbove(m.hist,px,1);m.p_up10=pAbove(m.hist,px,1.1);m.p_up30=pAbove(m.hist,px,1.3);m.p_dn10=pBelow(m.hist,px,0.9);m.p_dn20=pBelow(m.hist,px,0.8);
-        CD.fin[k].cur=px;CD.val[k].cur=px;CD.fin[k].pe27=m.cur_pe;ok++;}
+      if(applyLivePrice(k,px))ok++;
     }catch(e){console.error('parse '+k,e);}}).catch(function(e){console.error('call '+k,e);})
     .then(function(){done++;if(done===order.length){var now=new Date();st.innerHTML='🟢 실시간 '+now.toLocaleTimeString('ko-KR')+' ('+ok+'/4 갱신) · Bigdata.com';rerender();}});
   });
@@ -861,6 +888,7 @@ function analyzeReports(){
 }
 function boot(){
   var rb=document.getElementById('refreshBtn'); if(rb)rb.addEventListener('click',refreshQuotes);
+  if(/^https?:$/.test(location.protocol)&&!(window.cowork&&window.cowork.callMcpTool))refreshQuotes(); // 웹(Vercel)은 열 때 자동 갱신
   var nb=document.getElementById('newsBtn'); if(nb)nb.addEventListener('click',loadNews);
   var ov=document.getElementById('auditOv');
   if(!ov){ov=document.createElement('div');ov.id='auditOv';document.body.appendChild(ov);
