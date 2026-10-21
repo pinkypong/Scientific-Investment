@@ -23,6 +23,29 @@ const KIS_PRICE_PATH = "/uapi/domestic-stock/v1/quotations/inquire-price";
 const KIS_PRICE_TR_ID = "FHKST01010100"; // same id for real and mock
 const CACHE_SECONDS = 3 * 60 * 60; // edge cache: at most one upstream round per 3 hours
 
+// A short upstream error code (e.g. "EGW00133") is safe to show; anything else is dropped so
+// no free text from an upstream body, which could echo request details, reaches a response.
+function safeCode(value) {
+  return typeof value === "string" && /^[A-Za-z0-9_]{1,24}$/.test(value) ? value : null;
+}
+
+// Only errors of this class may put their message in a response: we build them ourselves
+// from a label, an HTTP status and a safe code. Any other exception is reported generically.
+class UpstreamError extends Error {}
+
+function reason(error) {
+  return error instanceof UpstreamError ? error.message : "network error";
+}
+
+async function errorCode(response) {
+  try {
+    const body = await response.json();
+    return safeCode(body && (body.msg_cd || body.error_code));
+  } catch (error) {
+    return null;
+  }
+}
+
 function round(value, digits) {
   const scale = 10 ** digits;
   return Math.round(value * scale) / scale;
@@ -66,7 +89,7 @@ async function fetchUs(fetchImpl, keyId, secret) {
   const response = await fetchImpl(url, {
     headers: { "APCA-API-KEY-ID": keyId, "APCA-API-SECRET-KEY": secret },
   });
-  if (!response.ok) throw new Error(`alpaca ${response.status}`);
+  if (!response.ok) throw new UpstreamError(`alpaca http ${response.status}`);
   return normalizeSnapshots(await response.json(), US_SYMBOLS);
 }
 
@@ -82,19 +105,24 @@ async function kisAccessToken(fetchImpl, base, appKey, appSecret, nowMs) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ grant_type: "client_credentials", appkey: appKey, appsecret: appSecret }),
   });
-  if (!response.ok) throw new Error(`kis token ${response.status}`);
+  if (!response.ok) {
+    const code = await errorCode(response);
+    throw new UpstreamError(`kis token http ${response.status}${code ? ` ${code}` : ""}`);
+  }
   const body = await response.json();
-  if (!body.access_token) throw new Error("kis token missing");
+  if (!body.access_token) throw new UpstreamError("kis token missing in response");
   const lifetimeMs = (Number(body.expires_in) > 0 ? Number(body.expires_in) : 86_400) * 1000;
   kisToken = { value: body.access_token, base, appKey, expiresAt: nowMs + lifetimeMs };
   return kisToken.value;
 }
 
+// Returns {quotes, notes}; notes say, per code, why a price is missing.
 async function fetchKr(fetchImpl, appKey, appSecret, env, nowMs) {
   const base = KIS_BASE[env] || KIS_BASE.real;
   const token = await kisAccessToken(fetchImpl, base, appKey, appSecret, nowMs);
   const fetchedAt = new Date(nowMs).toISOString();
   const quotes = {};
+  const notes = [];
   for (const code of Object.keys(KR_CODES)) { // sequential: KIS limits calls per second
     const url = `${base}${KIS_PRICE_PATH}?FID_COND_MRKT_DIV_CODE=J&FID_INPUT_ISCD=${code}`;
     const response = await fetchImpl(url, {
@@ -103,11 +131,22 @@ async function fetchKr(fetchImpl, appKey, appSecret, env, nowMs) {
         appkey: appKey, appsecret: appSecret, tr_id: KIS_PRICE_TR_ID, custtype: "P",
       },
     });
-    if (!response.ok) continue;
-    const quote = normalizeKisPrice(await response.json(), code, fetchedAt);
-    if (quote) quotes[code] = quote;
+    if (!response.ok) {
+      const detail = await errorCode(response);
+      notes.push(`KR ${code}: http ${response.status}${detail ? ` ${detail}` : ""}`);
+      continue;
+    }
+    let body = null;
+    try { body = await response.json(); } catch (error) { /* reported below */ }
+    const quote = normalizeKisPrice(body, code, fetchedAt);
+    if (quote) {
+      quotes[code] = quote;
+    } else {
+      const detail = body && safeCode(body.msg_cd);
+      notes.push(`KR ${code}: rt_cd ${body && safeCode(body.rt_cd) ? body.rt_cd : "?"}${detail ? ` ${detail}` : ""}`);
+    }
   }
-  return quotes;
+  return { quotes, notes };
 }
 
 function send(res, status, payload, cacheControl) {
@@ -126,22 +165,24 @@ async function handler(req, res, fetchImpl = globalThis.fetch, nowMs = Date.now(
   }
   const quotes = {};
   const sources = [];
-  const errors = []; // short labels only; never upstream bodies or keys
+  const errors = []; // our own labels + HTTP status + safe codes; never upstream text or keys
   if (usReady) {
     try {
       Object.assign(quotes, await fetchUs(fetchImpl, env.ALPACA_API_KEY_ID, env.ALPACA_API_SECRET_KEY));
       sources.push({ market: "US", name: "Alpaca market data (IEX feed)" });
     } catch (error) {
-      errors.push("US upstream failed");
+      errors.push(`US upstream failed: ${reason(error)}`);
     }
   }
   if (krReady) {
     const kisEnv = env.KIS_ENV === "mock" ? "mock" : "real";
     try {
-      Object.assign(quotes, await fetchKr(fetchImpl, env.KIS_APP_KEY, env.KIS_APP_SECRET, kisEnv, nowMs));
-      sources.push({ market: "KR", name: `한국투자증권 Open API (${kisEnv === "mock" ? "모의" : "실전"})` });
+      const kr = await fetchKr(fetchImpl, env.KIS_APP_KEY, env.KIS_APP_SECRET, kisEnv, nowMs);
+      Object.assign(quotes, kr.quotes);
+      errors.push(...kr.notes);
+      sources.push({ market: "KR", name: `한국투자증권 Open API (${kisEnv === "mock" ? "모의" : "실전"})`, env: kisEnv });
     } catch (error) {
-      errors.push("KR upstream failed");
+      errors.push(`KR upstream failed: ${reason(error)}`);
     }
   }
   const wanted = [...(usReady ? US_SYMBOLS : []), ...(krReady ? Object.keys(KR_CODES) : [])];
@@ -166,3 +207,4 @@ module.exports.normalizeKisPrice = normalizeKisPrice;
 module.exports.US_SYMBOLS = US_SYMBOLS;
 module.exports.KR_CODES = KR_CODES;
 module.exports._resetTokenCache = _resetTokenCache;
+module.exports.UpstreamError = UpstreamError;

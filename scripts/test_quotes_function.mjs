@@ -141,7 +141,7 @@ test("one market failing does not hide the other; partial answers cache briefly"
     assert.equal(res.statusCode, 200);
     const body = res.json();
     assert.ok("005930" in body.quotes);
-    assert.deepEqual(body.errors, ["US upstream failed"]);
+    assert.deepEqual(body.errors, ["US upstream failed: network error"]);  // exception text is never echoed
     assert.deepEqual(body.missing, US_SYMBOLS);
     assert.equal(res.headers["cache-control"], "public, s-maxage=600");
     assertNoSecret(res.body);
@@ -155,6 +155,49 @@ test("KIS error answer for one code drops only that code", async () => {
     await handler({}, res, fetchImpl, NOW);
     assert.deepEqual(Object.keys(res.json().quotes), ["005930"]);
     assert.deepEqual(res.json().missing, ["000660"]);
+    assert.deepEqual(res.json().errors, ["KR 000660: rt_cd 1"]);  // free text msg1 is not echoed
+  });
+});
+
+test("diagnostics: token rejection shows the status and KIS error code, never the body text", async () => {
+  await withEnv({ KIS_APP_KEY: SECRETS.KIS_APP_KEY, KIS_APP_SECRET: SECRETS.KIS_APP_SECRET }, async () => {
+    const { fetchImpl } = upstream({ token: json({ error_code: "EGW00103", error_description: `bad ${SECRETS.KIS_APP_SECRET}` }, false, 403) });
+    const res = fakeRes();
+    await handler({}, res, fetchImpl, NOW);
+    assert.deepEqual(res.json().errors, ["KR upstream failed: kis token http 403 EGW00103"]);
+    assertNoSecret(res.body);
+  });
+});
+
+test("diagnostics: per-code KIS failure carries rt_cd and msg_cd; hostile codes are dropped", async () => {
+  await withEnv({ KIS_APP_KEY: "k", KIS_APP_SECRET: "s" }, async () => {
+    const { fetchImpl } = upstream({ kis: {
+      "005930": json({ rt_cd: "1", msg_cd: "EGW00201", msg1: "초당 거래건수 초과" }),
+      "000660": json({ rt_cd: "1", msg_cd: "<script>alert(1)</script>" }),
+    } });
+    const res = fakeRes();
+    await handler({}, res, fetchImpl, NOW);
+    assert.equal(res.statusCode, 502);  // nothing usable at all
+    assert.deepEqual(res.json().errors, ["KR 005930: rt_cd 1 EGW00201", "KR 000660: rt_cd 1"]);
+  });
+});
+
+test("diagnostics: HTTP error on a price call is reported with its status", async () => {
+  await withEnv({ KIS_APP_KEY: "k", KIS_APP_SECRET: "s" }, async () => {
+    const { fetchImpl } = upstream({ kis: { "005930": json({ msg_cd: "EGW00123" }, false, 500) } });
+    const res = fakeRes();
+    await handler({}, res, fetchImpl, NOW);
+    assert.deepEqual(res.json().errors, ["KR 005930: http 500 EGW00123"]);
+    assert.ok("000660" in res.json().quotes);
+  });
+});
+
+test("diagnostics: the mode (real or mock) is stated so a wrong KIS_ENV is obvious", async () => {
+  await withEnv({ KIS_APP_KEY: "k", KIS_APP_SECRET: "s", KIS_ENV: "mock" }, async () => {
+    const { fetchImpl } = upstream();
+    const res = fakeRes();
+    await handler({}, res, fetchImpl, NOW);
+    assert.equal(res.json().sources[0].env, "mock");
   });
 });
 
@@ -165,7 +208,7 @@ test("token failure and total failure: 502, not cached, no secret", async () => 
     await handler({}, res, fetchImpl, NOW);
     assert.equal(res.statusCode, 502);
     assert.equal(res.headers["cache-control"], "no-store");
-    assert.deepEqual(res.json().errors, ["KR upstream failed"]);
+    assert.deepEqual(res.json().errors, ["KR upstream failed: kis token http 403"]);
     assertNoSecret(res.body);
   });
 });
