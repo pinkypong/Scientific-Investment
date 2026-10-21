@@ -164,7 +164,7 @@ test("diagnostics: token rejection shows the status and KIS error code, never th
     const { fetchImpl } = upstream({ token: json({ error_code: "EGW00103", error_description: `bad ${SECRETS.KIS_APP_SECRET}` }, false, 403) });
     const res = fakeRes();
     await handler({}, res, fetchImpl, NOW);
-    assert.deepEqual(res.json().errors, ["KR upstream failed: kis token http 403 EGW00103"]);
+    assert.deepEqual(res.json().errors, ["KR upstream failed (real): kis token http 403 EGW00103"]);
     assertNoSecret(res.body);
   });
 });
@@ -208,8 +208,33 @@ test("token failure and total failure: 502, not cached, no secret", async () => 
     await handler({}, res, fetchImpl, NOW);
     assert.equal(res.statusCode, 502);
     assert.equal(res.headers["cache-control"], "no-store");
-    assert.deepEqual(res.json().errors, ["KR upstream failed: kis token http 403"]);
+    assert.deepEqual(res.json().errors, ["KR upstream failed (real): kis token http 403"]);
     assertNoSecret(res.body);
+  });
+});
+
+test("pasted keys with stray whitespace still work; KIS_ENV is case/space tolerant", async () => {
+  await withEnv({ KIS_APP_KEY: "  key-with-space \n", KIS_APP_SECRET: "\tsecret\r\n", KIS_ENV: " Mock ",
+                  ALPACA_API_KEY_ID: " id ", ALPACA_API_SECRET_KEY: "sec\n" }, async () => {
+    const { fetchImpl, calls } = upstream();
+    const res = fakeRes();
+    await handler({}, res, fetchImpl, NOW);
+    const token = calls.find((c) => c.url.endsWith("/oauth2/tokenP"));
+    assert.ok(token.url.startsWith("https://openapivts.koreainvestment.com:29443"), "KIS_ENV ' Mock ' should mean mock");
+    assert.deepEqual(JSON.parse(token.init.body), { grant_type: "client_credentials", appkey: "key-with-space", appsecret: "secret" });
+    const price = calls.find((c) => c.url.includes("inquire-price"));
+    assert.equal(price.init.headers.appkey, "key-with-space");
+    const alpaca = calls.find((c) => c.url.startsWith("https://data.alpaca.markets/"));
+    assert.equal(alpaca.init.headers["APCA-API-KEY-ID"], "id");
+    assert.equal(alpaca.init.headers["APCA-API-SECRET-KEY"], "sec");
+  });
+});
+
+test("a key that is only whitespace counts as not configured", async () => {
+  await withEnv({ KIS_APP_KEY: "   ", KIS_APP_SECRET: "\n" }, async () => {
+    const res = fakeRes();
+    await handler({}, res, () => { throw new Error("must not call upstream"); }, NOW);
+    assert.equal(res.statusCode, 503);
   });
 });
 

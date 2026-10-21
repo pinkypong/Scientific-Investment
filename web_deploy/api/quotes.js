@@ -156,8 +156,19 @@ function send(res, status, payload, cacheControl) {
   res.end(JSON.stringify(payload));
 }
 
+// Values pasted into the Vercel dashboard often carry a stray space or line break, which
+// KIS and Alpaca reject as an invalid key. Trim every setting before use.
+function setting(name) {
+  const value = process.env[name];
+  return typeof value === "string" ? value.trim() : "";
+}
+
 async function handler(req, res, fetchImpl = globalThis.fetch, nowMs = Date.now()) {
-  const env = process.env;
+  const env = {
+    ALPACA_API_KEY_ID: setting("ALPACA_API_KEY_ID"), ALPACA_API_SECRET_KEY: setting("ALPACA_API_SECRET_KEY"),
+    KIS_APP_KEY: setting("KIS_APP_KEY"), KIS_APP_SECRET: setting("KIS_APP_SECRET"),
+    KIS_ENV: setting("KIS_ENV").toLowerCase(),
+  };
   const usReady = Boolean(env.ALPACA_API_KEY_ID && env.ALPACA_API_SECRET_KEY);
   const krReady = Boolean(env.KIS_APP_KEY && env.KIS_APP_SECRET);
   if (!usReady && !krReady) {
@@ -182,7 +193,7 @@ async function handler(req, res, fetchImpl = globalThis.fetch, nowMs = Date.now(
       errors.push(...kr.notes);
       sources.push({ market: "KR", name: `한국투자증권 Open API (${kisEnv === "mock" ? "모의" : "실전"})`, env: kisEnv });
     } catch (error) {
-      errors.push(`KR upstream failed: ${reason(error)}`);
+      errors.push(`KR upstream failed (${kisEnv}): ${reason(error)}`);
     }
   }
   const wanted = [...(usReady ? US_SYMBOLS : []), ...(krReady ? Object.keys(KR_CODES) : [])];
