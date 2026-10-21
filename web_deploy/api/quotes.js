@@ -117,34 +117,49 @@ async function kisAccessToken(fetchImpl, base, appKey, appSecret, nowMs) {
 }
 
 // Returns {quotes, notes}; notes say, per code, why a price is missing.
+// KIS answers EGW00201 ("초당 거래건수 초과") when calls come too close together, as seen on the
+// first live run. Space the calls out and retry that one code once after a pause.
+const KIS_CALL_GAP_MS = 350;
+const KIS_RATE_LIMIT_RETRY_MS = 1100;
+let sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function kisPrice(fetchImpl, base, token, appKey, appSecret, code) {
+  const url = `${base}${KIS_PRICE_PATH}?FID_COND_MRKT_DIV_CODE=J&FID_INPUT_ISCD=${code}`;
+  const response = await fetchImpl(url, {
+    headers: {
+      "Content-Type": "application/json", authorization: `Bearer ${token}`,
+      appkey: appKey, appsecret: appSecret, tr_id: KIS_PRICE_TR_ID, custtype: "P",
+    },
+  });
+  let body = null;
+  try { body = await response.json(); } catch (error) { /* reported by the caller */ }
+  return { status: response.status, ok: response.ok, body };
+}
+
+// Returns {quotes, notes}; notes say, per code, why a price is missing.
 async function fetchKr(fetchImpl, appKey, appSecret, env, nowMs) {
   const base = KIS_BASE[env] || KIS_BASE.real;
   const token = await kisAccessToken(fetchImpl, base, appKey, appSecret, nowMs);
   const fetchedAt = new Date(nowMs).toISOString();
   const quotes = {};
   const notes = [];
-  for (const code of Object.keys(KR_CODES)) { // sequential: KIS limits calls per second
-    const url = `${base}${KIS_PRICE_PATH}?FID_COND_MRKT_DIV_CODE=J&FID_INPUT_ISCD=${code}`;
-    const response = await fetchImpl(url, {
-      headers: {
-        "Content-Type": "application/json", authorization: `Bearer ${token}`,
-        appkey: appKey, appsecret: appSecret, tr_id: KIS_PRICE_TR_ID, custtype: "P",
-      },
-    });
-    if (!response.ok) {
-      const detail = await errorCode(response);
-      notes.push(`KR ${code}: http ${response.status}${detail ? ` ${detail}` : ""}`);
-      continue;
+  const codes = Object.keys(KR_CODES);
+  for (let i = 0; i < codes.length; i += 1) { // sequential: KIS limits calls per second
+    const code = codes[i];
+    if (i > 0) await sleep(KIS_CALL_GAP_MS);
+    let result = await kisPrice(fetchImpl, base, token, appKey, appSecret, code);
+    if (result.body && result.body.msg_cd === "EGW00201") {
+      await sleep(KIS_RATE_LIMIT_RETRY_MS);
+      result = await kisPrice(fetchImpl, base, token, appKey, appSecret, code);
     }
-    let body = null;
-    try { body = await response.json(); } catch (error) { /* reported below */ }
-    const quote = normalizeKisPrice(body, code, fetchedAt);
+    const quote = result.ok ? normalizeKisPrice(result.body, code, fetchedAt) : null;
     if (quote) {
       quotes[code] = quote;
-    } else {
-      const detail = body && safeCode(body.msg_cd);
-      notes.push(`KR ${code}: rt_cd ${body && safeCode(body.rt_cd) ? body.rt_cd : "?"}${detail ? ` ${detail}` : ""}`);
+      continue;
     }
+    const detail = result.body && safeCode(result.body.msg_cd || result.body.error_code);
+    const head = result.ok ? `rt_cd ${result.body && safeCode(result.body.rt_cd) ? result.body.rt_cd : "?"}` : `http ${result.status}`;
+    notes.push(`KR ${code}: ${head}${detail ? ` ${detail}` : ""}`);
   }
   return { quotes, notes };
 }
@@ -219,3 +234,4 @@ module.exports.US_SYMBOLS = US_SYMBOLS;
 module.exports.KR_CODES = KR_CODES;
 module.exports._resetTokenCache = _resetTokenCache;
 module.exports.UpstreamError = UpstreamError;
+module.exports._setSleep = (fn) => { sleep = fn; };

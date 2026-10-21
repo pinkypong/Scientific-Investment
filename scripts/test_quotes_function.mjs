@@ -16,7 +16,12 @@ const SECRETS = {
 const ENV_KEYS = [...Object.keys(SECRETS), "KIS_ENV"];
 const NOW = Date.parse("2026-10-22T01:00:00Z");
 
-beforeEach(() => handler._resetTokenCache());
+let slept = [];
+beforeEach(() => {
+  handler._resetTokenCache();
+  slept = [];
+  handler._setSleep(async (ms) => { slept.push(ms); });  // no real waiting in tests
+});
 
 function fakeRes() {
   return {
@@ -52,7 +57,9 @@ function upstream({ alpaca = json(ALPACA_ALL), token = json({ access_token: "tok
     if (url.startsWith("https://data.alpaca.markets/")) { if (alpaca instanceof Error) throw alpaca; return alpaca; }
     if (url.endsWith("/oauth2/tokenP")) return token;
     const code = new URL(url).searchParams.get("FID_INPUT_ISCD");
-    return kis[code] || json(kisPrice("61000"));
+    const answer = kis[code];
+    if (Array.isArray(answer)) return answer.length > 1 ? answer.shift() : answer[0];  // a sequence of replies
+    return answer || json(kisPrice("61000"));
   };
   return { fetchImpl, calls };
 }
@@ -198,6 +205,43 @@ test("diagnostics: the mode (real or mock) is stated so a wrong KIS_ENV is obvio
     const res = fakeRes();
     await handler({}, res, fetchImpl, NOW);
     assert.equal(res.json().sources[0].env, "mock");
+  });
+});
+
+test("live failure reproduced: SK하이닉스 rate-limited once, recovered by one retry", async () => {
+  await withEnv({ KIS_APP_KEY: "k", KIS_APP_SECRET: "s" }, async () => {
+    const limited = json({ rt_cd: "1", msg_cd: "EGW00201", msg1: "초당 거래건수를 초과하였습니다." }, false, 500);
+    const { fetchImpl, calls } = upstream({ kis: { "000660": [limited, json(kisPrice("512000"))] } });
+    const res = fakeRes();
+    await handler({}, res, fetchImpl, NOW);
+    const body = res.json();
+    assert.deepEqual(body.missing, []);
+    assert.deepEqual(body.errors, []);
+    assert.equal(body.quotes["000660"].price, 512000);
+    assert.equal(calls.filter((c) => c.url.includes("FID_INPUT_ISCD=000660")).length, 2);
+    assert.deepEqual(slept, [350, 1100]);  // gap before the 2nd code, then one back-off
+    assert.match(res.headers["cache-control"], /s-maxage=10800/);
+  });
+});
+
+test("persistent rate limit: exactly one retry, then reported", async () => {
+  await withEnv({ KIS_APP_KEY: "k", KIS_APP_SECRET: "s" }, async () => {
+    const limited = json({ rt_cd: "1", msg_cd: "EGW00201" }, false, 500);
+    const { fetchImpl, calls } = upstream({ kis: { "000660": [limited] } });
+    const res = fakeRes();
+    await handler({}, res, fetchImpl, NOW);
+    assert.equal(calls.filter((c) => c.url.includes("FID_INPUT_ISCD=000660")).length, 2);
+    assert.deepEqual(res.json().errors, ["KR 000660: http 500 EGW00201"]);
+    assert.equal(res.json().quotes["005930"].price, 61000);
+  });
+});
+
+test("other KIS errors are not retried", async () => {
+  await withEnv({ KIS_APP_KEY: "k", KIS_APP_SECRET: "s" }, async () => {
+    const { fetchImpl, calls } = upstream({ kis: { "005930": json({ rt_cd: "1", msg_cd: "EGW00121" }) } });
+    await handler({}, fakeRes(), fetchImpl, NOW);
+    assert.equal(calls.filter((c) => c.url.includes("FID_INPUT_ISCD=005930")).length, 1);
+    assert.deepEqual(slept, [350]);
   });
 });
 
