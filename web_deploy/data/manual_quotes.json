@@ -1,0 +1,7 @@
+{
+  "_note": "한국 종목 시세 수동 입력. price 와 as_of 를 함께 채운다(YYYY-MM-DD). 비워 두면 화면은 기존 스냅샷을 쓰고 '수동 입력 필요'라고 표시한다. 출처는 직접 확인한 곳을 적는다.",
+  "quotes": {
+    "005930": {"name": "삼성전자", "currency": "KRW", "price": null, "as_of": null, "source": null},
+    "000660": {"name": "SK하이닉스", "currency": "KRW", "price": null, "as_of": null, "source": null}
+  }
+}
