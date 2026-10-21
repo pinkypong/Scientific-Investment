@@ -9,9 +9,20 @@
 
 엔진은 다섯 번째 영역인 `computed`를 결과에 새로 만들며 원자료나 가정을 덮어쓰지 않는다.
 
-## 애널리스트 추정치 배제
+## 애널리스트 추정치 (비교용, 로컬 전용)
 
-컨센서스 EPS·목표주가·추정치 리비전은 관측값이 아니라 예측이다. `objective`에 넣지 않는다. 들어오면 엔진은 점수·완전성·출처연결률·기본 가치평가 입력에서 모두 제외하고 `ANALYST_INPUT_EXCLUDED` 경고를 단다. PE 교차검증의 기본 EPS는 `financials.eps_ttm`이며, 정상화 EPS를 쓰려면 `assumptions.relative_cross_check.eps`에 가정으로 명시한다.
+추정은 누구 것이든 사실이 아니다. 컨센서스 EPS·목표주가·추정치 리비전은 `objective`에 넣지 않는다. 들어오면 엔진은 점수·완전성·출처연결률·가치평가 입력에서 모두 제외하고 `ANALYST_INPUT_EXCLUDED` 경고를 단다. PE 교차검증의 기본 EPS는 `financials.eps_ttm`이며, 정상화 EPS를 쓰려면 `assumptions.relative_cross_check.eps`에 가정으로 명시한다.
+
+비교해 보려면 입력 JSON의 최상위에 `analyst` 블록을 둔다. `source`와 `as_of`는 필수다.
+
+```json
+"analyst": {"source": "제공처 이름", "as_of": "2026-10-20", "url": "https://...",
+            "target_price": 130.0, "eps_next_fy": 18.0, "revenue_growth_next_fy": 0.15}
+```
+
+- 엔진은 이 블록을 읽지 않고 결과에 그대로 실어 나른다. 어떤 계산 값도 바뀌지 않는다(테스트로 고정).
+- `vgs export`는 기본(공개 배포용)으로 이 블록을 쓰지 않는다. `--include-analyst`를 줄 때만 `detail.step3.analyst`에 쓴다. 이 출력은 공개 배포하지 않는다.
+- `screen.json`과 `step1`·`step2`에는 어느 경우에도 들어가지 않는다.
 
 ## 단위
 

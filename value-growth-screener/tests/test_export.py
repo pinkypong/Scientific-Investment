@@ -129,6 +129,56 @@ class ExportTests(unittest.TestCase):
         with TemporaryDirectory() as tmp, self.assertRaises(ValueError):
             write_export([self.analyze(a), self.analyze(b)], tmp)
 
+    ANALYST = {"source": "Example Research consensus", "as_of": "2026-10-20",
+               "url": "https://example.com/consensus/DEMO", "target_price": 777.0, "eps_next_fy": 55.5,
+               "revenue_growth_next_fy": 0.31}
+
+    def with_analyst(self):
+        payload = deepcopy(self.payload)
+        payload["analyst"] = dict(self.ANALYST)
+        return payload
+
+    def test_analyst_block_never_changes_any_computed_value(self):
+        plain, carried = self.analyze(), self.analyze(self.with_analyst())
+        self.assertEqual(carried["computed"], plain["computed"])
+        self.assertEqual(carried["flags"], plain["flags"])
+        self.assertEqual(carried["analyst"]["target_price"], 777.0)
+
+    def test_public_export_has_no_analyst_numbers(self):
+        with TemporaryDirectory() as tmp:
+            for path in write_export([self.analyze(self.with_analyst())], tmp):
+                text = path.read_text(encoding="utf-8")
+                for marker in ("777", "55.5", "Example Research", "third_party_forecast"):
+                    self.assertNotIn(marker, text, f"{marker} leaked into {path.name}")
+
+    def test_local_export_puts_analyst_only_in_step3(self):
+        result = self.analyze(self.with_analyst())
+        local, public = build_detail(result, include_analyst=True), build_detail(result)
+        self.assertEqual(local["step3"]["analyst"]["label"], "third_party_forecast")
+        self.assertEqual(local["step3"]["analyst"]["target_price"], 777.0)
+        for step in ("step1", "step2"):
+            self.assertEqual(local[step], public[step], step)
+        self.assertEqual(local["integrity"], public["integrity"])
+        screen_local = build_screen([result])
+        self.assertNotIn("777", json.dumps(screen_local))  # screen.json never carries forecasts
+
+    def test_analyst_block_requires_source_and_date(self):
+        payload = self.with_analyst()
+        del payload["analyst"]["as_of"]
+        result = self.analyze(payload)
+        build_detail(result)  # public build ignores the block entirely
+        with self.assertRaises(ValueError):
+            build_detail(result, include_analyst=True)
+
+    def test_cli_include_analyst_flag(self):
+        with TemporaryDirectory() as tmp:
+            src = Path(tmp) / "in.json"
+            src.write_text(json.dumps(self.with_analyst()), encoding="utf-8")
+            out = Path(tmp) / "out"
+            self.assertEqual(main(["export", str(src), "--out", str(out), "--include-analyst"]), 0)
+            detail = json.loads((out / "detail" / "DEMO.json").read_text(encoding="utf-8"))
+            self.assertEqual(detail["step3"]["analyst"]["eps_next_fy"], 55.5)
+
     def test_cli_export(self):
         with TemporaryDirectory() as tmp:
             code = main(["export", str(ROOT / "examples" / "synthetic_compounder.json"),

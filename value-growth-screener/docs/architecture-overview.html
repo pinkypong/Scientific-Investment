@@ -123,7 +123,7 @@ footer{margin-top:48px;color:var(--sub);font-size:13px;border-top:1px solid var(
 <p>모든 설계 결정은 아래 여섯 가지에서 나옵니다.</p>
 <div class="tablewrap"><table>
   <tr><th>원칙</th><th>실제로는</th></tr>
-  <tr><td>애널리스트 추정치 금지</td><td>컨센서스 EPS, 목표주가, 추정치 변경은 점수에도 가치평가에도 쓰지 않습니다. 입력에 섞여 들어오면 엔진이 무시하고 경고를 답니다.</td></tr>
+  <tr><td>추정은 누구 것이든 사실이 아니다</td><td>애널리스트 추정치(EPS, 목표주가)는 점수와 가치평가 입력에 자동으로 들어가지 않고, Step 3에서 비교용으로만 봅니다. 공개 배포본에는 넣지 않고 로컬에서만 봅니다. 내 가정도 추정이므로 "가정 기반"으로 표시합니다.</td></tr>
   <tr><td>사실과 가정을 나눈다</td><td>공시·시장에서 관측한 값은 <code>objective</code>, 사람이 정한 숫자(성장률, 할인율 등)는 <code>assumptions</code>에 따로 둡니다.</td></tr>
   <tr><td>숫자마다 출처</td><td>계산에 쓰인 모든 숫자에 "공시에서 왔는지, 가정에서 왔는지" 경로가 붙습니다.</td></tr>
   <tr><td>결론은 사람이</td><td>엔진은 후보와 계산 결과를 보여줄 뿐 사라 팔라 하지 않습니다.</td></tr>
@@ -150,7 +150,7 @@ footer{margin-top:48px;color:var(--sub);font-size:13px;border-top:1px solid var(
 <div class="steps">
   <div class="step s1"><div class="t">Step 1 · 스크리닝</div><div class="d">수백 종목을 공시 숫자로 훑어 후보를 고릅니다. 필터 기준은 사람이 조절합니다. 가정에 의존하는 값은 없습니다.</div></div>
   <div class="step s2"><div class="t">Step 2 · 종목분석</div><div class="d">고른 종목의 10년 공시 시계열, 사람이 묶은 구간 비교, 시나리오별 가치평가를 봅니다. 가정 기반이라고 표시합니다.</div></div>
-  <div class="step s3"><div class="t">Step 3 · 원문</div><div class="d">공시 원문, 뉴스, 리포트로 가는 링크만 둡니다. 여기서는 숫자를 가져오지 않습니다.</div></div>
+  <div class="step s3"><div class="t">Step 3 · 원문</div><div class="d">공시·뉴스·리포트로 가는 고정 바로가기와, 애널리스트 추정치(로컬에서만)를 둡니다. 추정치는 계산에 쓰지 않습니다.</div></div>
 </div>
 <p>
   "단계"라는 말이 프로젝트 안에서 세 가지 뜻으로 쓰였기 때문에 이름을 정리했습니다.

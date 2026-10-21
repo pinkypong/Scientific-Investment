@@ -3,9 +3,10 @@
 Raw facts and human assumptions are intentionally accepted in separate branches.
 The engine never writes calculated values back into either branch.
 
-Analyst forecasts (consensus EPS, target prices, estimate revisions) are not facts.
-They are excluded from every score, gate and default valuation input. If a payload
-still carries an ``objective.consensus`` block, it is ignored and flagged.
+No forecast is a fact, whoever made it. Analyst forecasts (consensus EPS, target prices,
+estimate revisions) never enter a score, gate or valuation input. A top-level ``analyst``
+block is carried through untouched for side-by-side display only. An ``objective.consensus``
+block is in the wrong branch: it is ignored and flagged.
 
 Absolute methods: ``fcff`` (DCF), ``ri`` (residual income) and ``epv`` (earnings power
 value). RI and EPV return an ``inputs`` map recording, per number, whether it is a reported
@@ -607,6 +608,7 @@ def analyze_security(payload: dict[str, Any], config: dict[str, Any] | None = No
                      "data_completeness": completeness, "provenance_coverage": provenance_coverage,
                      "decision": "PASS_DEEP_DIVE" if passed else "WATCH_OR_REJECT"},
         "objective": deepcopy(objective), "assumptions": deepcopy(assumptions),
+        "analyst": deepcopy(payload.get("analyst")),
         "flags": [flag.as_dict() for flag in flags], "sources": deepcopy(payload.get("sources", [])),
     }
 

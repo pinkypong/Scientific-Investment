@@ -59,6 +59,8 @@ def main(argv: list[str] | None = None) -> int:
     export.add_argument("--config")
     export.add_argument("--out", required=True)
     export.add_argument("--universe")
+    export.add_argument("--include-analyst", action="store_true",
+                        help="LOCAL ONLY: add analyst forecasts to step3. Never publish this output.")
     sec = sub.add_parser("sec-security-master", help="Download/cache the SEC ticker-to-CIK map")
     sec.add_argument("--data-root", default="data")
     sec.add_argument("--user-agent", default=os.getenv("SEC_USER_AGENT"))
@@ -120,7 +122,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "export":
         config = _load(args.config) if args.config else None
         results = [analyze_security(_load(path), config) for path in args.inputs]
-        for path in write_export(results, args.out, args.universe):
+        for path in write_export(results, args.out, args.universe, args.include_analyst):
             print(path)
         return 0
     store = DataStore(args.data_root)

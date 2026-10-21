@@ -9,7 +9,10 @@ Two kinds of file, matching the screen layout:
 
 The files are deterministic (sorted keys, no timestamps) so an unchanged input gives an
 identical file, and each detail file records a hash of the facts it was computed from.
-Analyst forecasts (``objective.consensus``) are dropped on the way out.
+
+Analyst forecasts are third-party estimates. They are written only when the caller asks for
+a local build (``include_analyst=True``), only into ``step3.analyst``, and never into step1
+or step2. The default (public) export carries none. ``objective.consensus`` is always dropped.
 """
 
 from __future__ import annotations
@@ -94,13 +97,25 @@ def step3_links(result: dict[str, Any]) -> list[dict[str, str]]:
     return links
 
 
-def build_detail(result: dict[str, Any]) -> dict[str, Any]:
+def analyst_block(result: dict[str, Any]) -> dict[str, Any] | None:
+    """The analyst forecast block for local display, or None. Every block must say where
+    and when its numbers came from."""
+    analyst = result.get("analyst")
+    if not analyst:
+        return None
+    missing = [key for key in ("source", "as_of") if not str(analyst.get(key) or "").strip()]
+    if missing:
+        raise ValueError(f"{ticker_of(result)}: analyst block needs {', '.join(missing)}")
+    return {**deepcopy(analyst), "label": "third_party_forecast"}
+
+
+def build_detail(result: dict[str, Any], include_analyst: bool = False) -> dict[str, Any]:
     """One security's full record. Pure: ``result`` is not modified."""
     computed = result["computed"]
     flags = result.get("flags", [])
     objective = _public_objective(result.get("objective", {}))
     data_flags = _data_flags(flags)
-    return {
+    detail = {
         "schema": SCHEMA_DETAIL,
         "security": deepcopy(result.get("security", {})),
         "as_of": result.get("as_of"),
@@ -133,6 +148,10 @@ def build_detail(result: dict[str, Any]) -> dict[str, Any]:
         "sources": deepcopy(result.get("sources", [])),
         "integrity": {"objective_sha256": hashlib.sha256(_canonical(objective).encode("utf-8")).hexdigest()},
     }
+    analyst = analyst_block(result) if include_analyst else None
+    if analyst:
+        detail["step3"]["analyst"] = analyst
+    return detail
 
 
 def build_screen(results: Iterable[dict[str, Any]], universe: str | None = None) -> dict[str, Any]:
@@ -165,8 +184,11 @@ def build_screen(results: Iterable[dict[str, Any]], universe: str | None = None)
     }
 
 
-def write_export(results: list[dict[str, Any]], out_dir: str | Path, universe: str | None = None) -> list[Path]:
-    """Write screen.json and detail/<TICKER>.json. Returns the written paths."""
+def write_export(results: list[dict[str, Any]], out_dir: str | Path, universe: str | None = None,
+                 include_analyst: bool = False) -> list[Path]:
+    """Write screen.json and detail/<TICKER>.json. Returns the written paths.
+
+    ``include_analyst`` is for local builds only; never publish its output."""
     out = Path(out_dir)
     names: dict[str, str] = {}
     for result in results:
@@ -179,7 +201,7 @@ def write_export(results: list[dict[str, Any]], out_dir: str | Path, universe: s
     written = []
     for result in results:
         path = out / "detail" / f"{_SAFE_NAME.sub('_', ticker_of(result))}.json"
-        path.write_text(json.dumps(build_detail(result), sort_keys=True, ensure_ascii=False, indent=1,
+        path.write_text(json.dumps(build_detail(result, include_analyst), sort_keys=True, ensure_ascii=False, indent=1,
                                    allow_nan=False) + "\n", encoding="utf-8", newline="\n")
         written.append(path)
     screen_path = out / "screen.json"
