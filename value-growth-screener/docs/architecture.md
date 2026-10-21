@@ -172,7 +172,7 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | Step 3 링크 | 일부 | SEC 공시 목록 링크와 `sources`의 URL만. IR·뉴스 검색 고정 바로가기는 아직 |
 | 애널리스트 추정치 (로컬 전용) | 완료(통로만) | 입력 JSON의 최상위 `analyst` 블록 → `export --include-analyst` 때만 `step3.analyst`. 자동 수집은 없음 |
 | 공시·가정 파일 분리 | 완료 | `inputs.py`, `split-input`, `--assumptions-dir`. 예제는 `examples/facts`, `examples/assumptions` |
-| 대시보드 시세 | **폰에서 작동 안 함** | 시세 코드가 데스크톱 Cowork 전용 기능(`window.cowork`)이라 Vercel에서는 2026-08-21 스냅샷만 보임 → 9장 질문 9 |
+| 대시보드 시세 | 완료(배포 설정 대기) | 미국: Vercel 서버 함수 `web_deploy/api/quotes.js` → Alpaca, 3시간 캐시. 한국: `web_deploy/data/manual_quotes.json` 수동 입력. Vercel에 키 2개 등록과 Root Directory 확인 필요(`web_deploy/README_배포.md`). 실제 Alpaca 호출은 키가 없어 아직 검증 못 함 |
 | 대시보드 | 빈 화면 틀만 | 8장 |
 
 ---
@@ -225,7 +225,9 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | 2026-10-21 | `feature/vgs-ri-epv` | `ba65945` | 작업 B: `vgs export`(screen.json, detail/*.json). 엔진 수정: 객관 점수가 가정 플래그에 영향받지 않게 함 | 40개. 수정 전 엔진에서 새 테스트가 실패하는 것 확인 |
 | 2026-10-21 | `feature/vgs-ri-epv` | `6e373d7` | 자연어 개요 문서(`architecture-overview.html`) | 폰·다크 모드 확인 |
 | 2026-10-21 | `feature/vgs-ri-epv` | `8509098` | 원칙 1 개정, 애널리스트 추정치 로컬 전용 통로(`--include-analyst`) | 45개. 공개본 누출 시 테스트 실패 확인 |
-| 2026-10-21 | `feature/vgs-ri-epv` | (이 커밋) | 공시 파일과 가정 파일 분리, `split-input`, 시세·비교 항목 결정 기록 | 52개. 나눈 형식과 합친 형식의 리포트가 같음을 확인 |
+| 2026-10-21 | `feature/vgs-ri-epv` | `09f275d` | 공시 파일과 가정 파일 분리, `split-input`, 시세·비교 항목 결정 기록 | 52개. 나눈 형식과 합친 형식의 리포트가 같음을 확인 |
+| 2026-10-21 | `feature/dashboard-valuation-tab` | `41c1b1b` | 웹 시세 자동 갱신: Vercel 함수(Alpaca, 3시간 캐시) + 한국 수동 입력 파일, CI에 node 테스트 | node 5개, data_sources 125개, 가짜 Vercel 서버로 폰 너비 브라우저 확인 |
+| 2026-10-21 | `feature/vgs-ri-epv` | (이 커밋) | 문서: D-18, 시세 상태 | — |
 
 **모든 브랜치는 로컬에만 있습니다(푸시 안 함).** `feature/vgs-ri-epv`는 `feature/vgs-actual-only-growth` 위에 쌓여 있으므로 그 순서로 합쳐야 합니다.
 
@@ -253,6 +255,7 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | D-15 | 10-21 | 시세는 Vercel 서버 함수가 몇 시간 단위 캐시로 받아 준다. API 키는 Vercel에만 보관 | main 자동 커밋 없이 폰에서 시세 갱신 |
 | D-16 | 10-21 | 공시 파일과 가정 파일을 분리한다 (`facts/`, `assumptions/`) | 공시 자동 갱신이 사람의 가정을 덮어쓰지 못하게 |
 | D-17 | 10-21 | 나란히 비교 기본 항목: 1년차 매출성장률, 1년차 영업이익률, 적정가치 vs 목표주가. RI를 쓰면 ROE 추가. 기간을 같이 표시 | 같은 기간끼리만 비교해야 의미가 있다. 사용자가 미정이라 기본값으로 시작하고 바꿀 수 있음 |
+| D-18 | 10-21 | 미국 시세는 Alpaca만, 한국 시세는 수동 입력 파일 | 무료로 몇 시간 단위 자동 갱신이 되는 한국 시세원은 조건이 붙는다: 한국투자증권 Open API(무료지만 계좌·앱키 필요), 공공데이터포털 금융위원회 주식시세정보(무료지만 다음 영업일 오후 1시 이후 종가). 비공식 포털 주소는 약관·안정성 문제로 제외 |
 
 ### 열린 질문
 1. **섹터 분류 출처**: SPY 보유종목 파일의 섹터 열(익숙한 11개 섹터, 제3자 분류, 실제 파일 확인 필요) vs SEC의 SIC 코드(공시 기반이지만 400여 개로 잘고 낡음). 제안은 SPY 열 우선, 없는 종목만 SIC.
@@ -263,7 +266,7 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 6. **CI에 VGS 테스트 추가**(지금 CI는 data_sources 테스트만 돈다).
 7. **`screen.json` 열 구성**: 지금 12개(주가·시총·매출·영업이익률·ROIC·영업CF/순이익·발생액비율·부채/EBITDA·이자보상배율·매출 CAGR·YoY·마진 변화). 스크리닝에 꼭 필요한 열이 더 있는지, 뺄 열이 있는지.
 8. **Step 1 필터 기준**을 파일에 담을지(규칙 기반 표시), 화면에서 사람이 조절하게만 할지.
-9. **시세 출처** (방법은 D-15로 결정): Bigdata.com REST(한·미, 토큰 과금, `BIGDATA_API_KEY` 미설정) 또는 Alpaca(미국만, 무료 플랜, 키는 GitHub에 있음). 한국 종목 무료 대안은 별도 조사 필요.
+9. ~~시세 출처~~ → D-18로 결정. 나중에 한국 자동화가 필요하면 한국투자증권 Open API를 같은 서버 함수에 추가하는 방식이 가장 가깝다.
 
 ---
 
