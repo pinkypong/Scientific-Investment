@@ -70,13 +70,15 @@ Scientific-Investment/                 ← GitHub: pinkypong/Scientific-Investme
 │   │   ├─ engine.py                    가치평가·점수·플래그 계산 (fcff, ri, epv, 상대가치)
 │   │   ├─ report.py                    Markdown 리포트, 순위 CSV 만들기
 │   │   ├─ cli.py                       명령어 입구 (analyze, screen, sec-snapshot …)
+│   │   ├─ export.py                    화면용 JSON 내보내기 (screen.json, detail/)
+│   │   ├─ inputs.py                    공시 파일 + 가정 파일 합치기, split-input
 │   │   └─ data/                        수집·정규화
 │   │       ├─ sec.py, xbrl.py          SEC 공시 → TTM·FY 숫자, ttm_series
 │   │       ├─ holdings.py, universe.py SPY·NDX 보유종목 → 종목 풀
 │   │       ├─ alpaca.py, factors.py    가격, 팩터 수익률
 │   │       └─ deep_dive.py             상위 후보용 Bigdata 조회 큐 만들기
 │   ├─ config/                          default.json(게이트·임계값), universes/
-│   ├─ examples/synthetic_compounder.json   가짜 종목 예제 입력
+│   ├─ examples/                        가짜 종목 예제: synthetic_compounder.json(합친 형식), facts/·assumptions/(나눈 형식)
 │   ├─ tests/                           28개 테스트
 │   └─ docs/                            architecture.md(이 문서), data-contract.md, …
 ├─ data_sources/                        기존 대시보드용 수집 계층 (KR+US, 테스트 125개)
@@ -92,6 +94,18 @@ Scientific-Investment/                 ← GitHub: pinkypong/Scientific-Investme
 
 ## 5. 데이터 계약 (VGS가 읽는 JSON)
 
+**파일은 두 개로 나눕니다 (2026-10-21).**
+
+| 파일 | 누가 쓰나 | 내용 |
+|---|---|---|
+| `facts/<티커>.json` | 수집(자동). 언제든 다시 만들어도 됨 | `security`, `as_of`, `objective`, `sources`, (로컬용) `analyst` |
+| `assumptions/<티커>.json` | **사람만** | `{"ticker": "…", "assumptions": {…}}` |
+
+- 분석할 때 `--assumptions-dir`로 둘을 합칩니다. 공시 파일에 `assumptions`가 들어 있으면 거부합니다(자동 갱신이 사람의 가정을 덮어쓰지 못하게).
+- 가정 파일이 없는 종목도 Step 1은 그대로 나오고 Step 2만 비어 있습니다. 가정은 Step 1에서 고른 종목에만 쓰면 됩니다.
+- 기존 합친 형식 파일은 `vgs split-input`으로 나눕니다. 이미 있는 가정 파일은 덮어쓰지 않습니다.
+
+합친 뒤의 입력은 아래 네 구역으로 되어 있습니다.
 입력 JSON은 네 구역으로 나뉩니다. 엔진은 다섯 번째 구역 `computed`를 새로 만들 뿐, 앞의 구역을 고치지 않습니다.
 
 | 구역 | 누가 채우나 | 예 |
@@ -157,6 +171,7 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | 화면용 결과 JSON (`vgs export`) | 완료 | 예제 종목으로 검증. 실제 종목 연결은 작업 G |
 | Step 3 링크 | 일부 | SEC 공시 목록 링크와 `sources`의 URL만. IR·뉴스 검색 고정 바로가기는 아직 |
 | 애널리스트 추정치 (로컬 전용) | 완료(통로만) | 입력 JSON의 최상위 `analyst` 블록 → `export --include-analyst` 때만 `step3.analyst`. 자동 수집은 없음 |
+| 공시·가정 파일 분리 | 완료 | `inputs.py`, `split-input`, `--assumptions-dir`. 예제는 `examples/facts`, `examples/assumptions` |
 | 대시보드 시세 | **폰에서 작동 안 함** | 시세 코드가 데스크톱 Cowork 전용 기능(`window.cowork`)이라 Vercel에서는 2026-08-21 스냅샷만 보임 → 9장 질문 9 |
 | 대시보드 | 빈 화면 틀만 | 8장 |
 
@@ -209,7 +224,8 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | 2026-10-15 | `feature/vgs-ri-epv` | `c1d9bfd` | 아키텍처 누적 문서 작성 | — |
 | 2026-10-21 | `feature/vgs-ri-epv` | `ba65945` | 작업 B: `vgs export`(screen.json, detail/*.json). 엔진 수정: 객관 점수가 가정 플래그에 영향받지 않게 함 | 40개. 수정 전 엔진에서 새 테스트가 실패하는 것 확인 |
 | 2026-10-21 | `feature/vgs-ri-epv` | `6e373d7` | 자연어 개요 문서(`architecture-overview.html`) | 폰·다크 모드 확인 |
-| 2026-10-21 | `feature/vgs-ri-epv` | (이 커밋) | 원칙 1 개정, 애널리스트 추정치 로컬 전용 통로(`--include-analyst`) | 45개. 공개본 누출 시 테스트 실패 확인 |
+| 2026-10-21 | `feature/vgs-ri-epv` | `8509098` | 원칙 1 개정, 애널리스트 추정치 로컬 전용 통로(`--include-analyst`) | 45개. 공개본 누출 시 테스트 실패 확인 |
+| 2026-10-21 | `feature/vgs-ri-epv` | (이 커밋) | 공시 파일과 가정 파일 분리, `split-input`, 시세·비교 항목 결정 기록 | 52개. 나눈 형식과 합친 형식의 리포트가 같음을 확인 |
 
 **모든 브랜치는 로컬에만 있습니다(푸시 안 함).** `feature/vgs-ri-epv`는 `feature/vgs-actual-only-growth` 위에 쌓여 있으므로 그 순서로 합쳐야 합니다.
 
@@ -234,6 +250,9 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | D-12 | 10-21 | 애널리스트 추정치는 공개 배포본(Vercel)에서 빼고 로컬에서만 본다 | 혼자 쓰는 도구. 제3자 데이터 재배포 약관 위험 회피 |
 | D-13 | 10-21 | 뉴스·리포트는 수집하지 않는다. 고정 바로가기 링크로 사용자가 직접 본다 | 링크는 항상 최신 페이지를 열어 갱신이 필요 없다 |
 | D-14 | 10-21 | 내 가정과 애널리스트 추정치를 나란히 표시한다 (로컬에서만) | 내 가정이 시장 기대보다 보수적인지 공격적인지 보기 위해 |
+| D-15 | 10-21 | 시세는 Vercel 서버 함수가 몇 시간 단위 캐시로 받아 준다. API 키는 Vercel에만 보관 | main 자동 커밋 없이 폰에서 시세 갱신 |
+| D-16 | 10-21 | 공시 파일과 가정 파일을 분리한다 (`facts/`, `assumptions/`) | 공시 자동 갱신이 사람의 가정을 덮어쓰지 못하게 |
+| D-17 | 10-21 | 나란히 비교 기본 항목: 1년차 매출성장률, 1년차 영업이익률, 적정가치 vs 목표주가. RI를 쓰면 ROE 추가. 기간을 같이 표시 | 같은 기간끼리만 비교해야 의미가 있다. 사용자가 미정이라 기본값으로 시작하고 바꿀 수 있음 |
 
 ### 열린 질문
 1. **섹터 분류 출처**: SPY 보유종목 파일의 섹터 열(익숙한 11개 섹터, 제3자 분류, 실제 파일 확인 필요) vs SEC의 SIC 코드(공시 기반이지만 400여 개로 잘고 낡음). 제안은 SPY 열 우선, 없는 종목만 SIC.
@@ -244,9 +263,7 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 6. **CI에 VGS 테스트 추가**(지금 CI는 data_sources 테스트만 돈다).
 7. **`screen.json` 열 구성**: 지금 12개(주가·시총·매출·영업이익률·ROIC·영업CF/순이익·발생액비율·부채/EBITDA·이자보상배율·매출 CAGR·YoY·마진 변화). 스크리닝에 꼭 필요한 열이 더 있는지, 뺄 열이 있는지.
 8. **Step 1 필터 기준**을 파일에 담을지(규칙 기반 표시), 화면에서 사람이 조절하게만 할지.
-9. **시세 자동 갱신 방법**: (가) Vercel 서버 함수가 몇 시간 캐시로 시세를 받아 줌(키는 Vercel에 보관) / (나) GitHub Actions가 몇 시간마다 시세 파일을 main에 커밋. 시세 출처는 Bigdata.com REST(한·미 모두, `BIGDATA_API_KEY` 필요, 아직 어디에도 설정 안 됨) 또는 Alpaca(미국만, 키는 GitHub에 있음).
-10. **가정 파일 분리**: 지금은 공시 숫자와 사람 가정이 종목별 입력 JSON 한 파일에 같이 있다. 공시를 자동 갱신하면 가정을 덮어쓸 수 있으므로 `assumptions/<티커>.json`으로 분리할지.
-11. **나란히 비교할 항목**: 1년차 매출성장률, 1년차 영업이익률, ROE, 적정가치 vs 목표주가. 기간이 다른 항목(내 5년차 목표 vs 애널 차년도)은 기간을 같이 표시.
+9. **시세 출처** (방법은 D-15로 결정): Bigdata.com REST(한·미, 토큰 과금, `BIGDATA_API_KEY` 미설정) 또는 Alpaca(미국만, 무료 플랜, 키는 GitHub에 있음). 한국 종목 무료 대안은 별도 조사 필요.
 
 ---
 

@@ -2,6 +2,8 @@
 
 입력 JSON은 아래 네 영역을 엄격히 분리한다.
 
+공시 쪽(`security`·`objective`·`sources`)은 `facts/<티커>.json`, 사람의 가정은 `assumptions/<티커>.json`(`{"ticker":…, "assumptions":{…}}`)에 따로 두고 `--assumptions-dir`로 합친다. 공시 파일에 `assumptions`가 있으면 거부한다. 한 파일에 다 담은 기존 형식도 `--assumptions-dir` 없이 그대로 읽는다.
+
 1. `security`: 티커, 기업명, 섹터, 통화 같은 식별 정보
 2. `objective`: Bigdata.com, SEC, 거래소, ETF 운용사 등에서 관측한 원자료
 3. `assumptions`: 성장률, 목표 마진, WACC, 영구성장률, 목표 멀티플처럼 분석자가 정한 숫자
