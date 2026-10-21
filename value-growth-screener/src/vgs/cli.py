@@ -18,6 +18,7 @@ from .data.sec import SecEdgarClient
 from .data.universe import DEFAULT_FORCED_SYMBOLS, build_universe, read_holdings_csv
 from .data.xbrl import normalize_companyfacts
 from .engine import analyze_security, rank_results
+from .export import write_export
 from .report import render_markdown, render_ranking_csv
 
 
@@ -53,6 +54,11 @@ def main(argv: list[str] | None = None) -> int:
     screen.add_argument("inputs", nargs="+")
     screen.add_argument("--config")
     screen.add_argument("--output")
+    export = sub.add_parser("export", help="Write screen.json and detail/<TICKER>.json for a viewer")
+    export.add_argument("inputs", nargs="+")
+    export.add_argument("--config")
+    export.add_argument("--out", required=True)
+    export.add_argument("--universe")
     sec = sub.add_parser("sec-security-master", help="Download/cache the SEC ticker-to-CIK map")
     sec.add_argument("--data-root", default="data")
     sec.add_argument("--user-agent", default=os.getenv("SEC_USER_AGENT"))
@@ -110,6 +116,12 @@ def main(argv: list[str] | None = None) -> int:
         config = _load(args.config) if args.config else None
         ranked = rank_results(analyze_security(_load(path), config) for path in args.inputs)
         _write_or_print(render_ranking_csv(ranked), args.output)
+        return 0
+    if args.command == "export":
+        config = _load(args.config) if args.config else None
+        results = [analyze_security(_load(path), config) for path in args.inputs]
+        for path in write_export(results, args.out, args.universe):
+            print(path)
         return 0
     store = DataStore(args.data_root)
     if args.command == "official-us-universe":

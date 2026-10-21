@@ -46,6 +46,13 @@ DEFAULT_CONFIG: dict[str, Any] = {
 # toward completeness or provenance coverage.
 EXCLUDED_OBJECTIVE_GROUPS = ("consensus",)
 
+# Flags that come from human valuation assumptions, not from reported data. The objective
+# (Step 1) score must not move because of them.
+ASSUMPTION_FLAG_CODES = frozenset({
+    "NO_SCENARIOS", "BAD_PROBABILITIES", "VALUATION_INPUT", "TERMINAL_DEPENDENCE",
+    "WACC_ASSUMPTION_GAP", "COE_ASSUMPTION_GAP", "RELATIVE_CROSS_CHECK",
+})
+
 REQUIRED_FACTS = (
     "market.price", "market.cash", "market.debt", "market.diluted_shares",
     "financials.revenue_ttm", "financials.ebit_margin_ttm",
@@ -570,7 +577,9 @@ def analyze_security(payload: dict[str, Any], config: dict[str, Any] | None = No
     provenance_coverage = _provenance_coverage(objective, payload.get("sources", []))
     critical_count = sum(flag.severity == "critical" for flag in flags)
     warning_count = sum(flag.severity == "warning" for flag in flags)
-    score = _objective_score(objective, critical_count)
+    data_critical_count = sum(flag.severity == "critical" and flag.code not in ASSUMPTION_FLAG_CODES
+                              for flag in flags)
+    score = _objective_score(objective, data_critical_count)
     opportunity_score = (
         0.45 * score["total"]
         + 0.25 * (100.0 * _clamp((upside or 0.0) / 0.50))

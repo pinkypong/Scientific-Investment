@@ -1,6 +1,6 @@
 # VGS 아키텍처 (누적 문서)
 
-> 최종 갱신: 2026-10-15
+> 최종 갱신: 2026-10-21
 > 이 문서는 **계속 쌓입니다.** 새 결정은 7장, 새 작업은 8장, 미결 사항은 9장에 추가하고, 구조가 바뀌면 1~6장을 고칩니다.
 > 대상 독자: 코딩 초보자. 모르는 말은 11장 용어집에 있습니다.
 
@@ -115,6 +115,33 @@ Scientific-Investment/                 ← GitHub: pinkypong/Scientific-Investme
 
 **점수와 판정(PASS/WATCH)은 "규칙 기반"입니다.** 입력은 공시 사실이지만 점수 구간과 가중치는 사람이 정한 값이므로, 사실이 아니라 규칙의 결과로 표시합니다.
 
+### 5.1 화면이 읽는 파일 (`vgs export`)
+
+엔진 결과를 화면용 JSON으로 내보냅니다. 화면 Step 구분과 파일이 1:1로 대응합니다.
+
+```
+python -m vgs.cli export <입력 JSON들> --config config/default.json --out <폴더> --universe <이름>
+
+<폴더>/
+├─ screen.json            Step 1 표: 종목당 한 줄. 공시 숫자 12개 + 규칙 기반 점수
+└─ detail/<티커>.json     종목 1개의 전부: step1 · step2 · step3
+```
+
+| 파일 구역 | 내용 | 라벨 | 가정에 의존? |
+|---|---|---|---|
+| `screen.json` rows | 주가·매출·마진·ROIC·부채비율·성장률 등 공시 숫자와 `objective_score` | `rule_based` | **아니오** |
+| `detail.step1` | 위 숫자 + 점수 구성 + 데이터 품질 플래그 | `rule_based` | 아니오 |
+| `detail.step2` | 시나리오 가치, 안전마진, 판정, 구간 비교, 가정 관련 플래그 | `assumption_based` | **예** |
+| `detail.step3` | 링크 목록(`kind`, `label`, `url`)만 | `links_only` | 숫자 없음 |
+| `detail.objective` | 공시 원자료 전체(`ttm_series` 포함). 애널리스트 추정치는 제거됨 | — | 아니오 |
+| `detail.integrity` | `objective_sha256`: 이 계산에 쓰인 공시 숫자의 해시 | — | — |
+
+- `screen.json`의 `columns`가 열마다 `label`, `kind`(pct/num/ratio), **원자료 경로**(`objective.ratios.roic` 등)를 알려 줍니다. 화면이 열을 일반적으로 그릴 수 있고, 숫자마다 출처 경로가 따라갑니다.
+- 파일은 **결정적**입니다(키 정렬, 타임스탬프 없음). 입력이 같으면 바이트까지 같습니다. 해시는 가정을 바꿔도 그대로이고 공시 숫자가 바뀌면 달라집니다.
+- NaN이 있으면 잘못된 JSON을 쓰지 않고 오류로 멈춥니다.
+- Step 3 링크는 CIK와 `sources`에 이미 있는 URL로만 만들고 `http(s)`만 허용합니다. 뉴스·애널리스트 URL은 만들어 내지 않습니다.
+- 크기 추정: 종목당 detail 약 15KB(`ttm_series` 포함 시), 500종목 `screen.json` 약 300KB. 상세는 Step 1을 통과한 종목에만 만들면 대시보드에 넣어도 가볍습니다.
+
 ---
 
 ## 6. 구현 상태 (2026-10-15 기준)
@@ -123,11 +150,11 @@ Scientific-Investment/                 ← GitHub: pinkypong/Scientific-Investme
 |---|---|---|
 | SEC 공시 → TTM·FY·ttm_series | 완료 | `xbrl.py` |
 | 종목 풀 (SPY + NDX + 지정 7종목) | 완료 | `build-universe`, `official-us-universe` |
-| 엔진: fcff / ri / epv / 상대가치 | 완료 | 테스트 28개 통과 |
+| 엔진: fcff / ri / epv / 상대가치 | 완료 | 테스트 40개 통과(엔진 28 + 내보내기 12) |
 | 사용자 지정 구간 비교 | 완료 | `cycle_groups` |
 | 섹터 분류 | **없음** | `SecurityRecord`에 `sector` 필드 없음 → 9장 |
 | 한국 종목(OpenDART)을 VGS 입력으로 | **없음** | `data_sources`에만 있음 |
-| 대시보드용 결과 JSON | **없음** | 작업 B에서 정의 |
+| 화면용 결과 JSON (`vgs export`) | 완료 | 예제 종목으로 검증. 실제 종목 연결은 작업 G |
 | Step 3 원문 링크 | **없음** | 정책은 7장 D-6 |
 | 대시보드 | 빈 화면 틀만 | 8장 |
 
@@ -177,7 +204,8 @@ Scientific-Investment/                 ← GitHub: pinkypong/Scientific-Investme
 | 2026-10-14 | `feature/vgs-ri-epv` | `e570302` | 사이클 해석 제거 → 10년 TTM 시계열 + 사용자 지정 구간. EPV 기본값 제거 | 28개 |
 | 2026-10-15 | `feature/dashboard-valuation-tab` | `4d1d7d3` | 대시보드에 빈 "가치평가" 화면 추가 | E1 43, E2 23, 브라우저 확인 |
 | 2026-10-15 | `feature/dashboard-valuation-tab` | `c99dfbd` | 화면을 Step 1·Step 2로 분리, 섹터 소탭 틀 | 동일 + 데스크톱·폰 클릭 확인 |
-| 2026-10-15 | `feature/vgs-ri-epv` | (이 문서) | 아키텍처 누적 문서 작성 | — |
+| 2026-10-15 | `feature/vgs-ri-epv` | `c1d9bfd` | 아키텍처 누적 문서 작성 | — |
+| 2026-10-21 | `feature/vgs-ri-epv` | (이 커밋) | 작업 B: `vgs export`(screen.json, detail/*.json). 엔진 수정: 객관 점수가 가정 플래그에 영향받지 않게 함 | 40개. 수정 전 엔진에서 새 테스트가 실패하는 것 확인 |
 
 **모든 브랜치는 로컬에만 있습니다(푸시 안 함).** `feature/vgs-ri-epv`는 `feature/vgs-actual-only-growth` 위에 쌓여 있으므로 그 순서로 합쳐야 합니다.
 
@@ -196,6 +224,8 @@ Scientific-Investment/                 ← GitHub: pinkypong/Scientific-Investme
 | D-6 | 10-15 | Step 3은 링크만. 애널리스트 리포트도 링크로만 두고 그 숫자를 가져오지 않는다 | 원칙 1 (추정치 금지) |
 | D-7 | 10-15 | 대시보드는 정적 사이트 유지. 시세만 실시간 | 모바일·Vercel에 적합 |
 | D-8 | 10-15 | 대시보드 구조 개편은 VGS 결과 JSON이 정해진 뒤 | 데이터 없이 틀만 바꾸면 재작업 |
+| D-9 | 10-21 | 객관(Step 1) 점수는 데이터 품질 플래그만 반영하고, 가치평가 가정에서 생긴 플래그(확률 합계 오류 등)에는 영향받지 않는다 | 수정 전에는 확률 하나가 틀리면 공시 기반 점수가 76.9 → 70.81로 떨어졌다. Step 1과 Step 2의 분리 원칙 |
+| D-10 | 10-21 | 화면 파일은 `screen.json`(Step 1)과 `detail/<티커>.json`(Step 1·2·3)로 나눈다. 파일은 결정적이고 공시 해시를 기록한다 | 화면 Step과 1:1 대응, 재현 가능 |
 
 ### 열린 질문
 1. **섹터 분류 출처**: SPY 보유종목 파일의 섹터 열(익숙한 11개 섹터, 제3자 분류, 실제 파일 확인 필요) vs SEC의 SIC 코드(공시 기반이지만 400여 개로 잘고 낡음). 제안은 SPY 열 우선, 없는 종목만 SIC.
@@ -204,6 +234,8 @@ Scientific-Investment/                 ← GitHub: pinkypong/Scientific-Investme
 4. **기존 Screener**(메모리 4종 순위)를 Step 1과 합칠지.
 5. **루트 `index.html`**(낡은 사본) 정리.
 6. **CI에 VGS 테스트 추가**(지금 CI는 data_sources 테스트만 돈다).
+7. **`screen.json` 열 구성**: 지금 12개(주가·시총·매출·영업이익률·ROIC·영업CF/순이익·발생액비율·부채/EBITDA·이자보상배율·매출 CAGR·YoY·마진 변화). 스크리닝에 꼭 필요한 열이 더 있는지, 뺄 열이 있는지.
+8. **Step 1 필터 기준**을 파일에 담을지(규칙 기반 표시), 화면에서 사람이 조절하게만 할지.
 
 ---
 
@@ -212,7 +244,7 @@ Scientific-Investment/                 ← GitHub: pinkypong/Scientific-Investme
 | 작업 | 내용 | 확인 방법 |
 |---|---|---|
 | **A** | 이 문서에 대한 사용자 확인 | 문서 검토 |
-| **B** | **VGS 결과 JSON 형식 정의**: `screen.json`(종목 표), `detail/<티커>.json`(상세) | 예제 종목으로 JSON 생성 |
+| **B** | **VGS 결과 JSON 형식 정의**: `screen.json`(종목 표), `detail/<티커>.json`(상세) — **완료 (2026-10-21)** | 예제 종목으로 JSON 생성 |
 | **C** | 섹터 분류 연결 (질문 1 결정 후) | 섹터별 종목 수 |
 | **D** | 대시보드에 JSON을 넣는 빌드 단계 + Step 2에 예제 종목 1개 표시 | 브라우저에서 bear/base/bull 표 |
 | **E** | 대시보드 구조 개편 (섹터 상위 탭 → Step 1·2·3, Memory 내용 이동) | 데스크톱·폰 클릭 확인 |
