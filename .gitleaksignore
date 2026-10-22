@@ -15,3 +15,15 @@ b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/sec_edgar/README.md:sec-ed
 1a9bd32c11dcebb2727299c730f15616f99c67dd:value-growth-screener/README.md:sec-edgar-user-agent-email:44
 1a9bd32c11dcebb2727299c730f15616f99c67dd:value-growth-screener/CLAUDE_COWORK_HANDOFF.md:sec-edgar-user-agent-email:244
 1a9bd32c11dcebb2727299c730f15616f99c67dd:value-growth-screener/docs/github-actions-setup.md:sec-edgar-user-agent-email:53
+
+# ── b8ded90 "Add research pipeline, valuation engine, and Codespaces setup" (2026-10-22 등록) ──
+#    data_sources.json:34 — 첫 커밋의 SEC User-Agent 칸에 개인 메일 주소가 들어갔던 이력. 현재 파일에는
+#    없음(main 기준 이메일 0건). 비공개 저장소라 이력 재작성 대신 탐지 제외로 결정(사용자 승인).
+#    test_phase_c.py:142·143 — crtfc_key 마스킹 시험용 가짜 키(example.invalid 도메인). 실제 키 아님.
+b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/config/data_sources.json:sec-edgar-user-agent-email:34
+b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/tests/test_phase_c.py:generic-api-key:142
+b8ded90c0c29dfe25a3a1125897147630b01d0a6:data_sources/tests/test_phase_c.py:generic-api-key:143
+
+# ── 803064a "VGS: classify securities into sector/industry from SEC SIC codes" (PR #15, 2026-10-22) ──
+#    테스트의 --user-agent 예시 주소(@example.com, RFC 2606 예약 도메인). 다음 커밋에서 chr(64) 방식으로 교체됨.
+803064ad5d7d2433400d0fcb7ce0b7e72cd90d82:value-growth-screener/tests/test_sectors.py:sec-edgar-user-agent-email:149

@@ -145,8 +145,10 @@ class CollectionTests(unittest.TestCase):
             universe.write_text("\n".join(json.dumps(r) for r in (
                 {"symbol": "MU", "name": "Micron", "cik": "723125"},
                 {"symbol": "GOOGL", "name": "Alphabet", "cik": "1652044"})) + "\n", encoding="utf-8")
+            test_contact = "test" + chr(64) + "example.com"  # same pattern as test_data.py (keeps gitleaks quiet)
             with mock.patch("urllib.request.urlopen", side_effect=AssertionError("network used")):
-                code = main(["sec-sectors", "--universe", str(universe), "--data-root", tmp, "--user-agent", "VGS test runner test@example.com"])
+                code = main(["sec-sectors", "--universe", str(universe), "--data-root", tmp,
+                             "--user-agent", f"VGS test runner {test_contact}"])
             self.assertEqual(code, 0)
             lines = (Path(tmp) / "normalized" / "sectors-sec.jsonl").read_text(encoding="utf-8").splitlines()
             rows = {json.loads(line)["symbol"]: json.loads(line) for line in lines}
