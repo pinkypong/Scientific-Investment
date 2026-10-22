@@ -3,9 +3,17 @@
 Raw facts and human assumptions are intentionally accepted in separate branches.
 The engine never writes calculated values back into either branch.
 
-Analyst forecasts (consensus EPS, target prices, estimate revisions) are not facts.
-They are excluded from every score, gate and default valuation input. If a payload
-still carries an ``objective.consensus`` block, it is ignored and flagged.
+No forecast is a fact, whoever made it. Analyst forecasts (consensus EPS, target prices,
+estimate revisions) never enter a score, gate or valuation input. A top-level ``analyst``
+block is carried through untouched for side-by-side display only. An ``objective.consensus``
+block is in the wrong branch: it is ignored and flagged.
+
+Absolute methods: ``fcff`` (DCF), ``ri`` (residual income) and ``epv`` (earnings power
+value). RI and EPV return an ``inputs`` map recording, per number, whether it is a reported
+fact (``objective.*``) or a human assumption (``assumptions.*``).
+
+Cycles are never inferred. ``objective.history.ttm_series`` holds reported rolling TTM
+points; only date ranges a person puts in ``assumptions.cycle_groups`` are summarized.
 """
 
 from __future__ import annotations
@@ -38,6 +46,13 @@ DEFAULT_CONFIG: dict[str, Any] = {
 # Objective subtrees that are forecasts, not observations. Never scored, never counted
 # toward completeness or provenance coverage.
 EXCLUDED_OBJECTIVE_GROUPS = ("consensus",)
+
+# Flags that come from human valuation assumptions, not from reported data. The objective
+# (Step 1) score must not move because of them.
+ASSUMPTION_FLAG_CODES = frozenset({
+    "NO_SCENARIOS", "BAD_PROBABILITIES", "VALUATION_INPUT", "TERMINAL_DEPENDENCE",
+    "WACC_ASSUMPTION_GAP", "COE_ASSUMPTION_GAP", "RELATIVE_CROSS_CHECK",
+})
 
 REQUIRED_FACTS = (
     "market.price", "market.cash", "market.debt", "market.diluted_shares",
@@ -188,6 +203,101 @@ def _fcff_value(objective: dict[str, Any], scenario: dict[str, Any]) -> dict[str
     }
 
 
+def _fact(objective: dict[str, Any], path: str) -> dict[str, Any]:
+    """A reported input, tagged with its objective path."""
+    value = _number(_get(objective, path))
+    if value is None:
+        raise KeyError(f"objective.{path}")
+    return {"value": value, "source": f"objective.{path}"}
+
+
+def _assumed(scenario: dict[str, Any], key: str, origin: str) -> dict[str, Any]:
+    """A human assumption, tagged with its assumptions path. Missing → KeyError, never a default."""
+    return {"value": float(scenario[key]), "source": f"{origin}.{key}"}
+
+
+def _ri_value(objective: dict[str, Any], scenario: dict[str, Any], origin: str) -> dict[str, Any]:
+    """Residual income: book equity + PV of (ROE - cost of equity) x opening book.
+
+    Book value is always the reported fact. ROE fades linearly from roe_start (default:
+    reported TTM ROE) to target_roe; the terminal value capitalizes the year-N+1 residual
+    income at (cost_of_equity - terminal_growth)."""
+    book = _fact(objective, "financials.book_value")
+    shares = float(objective["market"]["diluted_shares"])
+    if "roe_start" in scenario:
+        roe_start = _assumed(scenario, "roe_start", origin)
+    else:
+        net_income = float(objective["financials"]["net_income_ttm"])
+        roe_start = {"value": net_income / book["value"],
+                     "source": "objective.financials.net_income_ttm / objective.financials.book_value"}
+    inputs = {"book_value": book, "roe_start": roe_start}
+    for key in ("target_roe", "cost_of_equity", "payout_ratio", "terminal_growth"):
+        inputs[key] = _assumed(scenario, key, origin)
+    years = int(scenario.get("forecast_years", 5))
+    coe = inputs["cost_of_equity"]["value"]
+    growth = inputs["terminal_growth"]["value"]
+    payout = inputs["payout_ratio"]["value"]
+    target_roe = inputs["target_roe"]["value"]
+    if years < 1 or shares <= 0 or book["value"] <= 0:
+        raise ValueError("years, shares, and book value must be positive")
+    if not 0.0 <= payout <= 1.0:
+        raise ValueError("payout_ratio must be between 0 and 1")
+    if coe <= growth:
+        raise ValueError("cost of equity must be greater than terminal growth")
+
+    opening = book["value"]
+    pv_explicit = 0.0
+    for year in range(1, years + 1):
+        progress = (year - 1) / (years - 1) if years > 1 else 1.0
+        roe = roe_start["value"] + (target_roe - roe_start["value"]) * progress
+        earnings = roe * opening
+        pv_explicit += (earnings - coe * opening) / ((1.0 + coe) ** year)
+        opening += earnings * (1.0 - payout)
+    terminal_ri = (target_roe - coe) * opening
+    pv_terminal = terminal_ri / (coe - growth) / ((1.0 + coe) ** years)
+    equity_value = book["value"] + pv_explicit + pv_terminal
+    return {
+        "equity_value": equity_value,
+        "fair_value_per_share": equity_value / shares,
+        "terminal_value_share": pv_terminal / equity_value if equity_value > 0 else 0.0,
+        "book_value_share": book["value"] / equity_value if equity_value > 0 else 0.0,
+        "inputs": inputs,
+    }
+
+
+def _epv_value(objective: dict[str, Any], scenario: dict[str, Any], origin: str) -> dict[str, Any]:
+    """Earnings power value (no growth): normalized NOPAT / WACC, then net debt to equity.
+
+    Normalization is a judgement, so every operating input is a required assumption with no
+    default; the reported TTM series is there for the person choosing them."""
+    inputs = {key: _assumed(scenario, key, origin)
+              for key in ("normalized_revenue", "normalized_ebit_margin", "tax_rate", "wacc",
+                          # Signed NOPAT adjustment, e.g. D&A in excess of maintenance capex.
+                          "maintenance_capex_adjustment")}
+    shares = float(objective["market"]["diluted_shares"])
+    cash = float(objective["market"]["cash"])
+    debt = float(objective["market"]["debt"])
+    wacc = inputs["wacc"]["value"]
+    if shares <= 0 or wacc <= 0:
+        raise ValueError("shares and WACC must be positive")
+    nopat = (inputs["normalized_revenue"]["value"] * inputs["normalized_ebit_margin"]["value"]
+             * (1.0 - inputs["tax_rate"]["value"]) + inputs["maintenance_capex_adjustment"]["value"])
+    enterprise_value = nopat / wacc
+    equity_value = enterprise_value - debt + cash
+    return {"enterprise_value": enterprise_value, "equity_value": equity_value,
+            "fair_value_per_share": equity_value / shares, "normalized_nopat": nopat, "inputs": inputs}
+
+
+def _value(objective: dict[str, Any], scenario: dict[str, Any], method: str, origin: str) -> dict[str, Any]:
+    if method == "fcff":
+        return _fcff_value(objective, scenario)
+    if method == "ri":
+        return _ri_value(objective, scenario, origin)
+    if method == "epv":
+        return _epv_value(objective, scenario, origin)
+    return _relative_value(objective, scenario, method)
+
+
 def _wacc_build(objective: dict[str, Any]) -> dict[str, float] | None:
     """Build a market-value WACC from observable capital-market inputs when supplied."""
     capital = objective.get("capital", {})
@@ -268,7 +378,7 @@ def _scenario_values(payload: dict[str, Any]) -> tuple[list[dict[str, Any]], lis
     price = _number(_get(objective, "market.price"))
     for name, scenario in scenarios.items():
         try:
-            value = _fcff_value(objective, scenario) if method == "fcff" else _relative_value(objective, scenario, method)
+            value = _value(objective, scenario, method, f"assumptions.scenarios.{name}")
             fair = value["fair_value_per_share"]
             probability = float(scenario.get("probability", 0.0))
             rows.append({"name": name, "probability": probability, **value,
@@ -303,6 +413,38 @@ def _reverse_dcf(objective: dict[str, Any], base: dict[str, Any]) -> float | Non
         return (low + high) / 2.0
     except (KeyError, TypeError, ValueError, ZeroDivisionError):
         return None
+
+
+def _cycle_comparison(objective: dict[str, Any], groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Statistics of reported rolling-TTM points inside each human-chosen date range.
+
+    The engine never decides where a cycle starts or ends; ``assumptions.cycle_groups``
+    does. Rolling TTM points overlap, so the mean is of TTM points, not of discrete years."""
+    series = _get(objective, "history.ttm_series") or []
+    rows = []
+    for group in groups:
+        label, start, end = group.get("label"), str(group.get("start", "")), str(group.get("end", ""))
+        row: dict[str, Any] = {"label": label, "start": start, "end": end}
+        if not start or not end or start > end:
+            rows.append({**row, "error": "start/end must be ISO dates with start <= end"})
+            continue
+        points = [p for p in series if start <= str(p.get("period_end", "")) <= end]
+        margins = [(p["ebit_margin"], p["period_end"]) for p in points if _number(p.get("ebit_margin")) is not None]
+        revenues = [p for p in points if _number(p.get("revenue")) is not None]
+        row.update({"points": len(points),
+                    "first_period_end": points[0]["period_end"] if points else None,
+                    "last_period_end": points[-1]["period_end"] if points else None,
+                    "revenue_first": revenues[0]["revenue"] if revenues else None,
+                    "revenue_last": revenues[-1]["revenue"] if revenues else None,
+                    "ebit_margin_mean": sum(m for m, _ in margins) / len(margins) if margins else None,
+                    "ebit_margin_min": min(margins)[0] if margins else None,
+                    "ebit_margin_min_at": min(margins)[1] if margins else None,
+                    "ebit_margin_max": max(margins)[0] if margins else None,
+                    "ebit_margin_max_at": max(margins)[1] if margins else None})
+        first, last = row["revenue_first"], row["revenue_last"]
+        row["revenue_change"] = last / first - 1.0 if first and last is not None and first > 0 else None
+        rows.append(row)
+    return rows
 
 
 def _quality_flags(objective: dict[str, Any], config: dict[str, Any]) -> list[Flag]:
@@ -405,29 +547,40 @@ def analyze_security(payload: dict[str, Any], config: dict[str, Any] | None = No
     margin_of_safety = (anchor_fair - price) / anchor_fair if anchor_fair and price is not None and anchor_fair > 0 else None
     wacc_build = _wacc_build(objective)
     reverse_growth = None
-    if assumptions.get("valuation_method", "fcff") == "fcff" and "base" in assumptions.get("scenarios", {}):
-        reverse_growth = _reverse_dcf(objective, assumptions["scenarios"]["base"])
-        base_wacc = _number(assumptions["scenarios"]["base"].get("wacc"))
-        if wacc_build and base_wacc is not None and abs(base_wacc - wacc_build["wacc"]) > 0.02:
+    method = assumptions.get("valuation_method", "fcff")
+    base = assumptions.get("scenarios", {}).get("base")
+    if base is not None and method == "fcff":
+        reverse_growth = _reverse_dcf(objective, base)
+    if base is not None and wacc_build and method in ("fcff", "epv"):
+        base_wacc = _number(base.get("wacc"))
+        if base_wacc is not None and abs(base_wacc - wacc_build["wacc"]) > 0.02:
             flags.append(Flag("warning", "WACC_ASSUMPTION_GAP",
                               "Base-case WACC differs from the market-input WACC build by more than 200 bps."))
+    if base is not None and wacc_build and method == "ri":
+        base_coe = _number(base.get("cost_of_equity"))
+        if base_coe is not None and abs(base_coe - wacc_build["cost_of_equity"]) > 0.02:
+            flags.append(Flag("warning", "COE_ASSUMPTION_GAP",
+                              "Base-case cost of equity differs from the market-input CAPM build by more than 200 bps."))
     relative_cross_check = None
     cross = assumptions.get("relative_cross_check")
     if cross:
         try:
-            relative_cross_check = _relative_value(objective, cross, cross["method"])
+            relative_cross_check = _value(objective, cross, cross["method"], "assumptions.relative_cross_check")
             relative_cross_check["method"] = cross["method"]
             relative_cross_check["upside"] = (
                 relative_cross_check["fair_value_per_share"] / price - 1.0 if price and price > 0 else None
             )
         except (KeyError, TypeError, ValueError, ZeroDivisionError) as exc:
             flags.append(Flag("warning", "RELATIVE_CROSS_CHECK", str(exc)))
+    cycle_comparison = _cycle_comparison(objective, assumptions.get("cycle_groups") or [])
     present = sum(_get(objective, path) is not None for path in REQUIRED_FACTS)
     completeness = present / len(REQUIRED_FACTS)
     provenance_coverage = _provenance_coverage(objective, payload.get("sources", []))
     critical_count = sum(flag.severity == "critical" for flag in flags)
     warning_count = sum(flag.severity == "warning" for flag in flags)
-    score = _objective_score(objective, critical_count)
+    data_critical_count = sum(flag.severity == "critical" and flag.code not in ASSUMPTION_FLAG_CODES
+                              for flag in flags)
+    score = _objective_score(objective, data_critical_count)
     opportunity_score = (
         0.45 * score["total"]
         + 0.25 * (100.0 * _clamp((upside or 0.0) / 0.50))
@@ -450,10 +603,12 @@ def analyze_security(payload: dict[str, Any], config: dict[str, Any] | None = No
                      "base_fair_value": anchor_fair, "upside": upside, "margin_of_safety": margin_of_safety,
                      "reverse_dcf_implied_initial_growth": reverse_growth,
                      "relative_cross_check": relative_cross_check, "wacc_build": wacc_build,
+                     "cycle_comparison": cycle_comparison,
                      "objective_score": score, "risk_adjusted_opportunity_score": opportunity_score,
                      "data_completeness": completeness, "provenance_coverage": provenance_coverage,
                      "decision": "PASS_DEEP_DIVE" if passed else "WATCH_OR_REJECT"},
         "objective": deepcopy(objective), "assumptions": deepcopy(assumptions),
+        "analyst": deepcopy(payload.get("analyst")),
         "flags": [flag.as_dict() for flag in flags], "sources": deepcopy(payload.get("sources", [])),
     }
 

@@ -18,6 +18,8 @@ from .data.sec import SecEdgarClient
 from .data.universe import DEFAULT_FORCED_SYMBOLS, build_universe, read_holdings_csv
 from .data.xbrl import normalize_companyfacts
 from .engine import analyze_security, rank_results
+from .export import write_export
+from .inputs import assumptions_path, load_payload, split_payload
 from .report import render_markdown, render_ranking_csv
 
 
@@ -49,10 +51,24 @@ def main(argv: list[str] | None = None) -> int:
     analyze.add_argument("input")
     analyze.add_argument("--config")
     analyze.add_argument("--output")
+    analyze.add_argument("--assumptions-dir", help="read assumptions/<TICKER>.json; input is a facts file")
     screen = sub.add_parser("screen", help="Rank multiple normalized JSON inputs")
     screen.add_argument("inputs", nargs="+")
     screen.add_argument("--config")
     screen.add_argument("--output")
+    screen.add_argument("--assumptions-dir", help="read assumptions/<TICKER>.json; inputs are facts files")
+    export = sub.add_parser("export", help="Write screen.json and detail/<TICKER>.json for a viewer")
+    export.add_argument("inputs", nargs="+")
+    export.add_argument("--config")
+    export.add_argument("--out", required=True)
+    export.add_argument("--universe")
+    export.add_argument("--assumptions-dir", help="read assumptions/<TICKER>.json; inputs are facts files")
+    export.add_argument("--include-analyst", action="store_true",
+                        help="LOCAL ONLY: add analyst forecasts to step3. Never publish this output.")
+    split = sub.add_parser("split-input", help="Split a combined input into facts/ and assumptions/ files")
+    split.add_argument("input")
+    split.add_argument("--facts-dir", required=True)
+    split.add_argument("--assumptions-dir", required=True)
     sec = sub.add_parser("sec-security-master", help="Download/cache the SEC ticker-to-CIK map")
     sec.add_argument("--data-root", default="data")
     sec.add_argument("--user-agent", default=os.getenv("SEC_USER_AGENT"))
@@ -104,12 +120,30 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "analyze":
         config = _load(args.config) if args.config else None
-        _write_or_print(render_markdown(analyze_security(_load(args.input), config)), args.output)
+        _write_or_print(render_markdown(analyze_security(load_payload(args.input, args.assumptions_dir), config)), args.output)
         return 0
     if args.command == "screen":
         config = _load(args.config) if args.config else None
-        ranked = rank_results(analyze_security(_load(path), config) for path in args.inputs)
+        ranked = rank_results(analyze_security(load_payload(path, args.assumptions_dir), config)
+                              for path in args.inputs)
         _write_or_print(render_ranking_csv(ranked), args.output)
+        return 0
+    if args.command == "split-input":
+        facts, document = split_payload(_load(args.input))
+        target = assumptions_path(args.assumptions_dir, document["ticker"])
+        if target.exists():
+            raise SystemExit(f"{target} already exists; assumptions are written by a person, not overwritten")
+        facts_path = assumptions_path(args.facts_dir, document["ticker"])
+        for path, data in ((facts_path, facts), (target, document)):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+            print(path)
+        return 0
+    if args.command == "export":
+        config = _load(args.config) if args.config else None
+        results = [analyze_security(load_payload(path, args.assumptions_dir), config) for path in args.inputs]
+        for path in write_export(results, args.out, args.universe, args.include_analyst):
+            print(path)
         return 0
     store = DataStore(args.data_root)
     if args.command == "official-us-universe":

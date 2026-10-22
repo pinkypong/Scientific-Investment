@@ -152,6 +152,30 @@ class DataLayerTests(unittest.TestCase):
         self.assertAlmostEqual(history["ebit_margin_change_3y"], 20 / 133.1 - 0.10, places=6)
         self.assertEqual(history["basis_fiscal_year"], 2024)
 
+    def test_xbrl_ttm_series_rolls_and_leaves_gaps_empty(self):
+        ends = ["2022-03-31", "2022-06-30", "2022-09-30", "2022-12-31", "2023-03-31", "2023-06-30",
+                "2023-09-30", "2023-12-31", "2024-03-31", "2024-06-30", "2024-09-30", "2024-12-31"]
+        starts = ["2022-01-01", "2022-04-01", "2022-07-01", "2022-10-01", "2023-01-01", "2023-04-01",
+                  "2023-07-01", "2023-10-01", "2024-01-01", "2024-04-01", "2024-07-01", "2024-10-01"]
+        def q(i, value):
+            return {"start": starts[i], "end": ends[i], "val": value, "filed": "2025-02-01", "form": "10-Q",
+                    "fy": int(ends[i][:4]), "fp": f"Q{i % 4 + 1}", "accn": f"A{i}"}
+        revenue = [q(i, i + 1) for i in range(12) if ends[i] != "2023-06-30"]  # one quarter never filed
+        operating = [q(i, 0.1 * (i + 1)) for i in range(12)]
+        facts = {"cik": 1, "entityName": "Test", "facts": {"us-gaap": {
+            "Revenues": {"units": {"USD": revenue}}, "OperatingIncomeLoss": {"units": {"USD": operating}}}}}
+        series = {p["period_end"]: p for p in normalize_companyfacts(facts, "2025-03-01")["ttm_series"]}
+        self.assertEqual(len(series), 8)
+        self.assertAlmostEqual(series["2022-12-31"]["revenue"], 1 + 2 + 3 + 4)
+        self.assertAlmostEqual(series["2023-03-31"]["revenue"], 2 + 3 + 4 + 5)
+        for end in ("2023-09-30", "2023-12-31", "2024-03-31"):  # windows spanning the missing quarter
+            self.assertIsNone(series[end]["revenue"])
+            self.assertIsNone(series[end]["ebit_margin"])
+        self.assertIsNotNone(series["2023-09-30"]["operating_income"])  # its own quarters are complete
+        self.assertAlmostEqual(series["2024-12-31"]["revenue"], 9 + 10 + 11 + 12)
+        self.assertAlmostEqual(series["2024-12-31"]["ebit_margin"], 0.1)
+        self.assertEqual(series["2024-12-31"]["accessions"], ["A10", "A11", "A8", "A9"])
+
     def test_ken_french_parser(self):
         text = "notes\n,Mkt-RF,SMB,HML,RF\n20260901,1.00,-0.50,0.25,0.01\nfooter"
         row = parse_ken_french_csv(text, "ff5_daily")[0]
