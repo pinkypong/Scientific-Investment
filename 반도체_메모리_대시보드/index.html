@@ -29,6 +29,9 @@ h1{font-size:20px;margin:0 0 3px;letter-spacing:-.3px}
 .view{display:none}.view.active{display:block}
 .panel{display:none}.panel.active{display:block}
 #homeTop{overflow-x:auto} /* 폰에서 표만 옆으로 스크롤, 페이지는 고정 */
+.stabs{display:flex;gap:4px;flex-wrap:wrap;padding:2px 0 8px}
+.stab{border:1px dashed var(--line);background:#fff;color:var(--sub);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600}
+.stab.active{background:var(--slate);color:#fff;border:1px solid var(--slate)}
 section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 17px;margin:11px 0;box-shadow:0 1px 2px rgba(16,24,40,.04)}
 h2{font-size:15.5px;margin:0 0 3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 h2 .k{font-size:10px;font-weight:700;color:#fff;background:var(--slate);border-radius:6px;padding:2px 8px;letter-spacing:.4px}
@@ -97,6 +100,8 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
 
 <nav class="pnav" id="pnav">
   <button class="pbtn active" data-v="home">🏠 Home</button>
+  <button class="pbtn" data-v="step1">① 스크리닝</button>
+  <button class="pbtn" data-v="step2">② 종목분석</button>
   <button class="pbtn" data-v="screener">🔎 Screener</button>
   <button class="pbtn" data-v="memory">🧠 Memory</button>
   <button class="pbtn" data-v="governance">⚖️ Governance</button>
@@ -257,6 +262,25 @@ footer{color:var(--sub);font-size:11px;margin-top:16px;text-align:center;line-he
       <div class="flag"><b>Kill Conditions (§28)</b> — 삼성 HBM4 퀄 실패/지연 · HBM 재고 급증 · 주요 고객 capex 컷 · ASP 임계이하 하락 · 공급증설이 수요 크게 초과 · 점유율 상실. 무효화 조건 충족 시 thesis 폐기.</div>
     </section>
   </div>
+</div>
+
+<!-- ============ STEP 1 : 여러 종목 스크리닝 (공시 숫자 + 사람이 조절하는 필터) ============ -->
+<div class="view" id="v-step1">
+  <section>
+    <h2><span class="k">STEP 1</span>스크리닝</h2>
+    <p class="sec-sub">여러 종목을 공시 숫자로 훑어 후보를 고릅니다. 필터 기준은 사람이 정합니다.</p>
+    <div class="stabs"><span class="stab active">전체</span><span class="stab">섹터별 탭 (준비 중)</span></div>
+    <div class="flag"><b>준비 중</b> — 종목 표와 필터가 이 자리에 들어옵니다.</div>
+  </section>
+</div>
+
+<!-- ============ STEP 2 : 고른 종목의 상세분석·가치평가 (가정이 들어가는 구역) ============ -->
+<div class="view" id="v-step2">
+  <section>
+    <h2><span class="k">STEP 2</span>종목분석</h2>
+    <p class="sec-sub">스크리닝에서 고른 종목을 자세히 봅니다. 가치평가 숫자는 사람이 정한 가정에 의존합니다.</p>
+    <div class="flag"><b>준비 중</b> — 종목 선택, 공시 시계열, 가치평가 결과가 이 자리에 들어옵니다.</div>
+  </section>
 </div>
 
 <!-- ============ GOVERNANCE ============ -->
