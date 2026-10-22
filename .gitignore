@@ -3,6 +3,8 @@
 .env
 *.env
 **/.env
+**/.secrets.ps1
+**/*.secrets.ps1
 !data_sources/.env.example
 data_sources/config/data_sources.local.json
 

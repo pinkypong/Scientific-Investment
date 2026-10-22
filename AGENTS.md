@@ -18,9 +18,12 @@
 - 모바일에서 봐야 하는 완성본만 OneDrive로 내보낸다.
 - **개발·테스트는 로컬 오프라인, 커밋·푸시·CI/CD 는 GitHub** — 로컬 머신은 아웃바운드 네트워크가
   차단돼 라이브 동기화(`run_sync` 실수집)를 못 한다. 상세: `docs/workflow.md`.
-- 시크릿(`data_sources/.env` 의 `OPENDART_API_KEY`·`SEC_EDGAR_USER_AGENT`)은 **커밋 금지**. 실제
-  값은 로컬 `.env` 와 GitHub Actions secret 두 곳에만. 키 값을 출력·문서·커밋 메시지에 기재하지 않는다.
-- 클론 직후 `scripts/setup-hooks.sh`(또는 `.ps1`)로 pre-commit 훅을 켠다 — 시크릿·쓰레기 raw 스냅샷 차단.
+- 시크릿은 **커밋 금지**. 사는 곳이 세 군데이고 서로 다른 메커니즘이다 — `data_sources/.env`
+  (파이프라인·`kis_check`), Vercel 환경변수(`/api/quotes`), 셸 환경변수 `.secrets.ps1`(VGS 는
+  `.env` 를 읽지 않는다). 표는 `docs/workflow.md` "자격증명 세 곳". 실제 값은 로컬 파일과
+  GitHub Actions secret(+Vercel)에만. 키 값을 출력·문서·커밋 메시지에 기재하지 않는다.
+- 클론 직후 `scripts/bootstrap.sh`(또는 `.ps1`) 하나만 돌린다 — pre-commit 훅·의존성·store
+  재생성·raw mtime 정렬·자격증명 점검·검증을 한 번에. 훅만 켜려면 `scripts/setup-hooks.sh`.
 
 ## 2. 폴더 구조 규칙
 

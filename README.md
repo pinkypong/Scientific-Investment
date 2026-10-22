@@ -8,6 +8,19 @@
 
 ## 클론 직후 (Codespaces 포함)
 
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1   # Windows
+```
+```bash
+sh scripts/bootstrap.sh                                           # Linux / macOS
+```
+
+커밋 훅 활성화 → 의존성 설치 → raw mtime 정렬 → store 재생성 → 자격증명 점검 → 검증을
+한 번에 한다. 여러 번 실행해도 안전하고, **PC 를 새로 추가할 때 이것만 돌리면 된다**
+(`-SkipVerify` / `SKIP_VERIFY=1` 로 검증 생략). 파이썬은 **3.12 를 권장** — CI 가 쓰는 버전이다.
+
+수동으로 하려면:
+
 ```bash
 pip install -r data_sources/requirements.txt
 
@@ -22,6 +35,10 @@ Phase D 의 company-level raw cache + `netguard` 덕분에 외부 호출이 0건
 > 클론 직후 raw 는 항상 "방금 받은 것"으로 보이므로 재생성은 늘 성공하지만, 그만큼
 > `raw_cache_ttl_sec`(7일)이 클론 환경에서는 무의미하다. **최신 데이터가 필요하면**
 > `--no-network` 를 빼고 `--force` 로 실수집해야 한다(그때는 키가 필요).
+>
+> 반대로 **오래 놔둔 작업트리**에서는 raw mtime 이 TTL(7일)을 넘겨 cache hit 이 안 나고
+> `test_phase_d::test_ttl_skip_and_cache_hit_are_distinct` 가 깨진다. 같은 커밋인데 PC
+> 마다 결과가 다른 원인이다. `bootstrap` 이 mtime 을 현재로 맞춰 이걸 없앤다(내용 불변).
 
 ## 확인
 
@@ -33,17 +50,32 @@ python -m data_sources.valuation.context --check                         # cover
 
 ## 자격증명
 
-`data_sources/.env` 는 **커밋되지 않는다**. Codespaces 에서는 Repository secret 으로 넣는다
-(Settings → Secrets and variables → Codespaces):
+자격증명이 사는 곳은 **세 군데**이고 서로 다른 메커니즘이다. 어느 것도 커밋되지 않는다.
+`bootstrap` 이 "어떤 키가 비었는지" 이름만 알려주고, 값은 사람이 직접 채운다.
+
+**1. `data_sources/.env`** — 파이썬 파이프라인 + `scripts/kis_check.mjs`.
+`data_sources/.env.example` 을 `.env` 로 복사해 채운다.
 
 | 이름 | 필요성 |
 |---|---|
 | `OPENDART_API_KEY` | 한국 공시 **실수집** 시에만. 재생성·테스트에는 불필요 |
 | `SEC_EDGAR_USER_AGENT` | SEC 정책상 이름+이메일. 예: `AI Stock Research <CONTACT_EMAIL>` |
+| `BIGDATA_API_KEY` | Phase E2 시장 데이터 실수집 시에만 |
+| `KIS_APP_KEY` · `KIS_APP_SECRET` | 대시보드 한국 시세 **로컬 점검**(`kis_check.mjs`) 시에만 |
 
-로컬은 `data_sources/.env.example` 을 `.env` 로 복사해 채운다. GitHub Actions 에서는
-Repository secret (`Settings → Secrets and variables → Actions`) 으로 넣는다 — `data-refresh`
-워크플로우만 필요하고 `ci`·`secret-scan` 은 시크릿 없이 돈다. 자세한 건 `docs/workflow.md`.
+**2. Vercel 환경변수** — 배포된 `/api/quotes` (`web_deploy/api/quotes.js`).
+Vercel 프로젝트 설정에 넣는다. 로컬 파일과 무관하다.
+`ALPACA_API_KEY_ID` · `ALPACA_API_SECRET_KEY` · `KIS_APP_KEY` · `KIS_APP_SECRET` ·
+`KIS_ENV`(`real`|`mock`, 기본 `real`).
+
+**3. 셸 환경변수** — `value-growth-screener`(VGS). VGS 는 **`.env` 를 읽지 않고** `os.getenv`
+만 본다. `.secrets.ps1.example` 을 `.secrets.ps1` 로 복사해 채우고 세션에 적용한다
+(`. .\.secrets.ps1`). `SEC_USER_AGENT`(⚠ 위 `SEC_EDGAR_USER_AGENT` 와 **다른 이름**) ·
+`FRED_API_KEY` · `ALPACA_API_KEY_ID` · `ALPACA_API_SECRET_KEY`.
+
+GitHub Actions 는 Repository secret (`Settings → Secrets and variables → Actions`) 으로 넣는다 —
+`data-refresh` · `vgs-collect-us-data` 만 필요하고 `ci`·`secret-scan` 은 시크릿 없이 돈다.
+Codespaces 는 Codespaces secret. 자세한 건 `docs/workflow.md`.
 
 ## 어디서부터 읽나
 
