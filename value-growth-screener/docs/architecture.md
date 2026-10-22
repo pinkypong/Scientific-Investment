@@ -219,19 +219,23 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | 2026-10-14 | `feature/opendart-years-back-12` | `5c49cca` | 패치 적용: OpenDART `years_back` 4→12 | data_sources 125개 + CI 점검 |
 | 2026-10-14 | `feature/vgs-ri-epv` | `23a5339` | RI·EPV 가치평가 추가, 입력마다 출처 표시 | 27개 |
 | 2026-10-14 | `feature/vgs-ri-epv` | `e570302` | 사이클 해석 제거 → 10년 TTM 시계열 + 사용자 지정 구간. EPV 기본값 제거 | 28개 |
-| 2026-10-15 | `feature/dashboard-valuation-tab` | `4d1d7d3` | 대시보드에 빈 "가치평가" 화면 추가 | E1 43, E2 23, 브라우저 확인 |
-| 2026-10-15 | `feature/dashboard-valuation-tab` | `c99dfbd` | 화면을 Step 1·Step 2로 분리, 섹터 소탭 틀 | 동일 + 데스크톱·폰 클릭 확인 |
+| 2026-10-15 | `feature/dashboard-valuation-tab` | `504aebf` (원래 `4d1d7d3`) | 대시보드에 빈 "가치평가" 화면 추가 | E1 43, E2 23, 브라우저 확인 |
+| 2026-10-15 | `feature/dashboard-valuation-tab` | `49e4b96` (원래 `c99dfbd`) | 화면을 Step 1·Step 2로 분리, 섹터 소탭 틀 | 동일 + 데스크톱·폰 클릭 확인 |
 | 2026-10-15 | `feature/vgs-ri-epv` | `c1d9bfd` | 아키텍처 누적 문서 작성 | — |
 | 2026-10-21 | `feature/vgs-ri-epv` | `ba65945` | 작업 B: `vgs export`(screen.json, detail/*.json). 엔진 수정: 객관 점수가 가정 플래그에 영향받지 않게 함 | 40개. 수정 전 엔진에서 새 테스트가 실패하는 것 확인 |
 | 2026-10-21 | `feature/vgs-ri-epv` | `6e373d7` | 자연어 개요 문서(`architecture-overview.html`) | 폰·다크 모드 확인 |
 | 2026-10-21 | `feature/vgs-ri-epv` | `8509098` | 원칙 1 개정, 애널리스트 추정치 로컬 전용 통로(`--include-analyst`) | 45개. 공개본 누출 시 테스트 실패 확인 |
 | 2026-10-21 | `feature/vgs-ri-epv` | `09f275d` | 공시 파일과 가정 파일 분리, `split-input`, 시세·비교 항목 결정 기록 | 52개. 나눈 형식과 합친 형식의 리포트가 같음을 확인 |
-| 2026-10-21 | `feature/dashboard-valuation-tab` | `41c1b1b` | 웹 시세 자동 갱신: Vercel 함수(Alpaca, 3시간 캐시) + 한국 수동 입력 파일, CI에 node 테스트 | node 5개, data_sources 125개, 가짜 Vercel 서버로 폰 너비 브라우저 확인 |
+| 2026-10-21 | main (PR #6) | `2176314` (원래 `41c1b1b`) | 웹 시세 자동 갱신: Vercel 함수(Alpaca, 3시간 캐시) + 한국 수동 입력 파일, CI에 node 테스트 | node 5개, data_sources 125개, 가짜 Vercel 서버로 폰 너비 브라우저 확인 |
 | 2026-10-21 | `feature/vgs-ri-epv` | `e789e9a` | 문서: D-18, 시세 상태 | — |
-| 2026-10-22 | `feature/dashboard-valuation-tab` | `6d6101e` | 한국 시세: 한국투자증권 Open API 연결, 수동 입력은 예비 | node 10개, E1·E2, 브라우저(정상·실패 두 경우) |
-| 2026-10-22 | `feature/vgs-ri-epv` | (이 커밋) | 문서: D-19 | — |
+| 2026-10-22 | main (PR #6) | `dd2c8e6` (원래 `6d6101e`) | 한국 시세: 한국투자증권 Open API 연결, 수동 입력은 예비 | node 10개, E1·E2, 브라우저(정상·실패 두 경우) |
+| 2026-10-22 | `feature/vgs-ri-epv` | `a0a82e4` | 문서: D-19 | — |
+| 2026-10-21 | main (PR #7) | `f473b01` | 시세 실패 이유를 응답에 표시(상태 코드·안전한 오류 코드만) | node 14 |
+| 2026-10-22 | main (PR #8) | `555cce7`·`50925d5`·`736a802` | 키 공백 제거, KIS 초당 한도(EGW00201) 재시도, 로컬 점검 스크립트 `scripts/kis_check.mjs` | node 19, **실제 KIS 서버로 로컬 검증 후 푸시**, 운영 사이트에서 한·미 시세 전부 수신 확인 |
+| 2026-10-22 | `fix/home-table-overflow` | `48e10d5` | 폰에서 페이지가 옆으로 밀리던 문제(Home 표, 기존부터 있던 문제) 수정 | 390·360px 전 화면 |
+| 2026-10-22 | `feature/vgs-ri-epv` | (이 커밋) | 문서: GitHub 반영 상태, 대시보드 브랜치 재구성 기록 | — |
 
-**모든 브랜치는 로컬에만 있습니다(푸시 안 함).** `feature/vgs-ri-epv`는 `feature/vgs-actual-only-growth` 위에 쌓여 있으므로 그 순서로 합쳐야 합니다.
+**2026-10-22 사용자 승인으로 모든 작업 브랜치를 GitHub에 올렸습니다.** 시세 기능(PR #6·#7·#8)은 main에 병합·배포됨. 나머지는 PR 병합 대기. 대시보드 브랜치는 오래된 main 위에 있어 병합 시 시세 수정분을 되돌릴 위험이 있었으므로, Step 1·2 커밋 2개만 최신 코드 위로 다시 쌓았습니다(옛 버전은 로컬 `backup/dashboard-valuation-tab-old`). `feature/vgs-ri-epv`는 `feature/vgs-actual-only-growth` 위에 쌓여 있으므로 그 순서로 합쳐야 합니다.
 
 ---
 
