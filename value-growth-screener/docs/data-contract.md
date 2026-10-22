@@ -44,6 +44,8 @@
 - 예외는 `config/sector_overrides.json`에 `{"overrides": {"TICKER": {"industry", "reason", "decided_on"}}}`. 이유가 없거나 없는 업종이면 오류.
 - `screen.json` 행에는 `sector`, `sector_label`, `industry`, `industry_label`, `sector_source`, `sic`. `--sectors`를 주면 `meta.sectors`에 섹터→업종 목록(표시 순서)이 들어간다.
 - 분류는 공시 숫자 해시(`integrity.objective_sha256`)에 포함되지 않는다.
+- 실행 요약: `sec-sectors`는 `GITHUB_STEP_SUMMARY`가 있으면(또는 `--summary PATH`) 종목별 `| 종목 | SIC | SIC 설명 | 업종 | 섹터 | 출처 | 비고 |` 표를 Markdown으로 덧붙인다. 출처는 `규칙`·`예외`(비고에 이유)·`미분류`, 비고에는 `note`(`cik_not_found`, `sic_missing`, `fetch_failed: …`).
+- `GITHUB_ACTIONS=true`이면 조회 실패(`cik_not_found`·`fetch_failed`)는 `::error`, 나머지 미분류는 `::warning`으로 출력한다. 종료 코드는 기본 0, `--strict`면 실패가 있을 때 1.
 
 ## 단위
 
