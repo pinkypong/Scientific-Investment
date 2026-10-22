@@ -238,6 +238,7 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | 2026-10-22 | main (PR #13·#14) | — | 대시보드 Step 1·2 화면 병합, CI에 VGS 테스트 추가 | Python 3.12에서도 52개 통과, 실패 테스트로 CI가 빨개지는지 확인 |
 | 2026-10-22 | main (PR #15) | `803064a` | 작업 C: SEC SIC 기반 섹터·업종 분류, `sec-sectors`, `export --sectors`, 수집 워크플로 단계 | VGS 68개(3.12·3.14), 네트워크 차단 상태로 워크플로 명령 시뮬레이션 |
 | 2026-10-22 | `fix/gitleaks-sectors` | (이 커밋) | Gitleaks 실패 수정: 테스트의 예시 메일을 `chr(64)` 방식으로 바꿈, 첫 커밋(b8ded90)의 3건과 PR #15 테스트 줄을 `.gitleaksignore`에 등록 | 로컬 gitleaks 8.30.1: PR 범위·전체 이력 모두 0건 |
+| 2026-10-22 | `feature/sectors-run-summary` | (이 커밋) | `sec-sectors` 실행 요약: GitHub 실행 화면에 종목별 SIC·업종·섹터·출처 표(`GITHUB_STEP_SUMMARY`, `--summary`), 조회 실패·미분류를 `::error`/`::warning`으로 표시(continue-on-error여도 보임), `--strict` 추가(워크플로에는 미적용) | VGS 73개(3.12·3.14), 일부러 망가뜨린 코드에서 테스트 실패 확인, gitleaks 0건 |
 
 **2026-10-22 사용자 승인으로 모든 작업 브랜치를 GitHub에 올렸습니다.** 시세 기능(PR #6·#7·#8)은 main에 병합·배포됨. 나머지는 PR 병합 대기. 대시보드 브랜치는 오래된 main 위에 있어 병합 시 시세 수정분을 되돌릴 위험이 있었으므로, Step 1·2 커밋 2개만 최신 코드 위로 다시 쌓았습니다(옛 버전은 로컬 `backup/dashboard-valuation-tab-old`). `feature/vgs-ri-epv`는 `feature/vgs-actual-only-growth` 위에 쌓여 있으므로 그 순서로 합쳐야 합니다.
 

@@ -16,7 +16,8 @@ from .data.factors import DEFAULT_FRED_SERIES, FredClient, KenFrenchClient
 from .data.holdings import OfficialHoldingsClient, holdings_to_universe
 from .data.models import SecurityRecord
 from .data.sec import SecEdgarClient
-from .data.sectors import collect_sector_rows, load_overrides, load_sector_map, summarize
+from .data.sectors import (annotation_lines, collect_sector_rows, is_failed, load_overrides, load_sector_map,
+                           render_summary_markdown, summarize)
 from .data.universe import DEFAULT_FORCED_SYMBOLS, build_universe, read_holdings_csv
 from .data.xbrl import normalize_companyfacts
 from .engine import analyze_security, rank_results
@@ -83,6 +84,8 @@ def main(argv: list[str] | None = None) -> int:
     sectors.add_argument("--sector-map", default=str(_CONFIG / "sectors.json"))
     sectors.add_argument("--overrides", default=str(_CONFIG / "sector_overrides.json"))
     sectors.add_argument("--output-name", default="sectors-sec")
+    sectors.add_argument("--summary", help="Also write the Markdown run summary to this file")
+    sectors.add_argument("--strict", action="store_true", help="Exit 1 if any SEC lookup failed")
     sec = sub.add_parser("sec-security-master", help="Download/cache the SEC ticker-to-CIK map")
     sec.add_argument("--data-root", default="data")
     sec.add_argument("--user-agent", default=os.getenv("SEC_USER_AGENT"))
@@ -227,7 +230,16 @@ def main(argv: list[str] | None = None) -> int:
         print(store.write_jsonl("normalized", args.output_name, rows))
         for line in summarize(rows, sector_map):
             print(line)
-        return 0
+        markdown = render_summary_markdown(rows, sector_map)
+        if args.summary:
+            Path(args.summary).write_text(markdown, encoding="utf-8")
+        if os.environ.get("GITHUB_STEP_SUMMARY"):
+            with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as handle:
+                handle.write(markdown + "\n")
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            for line in annotation_lines(rows):
+                print(line)
+        return 1 if args.strict and any(is_failed(row) for row in rows) else 0
     if args.command == "sec-security-master":
         if not args.user_agent:
             parser.error("sec-security-master requires --user-agent or SEC_USER_AGENT")

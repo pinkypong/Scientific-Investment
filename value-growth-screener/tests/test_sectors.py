@@ -1,5 +1,8 @@
+from contextlib import redirect_stdout
 from copy import deepcopy
+import io
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
@@ -8,8 +11,8 @@ import unittest
 from vgs.cli import main
 from vgs.data.cache import DataStore
 from vgs.data.models import SecurityRecord
-from vgs.data.sectors import (classify, collect_sector_rows, load_overrides, load_sector_map,
-                              sic_from_submissions, summarize)
+from vgs.data.sectors import (annotation_lines, classify, collect_sector_rows, load_overrides, load_sector_map,
+                              render_summary_markdown, sic_from_submissions, summarize)
 from vgs.engine import analyze_security
 from vgs.export import attach_classification, build_detail, build_screen
 
@@ -155,6 +158,100 @@ class CollectionTests(unittest.TestCase):
         self.assertEqual(rows["MU"]["sector"], "semiconductors")
         self.assertEqual(rows["GOOGL"]["industry"], "software_services")
         self.assertEqual(rows["GOOGL"]["provider"], "SEC")
+
+
+class RunSummaryTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.map = load_sector_map(MAP_PATH)
+        overrides = {"GOOGL": {"industry": "media", "reason": "광고 | 검색", "decided_on": "2026-10-22"}}
+
+        def fetch(cik):
+            if int(cik) == 2:
+                raise TimeoutError("slow")
+            return {"1": {"sic": "3674", "sicDescription": "Semiconductors & Related Devices"},
+                    "3": {"sic": "", "sicDescription": ""},
+                    "4": {"sic": "9995", "sicDescription": "Non-Operating | Establishments"},
+                    "5": {"sic": "7370", "sicDescription": "Services-Computer Programming"}}[str(int(cik))]
+        records = [SecurityRecord("MU", "Micron", cik="1"), SecurityRecord("BAD", "Bad", cik="2"),
+                   SecurityRecord("NOSIC", "No sic", cik="3"), SecurityRecord("SHELL", "Shell", cik="4"),
+                   SecurityRecord("GOOGL", "Alphabet", cik="5"), SecurityRecord("NOCIK", "No cik")]
+        cls.rows = collect_sector_rows(records, fetch, cls.map, overrides, "2026-10-22T00:00:00Z")
+
+    def test_markdown_table(self):
+        markdown = render_summary_markdown(self.rows, self.map)
+        lines = markdown.splitlines()
+        self.assertEqual(lines[0], "### SEC 섹터 분류")
+        self.assertIn(self.map.version, markdown)
+        self.assertIn("2026-10-22T00:00:00Z", markdown)
+        self.assertIn("섹터별: 반도체 1 · 통신·미디어 1", markdown)
+        table = [line for line in lines if line.startswith("| ") and "---" not in line]
+        self.assertEqual(table[0], "| 종목 | SIC | SIC 설명 | 업종 | 섹터 | 출처 | 비고 |")
+        self.assertEqual([line.split(" | ")[0][2:] for line in table[1:]], ["MU", "BAD", "NOSIC", "SHELL", "GOOGL", "NOCIK"])
+        self.assertEqual(table[1], "| MU | 3674 | Semiconductors & Related Devices | 반도체 | 반도체 | 규칙 |  |")
+        self.assertEqual(table[2], "| BAD |  |  |  |  | 미분류 | fetch_failed: TimeoutError |")
+        self.assertIn("| NOSIC |  |  |  |  | 미분류 | sic_missing |", table)
+        self.assertIn("| SHELL | 9995 | Non-Operating \\| Establishments |  |  | 미분류 |  |", table)
+        self.assertTrue(table[5].endswith("| 예외 | 광고 \\| 검색 |"), table[5])
+        self.assertIn("| NOCIK |  |  |  |  | 미분류 | cik_not_found |", table)
+        for line in table:
+            self.assertEqual(line.replace("\\|", "").count("|"), 8, line)  # 7 cells, escaping holds
+        self.assertEqual(lines[-1], "전체 6개 · 미분류 4개 · 실패 2개")
+
+    def test_annotations(self):
+        self.assertEqual(annotation_lines(self.rows), [
+            "::error title=SEC sectors::2개 종목 실패: BAD(fetch_failed: TimeoutError), NOCIK(cik_not_found)",
+            "::warning title=SEC sectors::2개 종목 미분류: NOSIC(sic_missing), SHELL(9995)"])
+        self.assertEqual(annotation_lines([r for r in self.rows if r["symbol"] == "MU"]), [])
+
+    def _run_cli(self, tmp, env, *extra, with_failure=False):
+        DataStore(tmp).write_json("raw", "sec-submissions-CIK0000723125", {"sic": "3674", "sicDescription": "Semiconductors & Related Devices"})
+        records = [{"symbol": "MU", "name": "Micron", "cik": "723125"}]
+        if with_failure:
+            records.append({"symbol": "NOCIK", "name": "No cik"})
+        universe = Path(tmp) / "universe.jsonl"
+        universe.write_text("\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8")
+        test_contact = "test" + chr(64) + "example.com"  # same pattern as test_data.py (keeps gitleaks quiet)
+        argv = ["sec-sectors", "--universe", str(universe), "--data-root", tmp,
+                "--user-agent", f"VGS test runner {test_contact}", *extra]
+        output = io.StringIO()
+        # Start from a clean GitHub env so the suite behaves the same locally and inside Actions.
+        clean = {k: v for k, v in os.environ.items() if k not in ("GITHUB_STEP_SUMMARY", "GITHUB_ACTIONS")}
+        with mock.patch.dict(os.environ, {**clean, **env}, clear=True), mock.patch("urllib.request.urlopen", side_effect=AssertionError("network used")), \
+                redirect_stdout(output):
+            code = main(argv)
+        return code, output.getvalue()
+
+    def test_cli_appends_to_github_step_summary(self):
+        with TemporaryDirectory() as tmp:
+            summary = Path(tmp) / "step_summary.md"
+            summary.write_text("earlier step\n", encoding="utf-8")
+            code, out = self._run_cli(tmp, {"GITHUB_STEP_SUMMARY": str(summary), "GITHUB_ACTIONS": "true"}, with_failure=True)
+            text = summary.read_text(encoding="utf-8")
+        self.assertEqual(code, 0)  # failures stay visible but do not fail the step by default
+        self.assertTrue(text.startswith("earlier step\n### SEC 섹터 분류"))
+        self.assertIn("| MU | 3674 |", text)
+        self.assertIn("| NOCIK |  |  |  |  | 미분류 | cik_not_found |", text)
+        self.assertIn("반도체: 1", out)  # existing stdout lines are kept
+        self.assertIn("::error title=SEC sectors::1개 종목 실패: NOCIK(cik_not_found)", out)
+
+    def test_cli_without_github_env_writes_nothing_extra(self):
+        with TemporaryDirectory() as tmp:
+            code, out = self._run_cli(tmp, {"GITHUB_STEP_SUMMARY": ""}, with_failure=True)
+            files = sorted(p.name for p in Path(tmp).rglob("*.md"))
+        self.assertEqual(code, 0)
+        self.assertEqual(files, [])
+        self.assertNotIn("::", out)
+
+    def test_cli_summary_option_and_strict(self):
+        with TemporaryDirectory() as tmp:
+            target = Path(tmp) / "summary.md"
+            code, _ = self._run_cli(tmp, {}, "--summary", str(target), "--strict")
+            self.assertEqual(code, 0)
+            self.assertIn("| MU | 3674 |", target.read_text(encoding="utf-8"))
+        with TemporaryDirectory() as tmp:
+            code, _ = self._run_cli(tmp, {}, "--strict", with_failure=True)
+            self.assertEqual(code, 1)
 
 
 class ExportTests(unittest.TestCase):

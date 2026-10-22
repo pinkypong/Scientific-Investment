@@ -147,16 +147,65 @@ def collect_sector_rows(records: list[Any], fetch_submissions: Any, sector_map: 
     return rows
 
 
+def sector_counts(rows: list[dict[str, Any]], sector_map: SectorMap) -> list[tuple[str, int]]:
+    """(sector label, count) in display order, sectors without rows left out."""
+    counts = [(s["label"], sum(row.get("sector") == s["key"] for row in rows)) for s in sector_map.sectors]
+    return [(label, count) for label, count in counts if count]
+
+
+def is_failed(row: dict[str, Any]) -> bool:
+    """The SEC lookup itself failed (no CIK, or the fetch raised), as opposed to an uncovered SIC."""
+    note = str(row.get("note") or "")
+    return note == "cik_not_found" or note.startswith("fetch_failed")
+
+
 def summarize(rows: list[dict[str, Any]], sector_map: SectorMap) -> list[str]:
     """Human-readable lines: count per sector, then everything that needs a look."""
-    lines = []
-    for sector in sector_map.sectors:
-        count = sum(row.get("sector") == sector["key"] for row in rows)
-        if count:
-            lines.append(f"{sector['label']}: {count}")
+    lines = [f"{label}: {count}" for label, count in sector_counts(rows, sector_map)]
     for label, test in (("unclassified", lambda r: r["source"] == SOURCE_UNCLASSIFIED),
                         ("override", lambda r: r["source"] == SOURCE_OVERRIDE)):
         hits = [f"{r['symbol']}({r.get('sic') or r.get('note') or '-'})" for r in rows if test(r)]
         if hits:
             lines.append(f"{label} {len(hits)}: {', '.join(hits)}")
+    return lines
+
+
+_SOURCE_LABELS = {SOURCE_SIC: "규칙", SOURCE_OVERRIDE: "예외", SOURCE_UNCLASSIFIED: "미분류"}
+
+
+def _cell(value: Any) -> str:
+    text = "" if value is None else " ".join(str(value).split())
+    return text.replace("|", "\\|")
+
+
+def render_summary_markdown(rows: list[dict[str, Any]], sector_map: SectorMap) -> str:
+    """Markdown run summary (GitHub step summary): sector counts and one table row per security."""
+    observed = next((row.get("observed_at") for row in rows if row.get("observed_at")), "-")
+    counts = sector_counts(rows, sector_map)
+    lines = ["### SEC 섹터 분류", "", f"분류표 버전 `{sector_map.version or '-'}` · 조회 시각 `{observed}`", "",
+             "섹터별: " + (" · ".join(f"{label} {count}" for label, count in counts) if counts else "없음"), "",
+             "| 종목 | SIC | SIC 설명 | 업종 | 섹터 | 출처 | 비고 |",
+             "| --- | --- | --- | --- | --- | --- | --- |"]
+    for row in rows:
+        notes = [row.get("override_reason") if row.get("source") == SOURCE_OVERRIDE else None, row.get("note")]
+        lines.append("| " + " | ".join(_cell(value) for value in (
+            row.get("symbol"), row.get("sic"), row.get("sic_description"), row.get("industry_label"),
+            row.get("sector_label"), _SOURCE_LABELS.get(row.get("source"), row.get("source")),
+            "; ".join(str(n) for n in notes if n))) + " |")
+    unclassified = sum(row.get("source") == SOURCE_UNCLASSIFIED for row in rows)
+    failed = sum(is_failed(row) for row in rows)
+    lines += ["", f"전체 {len(rows)}개 · 미분류 {unclassified}개 · 실패 {failed}개", ""]
+    return "\n".join(lines)
+
+
+def annotation_lines(rows: list[dict[str, Any]]) -> list[str]:
+    """GitHub workflow commands that surface failures and unclassified rows on the run page."""
+    failed = [f"{r['symbol']}({r.get('note')})" for r in rows if is_failed(r)]
+    other = [f"{r['symbol']}({r.get('sic') or r.get('note') or '-'})" for r in rows
+             if r.get("source") == SOURCE_UNCLASSIFIED and not is_failed(r)]
+    lines = []
+    if failed:
+        lines.append(f"::error title=SEC sectors::{len(failed)}개 종목 실패: {', '.join(failed)}")
+    if other:
+        lines.append(f"::warning title=SEC sectors::{len(other)}개 종목 미분류: {', '.join(other)}")
     return lines
