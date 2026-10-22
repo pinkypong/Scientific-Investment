@@ -37,6 +37,13 @@ jobs:
           pip install -r data_sources/requirements.txt
           # playwright 브라우저는 CI 불필요 (hankyung_global 수집 전용)
 
+      - name: VGS tests (value-growth-screener, stdlib only, offline)
+        # VGS 는 data_sources 와 독립이고 설치가 필요 없다(표준 라이브러리만). 빨리 실패하도록 앞에 둔다.
+        working-directory: value-growth-screener
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+
       - name: Regenerate store from committed raw/ (offline)
         # normalized·derived 는 .gitignore 대상 → 클론(체크아웃) 직후 재생성 필요.
         # 네트워크·API 키 불필요 (Phase D company cache + netguard).
