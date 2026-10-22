@@ -128,6 +128,30 @@ class DataLayerTests(unittest.TestCase):
         self.assertEqual(result["quarters"]["revenue"][-1]["value"], 40)
         self.assertTrue(result["quarters"]["revenue"][-1]["derived"])
 
+    def test_xbrl_reported_growth_history(self):
+        def fy(year, value, tag_filed):
+            return {"start": f"{year}-01-01", "end": f"{year}-12-31", "val": value, "filed": tag_filed,
+                    "form": "10-K", "fy": year, "fp": "FY"}
+        revenue = [fy(2021, 100, "2022-02-01"), fy(2022, 110, "2023-02-01"),
+                   fy(2023, 121, "2024-02-01"), fy(2024, 133.1, "2025-02-01")]
+        operating = [fy(2021, 10, "2022-02-01"), fy(2024, 20, "2025-02-01")]
+        # Eight discrete quarters that add up to the FY totals, so TTM and prior TTM both exist.
+        quarters = []
+        for i, (start, end) in enumerate([("2023-01-01", "2023-03-31"), ("2023-04-01", "2023-06-30"),
+                                          ("2023-07-01", "2023-09-30"), ("2023-10-01", "2023-12-31"),
+                                          ("2024-01-01", "2024-03-31"), ("2024-04-01", "2024-06-30"),
+                                          ("2024-07-01", "2024-09-30"), ("2024-10-01", "2024-12-31")]):
+            quarters.append({"start": start, "end": end, "val": 121 / 4 if i < 4 else 133.1 / 4, "filed": "2025-02-01",
+                             "form": "10-Q", "fy": int(start[:4]), "fp": f"Q{i % 4 + 1}"})
+        facts = {"cik": 1, "entityName": "Test", "facts": {"us-gaap": {
+            "Revenues": {"units": {"USD": revenue + quarters}},
+            "OperatingIncomeLoss": {"units": {"USD": operating}}}}}
+        history = normalize_companyfacts(facts, "2025-03-01")["history"]
+        self.assertAlmostEqual(history["revenue_cagr_3y"], 0.10, places=6)
+        self.assertAlmostEqual(history["revenue_yoy_ttm"], 0.10, places=6)
+        self.assertAlmostEqual(history["ebit_margin_change_3y"], 20 / 133.1 - 0.10, places=6)
+        self.assertEqual(history["basis_fiscal_year"], 2024)
+
     def test_ken_french_parser(self):
         text = "notes\n,Mkt-RF,SMB,HML,RF\n20260901,1.00,-0.50,0.25,0.01\nfooter"
         row = parse_ken_french_csv(text, "ff5_daily")[0]

@@ -8,7 +8,7 @@
   },
   "collection": {
     "tier1_sections": ["company_overview", "financial_ratios", "key_metrics"],
-    "tier2_sections": ["analyst_estimates", "latest_earnings"],
+    "tier2_sections": ["latest_earnings"],
     "tier2_top_n": 10,
     "tier3_top_n": 5,
     "market_snapshot_ttl_hours": 24,

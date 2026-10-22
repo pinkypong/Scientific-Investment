@@ -9,6 +9,10 @@
 
 엔진은 다섯 번째 영역인 `computed`를 결과에 새로 만들며 원자료나 가정을 덮어쓰지 않는다.
 
+## 애널리스트 추정치 배제
+
+컨센서스 EPS·목표주가·추정치 리비전은 관측값이 아니라 예측이다. `objective`에 넣지 않는다. 들어오면 엔진은 점수·완전성·출처연결률·기본 가치평가 입력에서 모두 제외하고 `ANALYST_INPUT_EXCLUDED` 경고를 단다. PE 교차검증의 기본 EPS는 `financials.eps_ttm`이며, 정상화 EPS를 쓰려면 `assumptions.relative_cross_check.eps`에 가정으로 명시한다.
+
 ## 단위
 
 - 비율은 모두 소수: 12% → `0.12`
@@ -20,14 +24,14 @@
 ## 객관 필드 그룹
 
 - `market`: price, cash, debt, diluted_shares, market_cap, enterprise_value
-- `financials`: revenue_ttm, ebit_margin_ttm, ocf_ttm, net_income_ttm, ebitda_ttm, tangible_book_value
+- `financials`: revenue_ttm, ebit_margin_ttm, ocf_ttm, net_income_ttm, ebitda_ttm, eps_ttm, tangible_book_value
 - `ratios`: roic, wacc, ocf_to_net_income, accrual_ratio, debt_to_ebitda, interest_coverage, share_dilution_yoy
-- `consensus`: forward_eps, revenue_growth_3y, eps_growth_3y, revision_90d, target_median
+- `history`: revenue_cagr_3y, revenue_yoy_ttm, ebit_margin_change_3y — 공시된 FY·분기 값으로만 계산 (`vgs.data.xbrl.reported_growth`)
 - `risk`: beta, max_drawdown_1y
 - `portfolio`: correlation, concentration_reduction
 - `signals`: institutional_change_pct, workforce_yoy_pct, ravenpack_sentiment
 - `capital`: risk_free_rate, beta, equity_risk_premium, country_risk_premium, pre_tax_cost_debt, tax_rate, debt_value, equity_value
-- `etf`: lookthrough_forward_pe, concentration_hhi, top10_weight, expense_ratio, tracking_error
+- `etf`: lookthrough_trailing_pe, concentration_hhi, top10_weight, expense_ratio, tracking_error
 
 `wacc`의 시장 입력값은 객관적 관측치로 보관할 수 있지만 DCF에 실제 적용하는 WACC는 `assumptions.scenarios.*.wacc`에 둔다. 이 구분은 ‘관측값’과 ‘모델 선택’을 혼동하지 않기 위함이다.
 

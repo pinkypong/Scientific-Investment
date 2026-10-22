@@ -1,4 +1,7 @@
-"""Token-efficient Bigdata.com deep-dive queue built from screening ranks."""
+"""Token-efficient Bigdata.com deep-dive queue built from screening ranks.
+
+Analyst estimates and ratings are deliberately not requested: forecasts are not facts.
+"""
 
 from __future__ import annotations
 
@@ -24,11 +27,11 @@ def build_bigdata_queue(ranking_csv: str | Path, tier2: int = 50, tier3: int = 2
         symbol = row[symbol_field].strip().upper()
         if not symbol:
             continue
-        tasks = ["tearsheet:overview,ratios,key_metrics,analyst_estimates,latest_earnings"]
+        tasks = ["tearsheet:overview,ratios,key_metrics,latest_earnings"]
         tier = 2
         if rank <= tier3:
             tier = 3
-            tasks += ["tearsheet:financial_statements,analyst_ratings,fund_trends_history,hiring_trends",
+            tasks += ["tearsheet:financial_statements,fund_trends_history,hiring_trends",
                       "sentiment:30d"]
         if rank <= tier4:
             tier = 4
@@ -42,7 +45,7 @@ def build_bigdata_queue(ranking_csv: str | Path, tier2: int = 50, tier3: int = 2
         if normalized and normalized not in queued:
             queue.append({"symbol": normalized, "rank": None, "tier": 4, "status": "pending",
                           "reason": "forced_current_holding", "tasks": [
-                              "tearsheet:overview,ratios,key_metrics,analyst_estimates,latest_earnings,financial_statements,analyst_ratings,fund_trends_history,hiring_trends",
+                              "tearsheet:overview,ratios,key_metrics,latest_earnings,financial_statements,fund_trends_history,hiring_trends",
                               "sentiment:30d", "primary_sources:latest_10k_10q_8k_and_earnings_call",
                               "catalysts", "valuation_cross_check"], "created_at": stamp,
                           "token_policy": "metadata/tearsheet first; full-text retrieval only for material discrepancies"})
