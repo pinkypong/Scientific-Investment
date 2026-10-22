@@ -6,6 +6,7 @@ import csv
 import io
 import json
 import os
+import re
 import urllib.parse
 import urllib.request
 import zipfile
@@ -66,6 +67,27 @@ class KenFrenchClient:
         return rows
 
 
+class FredUnavailable(RuntimeError):
+    """FRED answered with something other than API JSON (e.g. its site-maintenance page)."""
+
+
+def _fred_json(body: bytes, content_type: str, series_id: str) -> dict[str, Any]:
+    """Parse a FRED API body. During maintenance FRED returns HTTP 200 with an HTML page, which
+    must fail clearly instead of as a bare JSONDecodeError. The message never includes the
+    request URL, because that carries the API key."""
+    try:
+        payload = json.loads(body)
+    except ValueError:
+        title = re.search(rb"<title>\s*(.*?)\s*</title>", body, re.IGNORECASE | re.DOTALL)
+        page = title.group(1).decode("utf-8", "replace") if title else f"{len(body)} bytes"
+        raise FredUnavailable(f"FRED {series_id}: expected JSON, got {content_type or 'unknown type'} ({page})."
+                              " The FRED API may be under maintenance; retry later.") from None
+    if not isinstance(payload, dict) or "observations" not in payload:
+        raise FredUnavailable(f"FRED {series_id}: JSON without observations "
+                              f"({payload.get('error_message', 'no error message') if isinstance(payload, dict) else type(payload).__name__})")
+    return payload
+
+
 class FredClient:
     def __init__(self, store: DataStore, api_key: str | None = None):
         self.store = store
@@ -84,7 +106,9 @@ class FredClient:
         url = "https://api.stlouisfed.org/fred/series/observations?" + urllib.parse.urlencode(params)
         request = urllib.request.Request(url, headers={"User-Agent": "Value-Growth-Screener/1.0"})
         with urllib.request.urlopen(request, timeout=45) as response:
-            payload = json.load(response)
+            body = response.read()
+            content_type = response.headers.get("Content-Type", "")
+        payload = _fred_json(body, content_type, series_id)
         stamp = datetime.now(timezone.utc).isoformat()
         rows = [{"series_id": series_id, "date": item["date"],
                  "value": None if item["value"] == "." else float(item["value"]),

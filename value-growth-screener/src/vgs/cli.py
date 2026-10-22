@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -12,7 +13,7 @@ from typing import Any
 from .data.alpaca import AlpacaMarketDataClient
 from .data.cache import DataStore
 from .data.deep_dive import build_bigdata_queue
-from .data.factors import DEFAULT_FRED_SERIES, FredClient, KenFrenchClient
+from .data.factors import DEFAULT_FRED_SERIES, FredClient, FredUnavailable, KenFrenchClient
 from .data.holdings import OfficialHoldingsClient, holdings_to_universe
 from .data.models import SecurityRecord
 from .data.sec import SecEdgarClient
@@ -203,7 +204,15 @@ def main(argv: list[str] | None = None) -> int:
         client = FredClient(store)
         outputs = {}
         for series in args.series:
-            rows = client.observations(series, args.start, args.end, args.vintage_date, refresh=args.refresh)
+            try:
+                rows = client.observations(series, args.start, args.end, args.vintage_date, refresh=args.refresh)
+            except FredUnavailable as error:
+                # One clear line instead of a traceback; on GitHub it also shows on the run page.
+                if os.environ.get("GITHUB_ACTIONS") == "true":
+                    print(f"::error title=FRED::{error}")
+                else:
+                    print(error, file=sys.stderr)
+                return 1
             outputs[series] = str(store.write_jsonl("normalized", f"fred-{series}-{args.vintage_date}", rows))
         print(json.dumps(outputs))
         return 0
