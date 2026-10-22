@@ -240,6 +240,7 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | 2026-10-22 | `fix/gitleaks-sectors` | (이 커밋) | Gitleaks 실패 수정: 테스트의 예시 메일을 `chr(64)` 방식으로 바꿈, 첫 커밋(b8ded90)의 3건과 PR #15 테스트 줄을 `.gitleaksignore`에 등록 | 로컬 gitleaks 8.30.1: PR 범위·전체 이력 모두 0건 |
 | 2026-10-22 | `feature/sectors-run-summary` | (이 커밋) | `sec-sectors` 실행 요약: GitHub 실행 화면에 종목별 SIC·업종·섹터·출처 표(`GITHUB_STEP_SUMMARY`, `--summary`), 조회 실패·미분류를 `::error`/`::warning`으로 표시(continue-on-error여도 보임), `--strict` 추가(워크플로에는 미적용) | VGS 73개(3.12·3.14), 일부러 망가뜨린 코드에서 테스트 실패 확인, gitleaks 0건 |
 | 2026-10-22 | `fix/fred-maintenance-node` | (이 커밋) | FRED가 점검 중일 때 HTTP 200 + HTML 점검 페이지를 주면 `JSONDecodeError` 대신 한 줄 설명으로 종료(키는 메시지에 넣지 않음, 캐시 안 함), GitHub에서는 실행 페이지 상단 오류로 표시. 수집 워크플로의 checkout·setup-python·upload-artifact를 node24 버전(v6)으로 | VGS 78(3.12·3.14), 실제 FRED 점검 페이지로 확인, 수정 되돌리면 테스트 실패 확인 |
+| 2026-10-22 | `feature/sector-overrides-mobile` | (이 커밋) | 예외 2건(QCOM·SNDK→반도체), 실행 요약표를 폰에서 읽기 좋게(종목·분류·출처·비고·SIC 순, 섹터›업종 한 칸), 수집 워크플로 기본 mode를 full로 | VGS 78(3.12·3.14), 실행 #6 실제 SEC 데이터로 네트워크 없이 재분류: 반도체 6·소프트웨어 1, 미분류 0 |
 
 **2026-10-22 사용자 승인으로 모든 작업 브랜치를 GitHub에 올렸습니다.** 시세 기능(PR #6·#7·#8)은 main에 병합·배포됨. 나머지는 PR 병합 대기. 대시보드 브랜치는 오래된 main 위에 있어 병합 시 시세 수정분을 되돌릴 위험이 있었으므로, Step 1·2 커밋 2개만 최신 코드 위로 다시 쌓았습니다(옛 버전은 로컬 `backup/dashboard-valuation-tab-old`). `feature/vgs-ri-epv`는 `feature/vgs-actual-only-growth` 위에 쌓여 있으므로 그 순서로 합쳐야 합니다.
 
@@ -271,9 +272,11 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | D-19 | 10-22 | 한국 시세는 한국투자증권 Open API(시세 조회만)로 자동화하고, 수동 입력 파일은 예비로 남긴다 | 사용자가 한국투자증권 계좌를 개설. 실전 키는 매매 권한도 있어, 그 계좌는 시세 조회 전용으로 비워 두기를 권장 |
 | D-20 | 10-22 | 섹터 분류 원천은 SEC SIC 코드 | 실제 파일 확인 결과 SPY 공식 XLSX의 `Sector` 열은 505종목 전부 `-`(공란), Nasdaq-100 파일엔 섹터 열 자체가 없음. SIC는 모든 SEC 공시 기업에 있는 공시 사실 |
 | D-21 | 10-22 | 두 단계(섹터 12 → 업종 49) + 사람이 정하는 예외 파일. 규칙은 첫 매치 우선, 도달 불가 규칙은 거부, 어디에도 안 걸리면 `unclassified`(추측 안 함). 예외는 이유 필수, 원래 SIC 보존, 처음엔 비워 둠 | 사용자 결정. SIC는 1987년 체계라 구글·메타(7370)·비자/마스터카드(7389) 같은 어색한 분류가 생기므로 사람이 고칠 수 있어야 함 |
+| D-22 | 10-22 | 섹터 예외 2건: QCOM(SIC 3663 통신장비)·SNDK(SIC 3572 저장장치) → 반도체. GOOGL(7370)은 규칙대로 소프트웨어·인터넷 유지 | 첫 실수집(실행 #6, 7종목) 결과를 보고 사용자가 결정. 원래 SIC와 규칙 결과는 데이터에 그대로 남음 |
+| D-23 | 10-22 | 거시(FRED) 데이터는 계속 FRED로 받는다. 대체 원천(재무부 수익률 등)은 FRED 실패가 반복될 때만 추가 | 10-22 오전 FRED 사이트 전체 점검(API가 HTML 점검 페이지 반환)으로 실패했으나 같은 날 오후 실행 #6에서 6개 시리즈 모두 수집됨. GitHub의 FRED 키도 유효 확인 |
 
 ### 열린 질문
-1. ~~섹터 분류 출처~~ → D-20·D-21. 남은 일: 첫 실수집 뒤 예외 후보(예: GOOGL·META=7370 소프트웨어, V·MA=7389 사업서비스, AMZN=5961 소매)를 사용자가 승인.
+1. ~~섹터 분류 출처~~ → D-20·D-21·D-22 (예외 결정 완료).
 2. **VGS ↔ data_sources 관계**: SEC 수집이 중복. 한국 종목(OpenDART)을 VGS에 넣으려면 연결이 필요.
 3. **Home·Governance·설계 메뉴**를 새 구조에서 어디에 둘지.
 4. **기존 Screener**(메모리 4종 순위)를 Step 1과 합칠지.

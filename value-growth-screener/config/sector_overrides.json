@@ -1,4 +1,15 @@
 {
-  "_note": "사람이 정한 종목별 업종 예외. SEC SIC 규칙보다 우선한다. 원래 SIC 는 결과에 그대로 남는다. 형식: \"TICKER\": {\"industry\": \"<sectors.json 의 업종 key>\", \"reason\": \"왜 바꾸는지\", \"decided_on\": \"YYYY-MM-DD\"}. 첫 실수집 뒤 사용자가 승인한 것만 넣는다.",
-  "overrides": {}
+  "_note": "사람이 정한 종목별 업종 예외. SEC SIC 규칙보다 우선한다. 원래 SIC 는 결과에 그대로 남는다. 형식: \"TICKER\": {\"industry\": \"<sectors.json 의 업종 key>\", \"reason\": \"왜 바꾸는지\", \"decided_on\": \"YYYY-MM-DD\"}. 사용자가 승인한 것만 넣는다.",
+  "overrides": {
+    "QCOM": {
+      "industry": "semiconductors",
+      "reason": "실제 사업은 모바일 칩(Snapdragon) 설계 — 팩리스 반도체",
+      "decided_on": "2026-10-22"
+    },
+    "SNDK": {
+      "industry": "semiconductors",
+      "reason": "NAND 메모리 반도체 기업 — 메모리 4종과 같은 그룹으로 비교",
+      "decided_on": "2026-10-22"
+    }
+  }
 }

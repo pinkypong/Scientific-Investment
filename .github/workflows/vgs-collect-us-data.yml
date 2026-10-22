@@ -22,10 +22,10 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "smoke = GOOGL only, short ranges (verify keys/limits). full = 7 holdings, 2023-2026."
+        description: "full (default) = 7 holdings, 2023-2026. smoke = GOOGL only, short ranges (verify keys/limits)."
         type: choice
         options: [smoke, full]
-        default: smoke
+        default: full
       as_of:
         description: "as-of / vintage date (YYYY-MM-DD) -- also the end date for bars and FRED"
         default: "2026-09-01"
