@@ -184,14 +184,17 @@ def render_summary_markdown(rows: list[dict[str, Any]], sector_map: SectorMap) -
     counts = sector_counts(rows, sector_map)
     lines = ["### SEC 섹터 분류", "", f"분류표 버전 `{sector_map.version or '-'}` · 조회 시각 `{observed}`", "",
              "섹터별: " + (" · ".join(f"{label} {count}" for label, count in counts) if counts else "없음"), "",
-             "| 종목 | SIC | SIC 설명 | 업종 | 섹터 | 출처 | 비고 |",
-             "| --- | --- | --- | --- | --- | --- | --- |"]
+             # Phone-friendly: short columns first, the long SIC description last.
+             "| 종목 | 분류 | 출처 | 비고 | SIC |",
+             "| --- | --- | --- | --- | --- |"]
     for row in rows:
         notes = [row.get("override_reason") if row.get("source") == SOURCE_OVERRIDE else None, row.get("note")]
+        sector, industry = row.get("sector_label"), row.get("industry_label")
+        label = "-" if not sector else sector if industry in (None, sector) else f"{sector} › {industry}"
+        sic = " · ".join(str(part) for part in (row.get("sic"), row.get("sic_description")) if part) if row.get("sic") else ""
         lines.append("| " + " | ".join(_cell(value) for value in (
-            row.get("symbol"), row.get("sic"), row.get("sic_description"), row.get("industry_label"),
-            row.get("sector_label"), _SOURCE_LABELS.get(row.get("source"), row.get("source")),
-            "; ".join(str(n) for n in notes if n))) + " |")
+            row.get("symbol"), label, _SOURCE_LABELS.get(row.get("source"), row.get("source")),
+            "; ".join(str(n) for n in notes if n), sic)) + " |")
     unclassified = sum(row.get("source") == SOURCE_UNCLASSIFIED for row in rows)
     failed = sum(is_failed(row) for row in rows)
     lines += ["", f"전체 {len(rows)}개 · 미분류 {unclassified}개 · 실패 {failed}개", ""]

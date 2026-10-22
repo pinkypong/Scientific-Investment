@@ -89,8 +89,15 @@ class OverrideTests(unittest.TestCase):
     def setUpClass(cls):
         cls.map = load_sector_map(MAP_PATH)
 
-    def test_committed_override_file_is_empty_until_the_user_decides(self):
-        self.assertEqual(load_overrides(ROOT / "config" / "sector_overrides.json", self.map), {})
+    def test_committed_overrides_are_exactly_the_user_approved_ones(self):
+        # Approved by the user on 2026-10-22 after the first live SEC run. GOOGL was kept on its SIC rule.
+        overrides = load_overrides(ROOT / "config" / "sector_overrides.json", self.map)
+        self.assertEqual({k: v["industry"] for k, v in overrides.items()},
+                         {"QCOM": "semiconductors", "SNDK": "semiconductors"})
+        self.assertTrue(all(v["decided_on"] == "2026-10-22" for v in overrides.values()))
+        qcom = classify("QCOM", 3663, "Radio & Tv Broadcasting & Communications Equipment", self.map, overrides)
+        self.assertEqual((qcom["sector"], qcom["source"], qcom["sic"], qcom["sic_industry"]),
+                         ("semiconductors", "override", 3663, "comm_equipment"))
 
     def test_override_wins_and_keeps_the_sec_facts(self):
         with TemporaryDirectory() as tmp:
@@ -186,16 +193,16 @@ class RunSummaryTests(unittest.TestCase):
         self.assertIn("2026-10-22T00:00:00Z", markdown)
         self.assertIn("섹터별: 반도체 1 · 통신·미디어 1", markdown)
         table = [line for line in lines if line.startswith("| ") and "---" not in line]
-        self.assertEqual(table[0], "| 종목 | SIC | SIC 설명 | 업종 | 섹터 | 출처 | 비고 |")
+        self.assertEqual(table[0], "| 종목 | 분류 | 출처 | 비고 | SIC |")
         self.assertEqual([line.split(" | ")[0][2:] for line in table[1:]], ["MU", "BAD", "NOSIC", "SHELL", "GOOGL", "NOCIK"])
-        self.assertEqual(table[1], "| MU | 3674 | Semiconductors & Related Devices | 반도체 | 반도체 | 규칙 |  |")
-        self.assertEqual(table[2], "| BAD |  |  |  |  | 미분류 | fetch_failed: TimeoutError |")
-        self.assertIn("| NOSIC |  |  |  |  | 미분류 | sic_missing |", table)
-        self.assertIn("| SHELL | 9995 | Non-Operating \\| Establishments |  |  | 미분류 |  |", table)
-        self.assertTrue(table[5].endswith("| 예외 | 광고 \\| 검색 |"), table[5])
-        self.assertIn("| NOCIK |  |  |  |  | 미분류 | cik_not_found |", table)
+        self.assertEqual(table[1], "| MU | 반도체 | 규칙 |  | 3674 · Semiconductors & Related Devices |")
+        self.assertEqual(table[2], "| BAD | - | 미분류 | fetch_failed: TimeoutError |  |")
+        self.assertIn("| NOSIC | - | 미분류 | sic_missing |  |", table)
+        self.assertIn("| SHELL | - | 미분류 |  | 9995 · Non-Operating \\| Establishments |", table)
+        self.assertEqual(table[5], "| GOOGL | 통신·미디어 › 미디어·출판·엔터 | 예외 | 광고 \\| 검색 | 7370 · Services-Computer Programming |")
+        self.assertIn("| NOCIK | - | 미분류 | cik_not_found |  |", table)
         for line in table:
-            self.assertEqual(line.replace("\\|", "").count("|"), 8, line)  # 7 cells, escaping holds
+            self.assertEqual(line.replace("\\|", "").count("|"), 6, line)  # 5 cells, escaping holds
         self.assertEqual(lines[-1], "전체 6개 · 미분류 4개 · 실패 2개")
 
     def test_annotations(self):
@@ -230,8 +237,8 @@ class RunSummaryTests(unittest.TestCase):
             text = summary.read_text(encoding="utf-8")
         self.assertEqual(code, 0)  # failures stay visible but do not fail the step by default
         self.assertTrue(text.startswith("earlier step\n### SEC 섹터 분류"))
-        self.assertIn("| MU | 3674 |", text)
-        self.assertIn("| NOCIK |  |  |  |  | 미분류 | cik_not_found |", text)
+        self.assertIn("| MU | 반도체 | 규칙 |", text)
+        self.assertIn("| NOCIK | - | 미분류 | cik_not_found |  |", text)
         self.assertIn("반도체: 1", out)  # existing stdout lines are kept
         self.assertIn("::error title=SEC sectors::1개 종목 실패: NOCIK(cik_not_found)", out)
 
@@ -248,7 +255,7 @@ class RunSummaryTests(unittest.TestCase):
             target = Path(tmp) / "summary.md"
             code, _ = self._run_cli(tmp, {}, "--summary", str(target), "--strict")
             self.assertEqual(code, 0)
-            self.assertIn("| MU | 3674 |", target.read_text(encoding="utf-8"))
+            self.assertIn("| MU | 반도체 | 규칙 |", target.read_text(encoding="utf-8"))
         with TemporaryDirectory() as tmp:
             code, _ = self._run_cli(tmp, {}, "--strict", with_failure=True)
             self.assertEqual(code, 1)
