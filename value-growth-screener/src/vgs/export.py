@@ -81,6 +81,24 @@ def ticker_of(result: dict[str, Any]) -> str:
     return ticker
 
 
+CLASSIFICATION_FIELDS = ("sic", "sic_description", "sic_industry", "source", "map_version",
+                         "override_reason", "override_decided_on", "provider", "observed_at", "url", "note")
+
+
+def attach_classification(result: dict[str, Any], row: dict[str, Any] | None) -> dict[str, Any]:
+    """Return a copy of ``result`` whose security carries sector/industry from a sec-sectors row.
+
+    The SIC facts and where the label came from (rule or override) travel with it."""
+    if row is None:
+        return result
+    out = deepcopy(result)
+    security = out.setdefault("security", {})
+    for key in ("sector", "sector_label", "industry", "industry_label"):
+        security[key] = row.get(key)
+    security["classification"] = {key: row[key] for key in CLASSIFICATION_FIELDS if key in row}
+    return out
+
+
 def step3_links(result: dict[str, Any]) -> list[dict[str, str]]:
     """Links only. Built from the CIK and from URLs already present in ``sources``;
     no news or analyst URL is ever constructed here."""
@@ -154,7 +172,8 @@ def build_detail(result: dict[str, Any], include_analyst: bool = False) -> dict[
     return detail
 
 
-def build_screen(results: Iterable[dict[str, Any]], universe: str | None = None) -> dict[str, Any]:
+def build_screen(results: Iterable[dict[str, Any]], universe: str | None = None,
+                 sector_catalog: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """Step 1 table. Only reported facts and the rule-based objective score."""
     rows = []
     for result in results:
@@ -164,6 +183,11 @@ def build_screen(results: Iterable[dict[str, Any]], universe: str | None = None)
             "ticker": ticker_of(result),
             "name": result.get("security", {}).get("name"),
             "sector": result.get("security", {}).get("sector"),
+            "sector_label": result.get("security", {}).get("sector_label"),
+            "industry": result.get("security", {}).get("industry"),
+            "industry_label": result.get("security", {}).get("industry_label"),
+            "sector_source": result.get("security", {}).get("classification", {}).get("source"),
+            "sic": result.get("security", {}).get("classification", {}).get("sic"),
             "as_of": result.get("as_of"),
             "facts": step1["facts"],
             "objective_score": step1["objective_score"]["total"],
@@ -173,9 +197,10 @@ def build_screen(results: Iterable[dict[str, Any]], universe: str | None = None)
             "detail": f"detail/{_SAFE_NAME.sub('_', ticker_of(result))}.json",
         })
     rows.sort(key=lambda row: (-row["objective_score"], row["ticker"]))
+    meta_sectors = {"sectors": sector_catalog} if sector_catalog is not None else {}
     return {
         "schema": SCHEMA_SCREEN,
-        "meta": {"universe": universe, "count": len(rows),
+        "meta": {**meta_sectors, "universe": universe, "count": len(rows),
                  "score_label": "rule_based",
                  "note": "공시 숫자와 규칙 기반 점수만 담는다. 가치평가 가정에 의존하는 값은 detail 파일의 step2에 있다."},
         "columns": [{"key": k, "label": label, "kind": kind, "path": f"objective.{path}"}
@@ -185,7 +210,7 @@ def build_screen(results: Iterable[dict[str, Any]], universe: str | None = None)
 
 
 def write_export(results: list[dict[str, Any]], out_dir: str | Path, universe: str | None = None,
-                 include_analyst: bool = False) -> list[Path]:
+                 include_analyst: bool = False, sector_catalog: list[dict[str, Any]] | None = None) -> list[Path]:
     """Write screen.json and detail/<TICKER>.json. Returns the written paths.
 
     ``include_analyst`` is for local builds only; never publish its output."""
@@ -205,6 +230,6 @@ def write_export(results: list[dict[str, Any]], out_dir: str | Path, universe: s
                                    allow_nan=False) + "\n", encoding="utf-8", newline="\n")
         written.append(path)
     screen_path = out / "screen.json"
-    screen_path.write_text(json.dumps(build_screen(results, universe), sort_keys=True, ensure_ascii=False,
+    screen_path.write_text(json.dumps(build_screen(results, universe, sector_catalog), sort_keys=True, ensure_ascii=False,
                                       indent=1, allow_nan=False) + "\n", encoding="utf-8", newline="\n")
     return [screen_path, *written]

@@ -74,6 +74,15 @@ jobs:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
         run: python -m vgs.cli sec-security-master --data-root data
 
+      - name: SEC sectors (SIC -> sector/industry)
+        continue-on-error: true
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        # Reuses the ticker->CIK cache from the step above; one submissions call per symbol.
+        run: >
+          python -m vgs.cli sec-sectors --symbols ${{ steps.p.outputs.symbols }}
+          --data-root data
+
       - name: FRED macro (vintage-fixed)
         continue-on-error: true
         env:

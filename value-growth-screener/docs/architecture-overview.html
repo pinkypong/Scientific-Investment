@@ -286,7 +286,7 @@ footer{margin-top:48px;color:var(--sub);font-size:13px;border-top:1px solid var(
 <h3>다음 작업</h3>
 <div class="tablewrap"><table>
   <tr><th>작업</th><th>내용</th></tr>
-  <tr><td>C</td><td>섹터 분류 연결 (아래 질문 1을 정한 뒤)</td></tr>
+  <tr><td>C</td><td><b>완료(2026-10-22).</b> SEC 업종코드(SIC)로 섹터 12개 → 업종 49개 분류. 사람이 고치는 예외 파일 허용. 실제 코드는 다음 수집 실행에서 처음 받음</td></tr>
   <tr><td>D</td><td>결과 파일을 대시보드에 넣는 빌드 단계, Step 2에 예제 종목 1개 표시</td></tr>
   <tr><td>E</td><td>대시보드 개편: 섹터 상위 탭 아래 Step 1·2·3, 기존 Memory 내용은 "반도체·메모리" 섹터로 옮김. 디자인은 이 단계부터 합류</td></tr>
   <tr><td>F</td><td>Step 1 표와 필터</td></tr>
@@ -294,7 +294,7 @@ footer{margin-top:48px;color:var(--sub);font-size:13px;border-top:1px solid var(
 </table></div>
 <h3>정해야 할 것</h3>
 <ol>
-  <li><b>섹터 분류 출처</b> — SPY 보유종목 파일의 섹터 열(익숙한 11개 섹터) 또는 SEC 업종 코드(공시 기반이지만 400여 개로 잘다). 제안은 SPY 우선, 없는 종목만 SEC 코드.</li>
+  <li><b>섹터 분류 예외</b> — 결정됨: 원천은 SEC SIC(SPY 파일의 섹터 열은 전부 비어 있었음). 남은 일은 첫 수집 뒤 어색한 분류(구글·메타, 비자·마스터카드 등)를 예외로 고칠지 사용자가 정하는 것.</li>
   <li><b>VGS와 data_sources를 어떻게 이을지</b> — SEC 수집 중복, 한국 종목 연결.</li>
   <li><b>Home·Governance·설계 메뉴</b>를 새 구조에서 어디에 둘지, 기존 Screener를 Step 1과 합칠지.</li>
   <li><b>Step 1 표의 열 12개</b>가 충분한지.</li>
