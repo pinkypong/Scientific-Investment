@@ -75,6 +75,7 @@ Scientific-Investment/                 ← GitHub: pinkypong/Scientific-Investme
 │   │   └─ data/                        수집·정규화
 │   │       ├─ sec.py, xbrl.py          SEC 공시 → TTM·FY 숫자, ttm_series
 │   │       ├─ holdings.py, universe.py SPY·NDX 보유종목 → 종목 풀
+│   │       ├─ sectors.py               SEC SIC 코드 → 섹터·업종 (config/sectors.json 규칙 + sector_overrides.json 예외)
 │   │       ├─ alpaca.py, factors.py    가격, 팩터 수익률
 │   │       └─ deep_dive.py             상위 후보용 Bigdata 조회 큐 만들기
 │   ├─ config/                          default.json(게이트·임계값), universes/
@@ -166,7 +167,7 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | 종목 풀 (SPY + NDX + 지정 7종목) | 완료 | `build-universe`, `official-us-universe` |
 | 엔진: fcff / ri / epv / 상대가치 | 완료 | 테스트 40개 통과(엔진 28 + 내보내기 12) |
 | 사용자 지정 구간 비교 | 완료 | `cycle_groups` |
-| 섹터 분류 | **없음** | `SecurityRecord`에 `sector` 필드 없음 → 9장 |
+| 섹터 분류 | 완료(실수집 대기) | `vgs sec-sectors`: SEC SIC → 업종 49개 → 섹터 12개. `export --sectors`가 종목별 섹터·업종과 `meta.sectors` 목록을 붙임. 실제 SIC는 GitHub Actions(`vgs-collect-us-data`)에서 처음 받음 |
 | 한국 종목(OpenDART)을 VGS 입력으로 | **없음** | `data_sources`에만 있음 |
 | 화면용 결과 JSON (`vgs export`) | 완료 | 예제 종목으로 검증. 실제 종목 연결은 작업 G |
 | Step 3 링크 | 일부 | SEC 공시 목록 링크와 `sources`의 URL만. IR·뉴스 검색 고정 바로가기는 아직 |
@@ -233,7 +234,9 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | 2026-10-21 | main (PR #7) | `f473b01` | 시세 실패 이유를 응답에 표시(상태 코드·안전한 오류 코드만) | node 14 |
 | 2026-10-22 | main (PR #8) | `555cce7`·`50925d5`·`736a802` | 키 공백 제거, KIS 초당 한도(EGW00201) 재시도, 로컬 점검 스크립트 `scripts/kis_check.mjs` | node 19, **실제 KIS 서버로 로컬 검증 후 푸시**, 운영 사이트에서 한·미 시세 전부 수신 확인 |
 | 2026-10-22 | `fix/home-table-overflow` | `48e10d5` | 폰에서 페이지가 옆으로 밀리던 문제(Home 표, 기존부터 있던 문제) 수정 | 390·360px 전 화면 |
-| 2026-10-22 | `feature/vgs-ri-epv` | (이 커밋) | 문서: GitHub 반영 상태, 대시보드 브랜치 재구성 기록 | — |
+| 2026-10-22 | `feature/vgs-ri-epv` | `2297be7` | 문서: GitHub 반영 상태, 대시보드 브랜치 재구성 기록 | — |
+| 2026-10-22 | main (PR #13·#14) | — | 대시보드 Step 1·2 화면 병합, CI에 VGS 테스트 추가 | Python 3.12에서도 52개 통과, 실패 테스트로 CI가 빨개지는지 확인 |
+| 2026-10-22 | `feature/vgs-sectors` | (이 커밋) | 작업 C: SEC SIC 기반 섹터·업종 분류, `sec-sectors`, `export --sectors`, 수집 워크플로 단계 | VGS 68개(3.12·3.14), 네트워크 차단 상태로 워크플로 명령 시뮬레이션 |
 
 **2026-10-22 사용자 승인으로 모든 작업 브랜치를 GitHub에 올렸습니다.** 시세 기능(PR #6·#7·#8)은 main에 병합·배포됨. 나머지는 PR 병합 대기. 대시보드 브랜치는 오래된 main 위에 있어 병합 시 시세 수정분을 되돌릴 위험이 있었으므로, Step 1·2 커밋 2개만 최신 코드 위로 다시 쌓았습니다(옛 버전은 로컬 `backup/dashboard-valuation-tab-old`). `feature/vgs-ri-epv`는 `feature/vgs-actual-only-growth` 위에 쌓여 있으므로 그 순서로 합쳐야 합니다.
 
@@ -263,9 +266,11 @@ python -m vgs.cli export <입력 JSON들> --config config/default.json --out <�
 | D-17 | 10-21 | 나란히 비교 기본 항목: 1년차 매출성장률, 1년차 영업이익률, 적정가치 vs 목표주가. RI를 쓰면 ROE 추가. 기간을 같이 표시 | 같은 기간끼리만 비교해야 의미가 있다. 사용자가 미정이라 기본값으로 시작하고 바꿀 수 있음 |
 | D-18 | 10-21 | 미국 시세는 Alpaca만, 한국 시세는 수동 입력 파일 | 무료로 몇 시간 단위 자동 갱신이 되는 한국 시세원은 조건이 붙는다: 한국투자증권 Open API(무료지만 계좌·앱키 필요), 공공데이터포털 금융위원회 주식시세정보(무료지만 다음 영업일 오후 1시 이후 종가). 비공식 포털 주소는 약관·안정성 문제로 제외 |
 | D-19 | 10-22 | 한국 시세는 한국투자증권 Open API(시세 조회만)로 자동화하고, 수동 입력 파일은 예비로 남긴다 | 사용자가 한국투자증권 계좌를 개설. 실전 키는 매매 권한도 있어, 그 계좌는 시세 조회 전용으로 비워 두기를 권장 |
+| D-20 | 10-22 | 섹터 분류 원천은 SEC SIC 코드 | 실제 파일 확인 결과 SPY 공식 XLSX의 `Sector` 열은 505종목 전부 `-`(공란), Nasdaq-100 파일엔 섹터 열 자체가 없음. SIC는 모든 SEC 공시 기업에 있는 공시 사실 |
+| D-21 | 10-22 | 두 단계(섹터 12 → 업종 49) + 사람이 정하는 예외 파일. 규칙은 첫 매치 우선, 도달 불가 규칙은 거부, 어디에도 안 걸리면 `unclassified`(추측 안 함). 예외는 이유 필수, 원래 SIC 보존, 처음엔 비워 둠 | 사용자 결정. SIC는 1987년 체계라 구글·메타(7370)·비자/마스터카드(7389) 같은 어색한 분류가 생기므로 사람이 고칠 수 있어야 함 |
 
 ### 열린 질문
-1. **섹터 분류 출처**: SPY 보유종목 파일의 섹터 열(익숙한 11개 섹터, 제3자 분류, 실제 파일 확인 필요) vs SEC의 SIC 코드(공시 기반이지만 400여 개로 잘고 낡음). 제안은 SPY 열 우선, 없는 종목만 SIC.
+1. ~~섹터 분류 출처~~ → D-20·D-21. 남은 일: 첫 실수집 뒤 예외 후보(예: GOOGL·META=7370 소프트웨어, V·MA=7389 사업서비스, AMZN=5961 소매)를 사용자가 승인.
 2. **VGS ↔ data_sources 관계**: SEC 수집이 중복. 한국 종목(OpenDART)을 VGS에 넣으려면 연결이 필요.
 3. **Home·Governance·설계 메뉴**를 새 구조에서 어디에 둘지.
 4. **기존 Screener**(메모리 4종 순위)를 Step 1과 합칠지.

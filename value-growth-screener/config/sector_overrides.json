@@ -1,0 +1,4 @@
+{
+  "_note": "사람이 정한 종목별 업종 예외. SEC SIC 규칙보다 우선한다. 원래 SIC 는 결과에 그대로 남는다. 형식: \"TICKER\": {\"industry\": \"<sectors.json 의 업종 key>\", \"reason\": \"왜 바꾸는지\", \"decided_on\": \"YYYY-MM-DD\"}. 첫 실수집 뒤 사용자가 승인한 것만 넣는다.",
+  "overrides": {}
+}

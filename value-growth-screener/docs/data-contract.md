@@ -26,6 +26,25 @@
 - `vgs export`는 기본(공개 배포용)으로 이 블록을 쓰지 않는다. `--include-analyst`를 줄 때만 `detail.step3.analyst`에 쓴다. 이 출력은 공개 배포하지 않는다.
 - `screen.json`과 `step1`·`step2`에는 어느 경우에도 들어가지 않는다.
 
+## 섹터·업종 (`security`)
+
+`vgs sec-sectors`가 SEC submissions의 SIC 코드로 분류하고, `vgs export --sectors <jsonl>`가 결과에 붙인다(입력 파일은 바꾸지 않음).
+
+| 필드 | 뜻 |
+|---|---|
+| `security.sector`, `sector_label` | 섹터 키·이름 (`config/sectors.json`의 12개) |
+| `security.industry`, `industry_label` | 업종 키·이름 (49개) |
+| `security.classification.sic`, `sic_description` | SEC가 공시한 SIC 코드와 설명 (사실) |
+| `security.classification.sic_industry` | 규칙만 적용했을 때의 업종 (예외가 있어도 남음) |
+| `security.classification.source` | `sec_sic`(규칙) · `override`(사람 예외) · `unclassified`(어느 규칙에도 안 걸림) |
+| `security.classification.override_reason`, `override_decided_on` | 예외일 때 이유와 날짜 |
+| `security.classification.provider`, `url`, `observed_at`, `map_version` | 출처와 규칙표 버전 |
+
+- 규칙표는 위에서부터 첫 매치. 넓은 범위가 좁은 범위를 가리면 로드할 때 오류.
+- 예외는 `config/sector_overrides.json`에 `{"overrides": {"TICKER": {"industry", "reason", "decided_on"}}}`. 이유가 없거나 없는 업종이면 오류.
+- `screen.json` 행에는 `sector`, `sector_label`, `industry`, `industry_label`, `sector_source`, `sic`. `--sectors`를 주면 `meta.sectors`에 섹터→업종 목록(표시 순서)이 들어간다.
+- 분류는 공시 숫자 해시(`integrity.objective_sha256`)에 포함되지 않는다.
+
 ## 단위
 
 - 비율은 모두 소수: 12% → `0.12`

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -15,12 +16,15 @@ from .data.factors import DEFAULT_FRED_SERIES, FredClient, KenFrenchClient
 from .data.holdings import OfficialHoldingsClient, holdings_to_universe
 from .data.models import SecurityRecord
 from .data.sec import SecEdgarClient
+from .data.sectors import collect_sector_rows, load_overrides, load_sector_map, summarize
 from .data.universe import DEFAULT_FORCED_SYMBOLS, build_universe, read_holdings_csv
 from .data.xbrl import normalize_companyfacts
 from .engine import analyze_security, rank_results
-from .export import write_export
+from .export import attach_classification, write_export
 from .inputs import assumptions_path, load_payload, split_payload
 from .report import render_markdown, render_ranking_csv
+
+_CONFIG = Path(__file__).resolve().parents[2] / "config"  # value-growth-screener/config
 
 
 def _load(path: str | Path) -> dict[str, Any]:
@@ -63,12 +67,22 @@ def main(argv: list[str] | None = None) -> int:
     export.add_argument("--out", required=True)
     export.add_argument("--universe")
     export.add_argument("--assumptions-dir", help="read assumptions/<TICKER>.json; inputs are facts files")
+    export.add_argument("--sectors", help="JSONL from sec-sectors: adds sector/industry to each security")
+    export.add_argument("--sector-map", default=str(_CONFIG / "sectors.json"))
     export.add_argument("--include-analyst", action="store_true",
                         help="LOCAL ONLY: add analyst forecasts to step3. Never publish this output.")
     split = sub.add_parser("split-input", help="Split a combined input into facts/ and assumptions/ files")
     split.add_argument("input")
     split.add_argument("--facts-dir", required=True)
     split.add_argument("--assumptions-dir", required=True)
+    sectors = sub.add_parser("sec-sectors", help="Classify securities by SEC SIC code into sector/industry")
+    sectors.add_argument("--symbols", nargs="*", default=[])
+    sectors.add_argument("--universe", help="JSONL from build-universe (symbol, cik)")
+    sectors.add_argument("--data-root", default="data")
+    sectors.add_argument("--user-agent", default=os.getenv("SEC_USER_AGENT"))
+    sectors.add_argument("--sector-map", default=str(_CONFIG / "sectors.json"))
+    sectors.add_argument("--overrides", default=str(_CONFIG / "sector_overrides.json"))
+    sectors.add_argument("--output-name", default="sectors-sec")
     sec = sub.add_parser("sec-security-master", help="Download/cache the SEC ticker-to-CIK map")
     sec.add_argument("--data-root", default="data")
     sec.add_argument("--user-agent", default=os.getenv("SEC_USER_AGENT"))
@@ -142,7 +156,18 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "export":
         config = _load(args.config) if args.config else None
         results = [analyze_security(load_payload(path, args.assumptions_dir), config) for path in args.inputs]
-        for path in write_export(results, args.out, args.universe, args.include_analyst):
+        catalog = None
+        if args.sectors:
+            rows = {}
+            with Path(args.sectors).open("r", encoding="utf-8") as handle:
+                for line in handle:
+                    if line.strip():
+                        row = json.loads(line)
+                        rows[row["symbol"]] = row
+            results = [attach_classification(r, rows.get(str(r.get("security", {}).get("ticker", "")).upper()))
+                       for r in results]
+            catalog = load_sector_map(args.sector_map).catalog()
+        for path in write_export(results, args.out, args.universe, args.include_analyst, catalog):
             print(path)
         return 0
     store = DataStore(args.data_root)
@@ -183,6 +208,25 @@ def main(argv: list[str] | None = None) -> int:
         rows = build_bigdata_queue(args.ranking, args.tier2, args.tier3, args.tier4, args.forced)
         output = store.write_jsonl("reports", args.output_name, rows)
         print(json.dumps({"path": str(output), "candidates": len(rows)}))
+        return 0
+    if args.command == "sec-sectors":
+        if not args.user_agent:
+            parser.error("sec-sectors requires --user-agent or SEC_USER_AGENT")
+        if not args.symbols and not args.universe:
+            parser.error("sec-sectors needs --symbols or --universe")
+        client = SecEdgarClient(args.user_agent, store)
+        sector_map = load_sector_map(args.sector_map)
+        overrides = load_overrides(args.overrides, sector_map)
+        records = _read_jsonl_records(args.universe) if args.universe else []
+        if args.symbols:
+            master = {record.symbol: record for record in client.company_tickers()}
+            records += [master.get(symbol.strip().upper(), SecurityRecord(symbol=symbol, name=symbol, source="input"))
+                        for symbol in args.symbols]
+        rows = collect_sector_rows(records, client.submissions, sector_map, overrides,
+                                   datetime.now(timezone.utc).isoformat())
+        print(store.write_jsonl("normalized", args.output_name, rows))
+        for line in summarize(rows, sector_map):
+            print(line)
         return 0
     if args.command == "sec-security-master":
         if not args.user_agent:
